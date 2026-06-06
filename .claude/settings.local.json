@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest frontend --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-git)",
+      "Bash(find /usr/local/bin /opt/homebrew/bin ~/.local/bin -name \"node\" -o -name \"npm\" -o -name \"bun\" 2>/dev/null | head -10)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(brew --version)",
+      "Bash(brew install *)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(kill 15716)",
+      "Bash(xargs kill -9)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/preview)",
+      "Bash(curl -s http://localhost:3000/preview)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(curl -s \"http://localhost:3000/_next/static/css/css-src_app_globals_css-node_modules_next_font_google_target_css.css?v=1780703898282\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
+      "Bash(curl -s https://ofpyuzdqfpqienlnzjwi.supabase.co/rest/v1/ -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mcHl1emRxZnBxaWVubG56andpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2OTI3NzUsImV4cCI6MjA5NjI2ODc3NX0.MS1saFBaxmHel8BIMbIbfBPGbPtBpnZsQZo0QpT8680' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mcHl1emRxZnBxaWVubG56andpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2OTI3NzUsImV4cCI6MjA5NjI2ODc3NX0.MS1saFBaxmHel8BIMbIbfBPGbPtBpnZsQZo0QpT8680')",
+      "Bash(curl -s -X POST https://ofpyuzdqfpqienlnzjwi.supabase.co/rest/v1/categories -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mcHl1emRxZnBxaWVubG56andpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDY5Mjc3NSwiZXhwIjoyMDk2MjY4Nzc1fQ.Ekfj2fgpX-dhIkI7JwtDeWkUXLk08kkR9elmKsJ7s9Q' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mcHl1emRxZnBxaWVubG56andpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDY5Mjc3NSwiZXhwIjoyMDk2MjY4Nzc1fQ.Ekfj2fgpX-dhIkI7JwtDeWkUXLk08kkR9elmKsJ7s9Q' -H 'Content-Type: application/json' -H 'Prefer: return=minimal' -d '[ *)",
+      "Bash(echo \"status: $?\")"
+    ]
+  }
+}

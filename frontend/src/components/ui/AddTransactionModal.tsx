@@ -1,0 +1,181 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { X } from 'lucide-react';
+
+interface Props {
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+export default function AddTransactionModal({ onClose, onSuccess }: Props) {
+  const [form, setForm] = useState({
+    type: 'expense' as 'income' | 'expense',
+    amount: '',
+    description: '',
+    category_id: '',
+    date: new Date().toISOString().split('T')[0],
+  });
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) return;
+      supabase
+        .from('categories')
+        .select('id,name,icon,type')
+        .eq('user_id', session.user.id)
+        .order('name')
+        .then(({ data: cats }) => setCategories(cats || []));
+    });
+  }, []);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setError('Não autenticado'); setLoading(false); return; }
+
+    const { error: err } = await supabase.from('transactions').insert({
+      user_id: user.id,
+      type: form.type,
+      amount: parseFloat(form.amount),
+      description: form.description,
+      category_id: form.category_id || null,
+      date: form.date,
+      source: 'web',
+    });
+
+    if (err) setError(err.message);
+    else onSuccess();
+    setLoading(false);
+  }
+
+  const filteredCategories = categories.filter(
+    (c) => c.type === form.type || c.type === 'both',
+  );
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      zIndex: 200, padding: 16,
+    }}>
+      <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid #f1f5f9' }}>
+          <h2 style={{ margin: 0, fontWeight: 600, fontSize: 17, color: '#0f172a' }}>Nova Transação</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex' }}>
+            <X size={20}/>
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Type toggle */}
+          <div style={{ display: 'flex', gap: 8 }}>
+            {(['expense', 'income'] as const).map((t) => (
+              <button
+                key={t} type="button"
+                onClick={() => setForm({ ...form, type: t, category_id: '' })}
+                style={{
+                  flex: 1, padding: '10px', borderRadius: 10, border: 'none',
+                  fontSize: 14, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s',
+                  background: form.type === t
+                    ? (t === 'expense' ? '#fee2e2' : '#dcfce7')
+                    : '#f1f5f9',
+                  color: form.type === t
+                    ? (t === 'expense' ? '#dc2626' : '#16a34a')
+                    : '#64748b',
+                }}
+              >
+                {t === 'expense' ? '💸 Despesa' : '💰 Receita'}
+              </button>
+            ))}
+          </div>
+
+          {/* Amount */}
+          <div>
+            <label style={labelStyle}>Valor (R$)</label>
+            <input
+              type="number" step="0.01" min="0.01" required
+              value={form.amount}
+              onChange={(e) => setForm({ ...form, amount: e.target.value })}
+              placeholder="0,00"
+              style={inputStyle}
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <label style={labelStyle}>Descrição</label>
+            <input
+              type="text" required
+              value={form.description}
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              placeholder="Ex: Almoço no restaurante"
+              style={inputStyle}
+            />
+          </div>
+
+          {/* Category */}
+          <div>
+            <label style={labelStyle}>Categoria</label>
+            <select
+              value={form.category_id}
+              onChange={(e) => setForm({ ...form, category_id: e.target.value })}
+              style={inputStyle}
+            >
+              <option value="">Selecionar categoria</option>
+              {filteredCategories.map((c) => (
+                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Date */}
+          <div>
+            <label style={labelStyle}>Data</label>
+            <input
+              type="date" required
+              value={form.date}
+              onChange={(e) => setForm({ ...form, date: e.target.value })}
+              style={inputStyle}
+            />
+          </div>
+
+          {error && (
+            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 14px', color: '#dc2626', fontSize: 13 }}>{error}</div>
+          )}
+
+          {/* Actions */}
+          <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
+            <button type="button" onClick={onClose} style={{
+              flex: 1, padding: '12px', borderRadius: 12, border: '1.5px solid #e2e8f0',
+              background: '#fff', color: '#64748b', fontSize: 14, fontWeight: 500, cursor: 'pointer',
+            }}>Cancelar</button>
+            <button type="submit" disabled={loading} style={{
+              flex: 1, padding: '12px', borderRadius: 12, border: 'none',
+              background: loading ? '#94a3b8' : 'linear-gradient(135deg,#22c55e,#16a34a)',
+              color: '#fff', fontSize: 14, fontWeight: 600, cursor: loading ? 'wait' : 'pointer',
+              boxShadow: loading ? 'none' : '0 4px 14px rgba(34,197,94,0.3)',
+            }}>{loading ? 'Salvando...' : 'Salvar'}</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+const labelStyle: React.CSSProperties = {
+  display: 'block', fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 6,
+};
+const inputStyle: React.CSSProperties = {
+  display: 'block', width: '100%', padding: '10px 12px',
+  borderRadius: 10, border: '1.5px solid #e2e8f0',
+  fontSize: 14, color: '#1e293b', background: '#fff',
+  outline: 'none', boxSizing: 'border-box',
+};
