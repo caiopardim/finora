@@ -470,7 +470,7 @@ function ReportsTab() {
       <div style={{ display:'flex', gap:8, marginBottom:24 }}>
         {[3,6,12].map((m) => (
           <button key={m} onClick={() => setPeriod(m)} style={{
-            padding:'7px 18px', borderRadius:8, border:'none', cursor:'pointer', fontSize:13, fontWeight:500,
+            padding:'7px 18px', borderRadius:8, cursor:'pointer', fontSize:13, fontWeight:500,
             background: period===m ? '#0f172a' : '#fff',
             color: period===m ? '#fff' : '#64748b',
             border: period===m ? 'none' : '1px solid #e2e8f0',
