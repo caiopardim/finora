@@ -82,7 +82,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const today = dayjs();
   const BellButton = ({ dark }: { dark?: boolean }) => (
     <div ref={alertRef} style={{ position: 'relative' }}>
-      <button onClick={() => setShowAlerts(v => !v)} style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 10, background: dark ? 'transparent' : '#f1f5f9' }}>
+      <button onClick={() => setShowAlerts(v => !v)} style={{ position: 'relative', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, borderRadius: 10, background: dark ? 'transparent' : '#f1f5f9' }}>
         <Bell size={20} color={dark ? '#94a3b8' : '#64748b'}/>
         {alerts.length > 0 && (
           <span style={{ position: 'absolute', top: 4, right: 4, minWidth: 16, height: 16, borderRadius: 99, background: '#ef4444', border: `2px solid ${dark ? '#0f172a' : '#fff'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 700, color: '#fff', padding: '0 3px' }}>
