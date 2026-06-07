@@ -166,7 +166,7 @@ export default function ReportsPage() {
           <p style={{ margin:'0 0 16px', fontSize:12, color:c.textFaint }}>{months} meses</p>
           {data.chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={data.chartData} margin={{ top:4, right:4, left:-20, bottom:0 }}>
+              <AreaChart data={data.chartData} margin={{ top:4, right:4, left:10, bottom:0 }}>
                 <defs>
                   <linearGradient id="gR" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%"  stopColor="#22c55e" stopOpacity={0.2}/>
