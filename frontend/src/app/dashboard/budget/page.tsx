@@ -38,9 +38,11 @@ export default function BudgetPage() {
   const [loading, setLoading] = useState(true);
 
   // Per-category editing
-  const [editingCat, setEditingCat] = useState<string | null>(null);
-  const [editRaw, setEditRaw]       = useState('');
-  const [savingCat, setSavingCat]   = useState(false);
+  const [editingCat, setEditingCat]   = useState<string | null>(null);
+  const [editRaw, setEditRaw]         = useState('');
+  const [editCatMode, setEditCatMode] = useState<'fixed' | 'percent'>('fixed');
+  const [editCatPct, setEditCatPct]   = useState('');
+  const [savingCat, setSavingCat]     = useState(false);
 
   async function load() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -101,14 +103,24 @@ export default function BudgetPage() {
 
   function openEditCat(cat: any) {
     setEditingCat(cat.id);
-    setEditRaw(cat.budget_limit ? toRawDigits(cat.budget_limit) : '');
+    const isP = cat.budget_limit_type === 'percent';
+    setEditCatMode(isP ? 'percent' : 'fixed');
+    setEditCatPct(isP && cat.budget_limit_pct ? String(cat.budget_limit_pct) : '');
+    setEditRaw(!isP && cat.budget_limit ? toRawDigits(cat.budget_limit) : '');
   }
 
   async function saveCat(id: string) {
     setSavingCat(true);
-    const val = parseDisplay(fmtDisplay(editRaw));
-    await supabase.from('categories').update({ budget_limit: val || null }).eq('id', id);
-    setCats(prev => prev.map(c => c.id === id ? { ...c, budget_limit: val || null } : c));
+    if (editCatMode === 'percent') {
+      const p = Number(editCatPct);
+      const effectiveLimit = p > 0 ? income * p / 100 : null;
+      await supabase.from('categories').update({ budget_limit_type: 'percent', budget_limit_pct: p || null, budget_limit: effectiveLimit }).eq('id', id);
+      setCats(prev => prev.map(c => c.id === id ? { ...c, budget_limit_type: 'percent', budget_limit_pct: p || null, budget_limit: effectiveLimit } : c));
+    } else {
+      const val = parseDisplay(fmtDisplay(editRaw));
+      await supabase.from('categories').update({ budget_limit_type: 'fixed', budget_limit_pct: null, budget_limit: val || null }).eq('id', id);
+      setCats(prev => prev.map(c => c.id === id ? { ...c, budget_limit_type: 'fixed', budget_limit_pct: null, budget_limit: val || null } : c));
+    }
     setEditingCat(null);
     setSavingCat(false);
   }
@@ -259,9 +271,15 @@ export default function BudgetPage() {
           <div style={{ padding: '8px 0' }}>
             {expenseCats.map((cat, i) => {
               const spent = catSpend[cat.id] || 0;
-              const limit = cat.budget_limit;
+              const effectiveLimit = cat.budget_limit_type === 'percent' && cat.budget_limit_pct
+                ? income * cat.budget_limit_pct / 100
+                : cat.budget_limit || 0;
+              const limit   = effectiveLimit;
               const pctUsed = limit ? Math.min(spent / limit * 100, 100) : 0;
               const over    = limit && spent > limit;
+              const limitLabel = cat.budget_limit_type === 'percent' && cat.budget_limit_pct
+                ? `${cat.budget_limit_pct}% da renda (${formatCurrency(effectiveLimit)})`
+                : formatCurrency(limit);
               const isEditing = editingCat === cat.id;
 
               return (
@@ -280,7 +298,7 @@ export default function BudgetPage() {
                             <>
                               <span style={{ fontSize: 13, color: over ? '#ef4444' : c.textMuted, fontWeight: 600 }}>
                                 {formatCurrency(spent)}
-                                {limit ? ` / ${formatCurrency(limit)}` : ''}
+                                {limit ? ` / ${limitLabel}` : ''}
                                 {over && ' 🔴'}
                               </span>
                               <button onClick={() => openEditCat(cat)} style={{ width: 28, height: 28, borderRadius: 7, border: 'none', background: '#eff6ff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -293,24 +311,47 @@ export default function BudgetPage() {
 
                       {/* Inline edit */}
                       {isEditing && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-                          <div style={{ position: 'relative', flex: 1 }}>
-                            <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 13, color: c.textMuted }}>R$</span>
-                            <input
-                              autoFocus
-                              type="text" inputMode="numeric"
-                              value={fmtDisplay(editRaw)}
-                              onChange={e => setEditRaw(e.target.value.replace(/\D/g, ''))}
-                              placeholder="0,00"
-                              style={{ ...inputStyle, paddingLeft: 32, fontSize: 13, padding: '7px 10px 7px 32px' }}
-                            />
+                        <div style={{ marginTop: 10 }}>
+                          {/* Mode toggle */}
+                          <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+                            {([['fixed','Valor fixo'], ['percent','% da renda']] as const).map(([m, label]) => (
+                              <button key={m} onClick={() => setEditCatMode(m)} style={{ flex: 1, padding: '7px', borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: editCatMode === m ? cat.color : c.inputBg, color: editCatMode === m ? '#fff' : c.textMuted }}>
+                                {label}
+                              </button>
+                            ))}
                           </div>
-                          <button onClick={() => saveCat(cat.id)} disabled={savingCat} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: '#22c55e', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <Check size={14} color="#fff"/>
-                          </button>
-                          <button onClick={() => setEditingCat(null)} style={{ width: 32, height: 32, borderRadius: 8, border: 'none', background: c.inputBg, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <X size={14} color={c.textMuted}/>
-                          </button>
+
+                          {editCatMode === 'fixed' ? (
+                            <div style={{ position: 'relative' }}>
+                              <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', fontSize: 13, color: c.textMuted }}>R$</span>
+                              <input autoFocus type="text" inputMode="numeric" value={fmtDisplay(editRaw)} onChange={e => setEditRaw(e.target.value.replace(/\D/g, ''))} placeholder="0,00" style={{ ...inputStyle, paddingLeft: 32, fontSize: 13, padding: '8px 10px 8px 32px' }}/>
+                            </div>
+                          ) : (
+                            <div>
+                              <div style={{ display: 'flex', gap: 6, marginBottom: 8, flexWrap: 'wrap' }}>
+                                {['5','10','15','20','25','30'].map(p => (
+                                  <button key={p} onClick={() => setEditCatPct(p)} style={{ padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, background: editCatPct === p ? cat.color : c.inputBg, color: editCatPct === p ? '#fff' : c.textMuted }}>{p}%</button>
+                                ))}
+                              </div>
+                              <div style={{ position: 'relative' }}>
+                                <input type="number" min="1" max="100" value={editCatPct} onChange={e => setEditCatPct(e.target.value)} placeholder="%" style={{ ...inputStyle, fontSize: 13, padding: '8px 10px' }}/>
+                              </div>
+                              {editCatPct && income > 0 && (
+                                <p style={{ margin: '6px 0 0', fontSize: 12, color: c.textFaint }}>
+                                  = {formatCurrency(income * Number(editCatPct) / 100)} de {formatCurrency(income)} de renda
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                            <button onClick={() => saveCat(cat.id)} disabled={savingCat} style={{ flex: 1, padding: '8px', borderRadius: 8, border: 'none', background: '#22c55e', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                              <Check size={13}/> Salvar
+                            </button>
+                            <button onClick={() => setEditingCat(null)} style={{ padding: '8px 14px', borderRadius: 8, border: 'none', background: c.inputBg, color: c.textMuted, fontSize: 13, cursor: 'pointer' }}>
+                              <X size={13}/>
+                            </button>
+                          </div>
                         </div>
                       )}
 
