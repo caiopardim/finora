@@ -19,13 +19,34 @@ interface Props {
   };
 }
 
+/** Formata número para exibição: 10000.5 → "10.000,50" */
+function fmtDisplay(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) return '';
+  const cents = parseInt(digits, 10);
+  return (cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/** Converte valor digitado (ex: "10.000,50") para número float */
+function parseDisplay(display: string): number {
+  return parseFloat(display.replace(/\./g, '').replace(',', '.')) || 0;
+}
+
+/** Inicializa string de dígitos a partir de um número (ex: 10000.5 → "1000050") */
+function toRawDigits(n: number): string {
+  return Math.round(n * 100).toString();
+}
+
 export default function AddTransactionModal({ onClose, onSuccess, transaction }: Props) {
   const { c } = useTheme();
   const isEdit = !!transaction;
 
+  // rawDigits guarda apenas os dígitos (centavos): "1000050" = R$ 10.000,50
+  const [rawDigits, setRawDigits] = useState(
+    transaction ? toRawDigits(transaction.amount) : ''
+  );
   const [form, setForm] = useState({
     type: (transaction?.type ?? 'expense') as 'income' | 'expense',
-    amount: transaction ? String(transaction.amount) : '',
     description: transaction?.description ?? '',
     category_id: transaction?.category_id ?? '',
     date: transaction?.date ?? new Date().toISOString().split('T')[0],
@@ -51,9 +72,12 @@ export default function AddTransactionModal({ onClose, onSuccess, transaction }:
     setLoading(true);
     setError('');
 
+    const amount = parseDisplay(fmtDisplay(rawDigits));
+    if (!amount) { setError('Informe um valor válido'); setLoading(false); return; }
+
     const payload = {
       type: form.type,
-      amount: parseFloat(form.amount),
+      amount,
       description: form.description,
       category_id: form.category_id || null,
       date: form.date,
@@ -135,13 +159,19 @@ export default function AddTransactionModal({ onClose, onSuccess, transaction }:
           {/* Amount */}
           <div>
             <label style={labelStyle}>Valor (R$)</label>
-            <input
-              type="number" step="0.01" min="0.01" required
-              value={form.amount}
-              onChange={(e) => setForm({ ...form, amount: e.target.value })}
-              placeholder="0,00"
-              style={inputStyle}
-            />
+            <div style={{ position: 'relative' }}>
+              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: c.textMuted, pointerEvents: 'none' }}>R$</span>
+              <input
+                type="text" inputMode="numeric" required
+                value={fmtDisplay(rawDigits)}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, '');
+                  setRawDigits(digits);
+                }}
+                placeholder="0,00"
+                style={{ ...inputStyle, paddingLeft: 36 }}
+              />
+            </div>
           </div>
 
           {/* Description */}
