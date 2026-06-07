@@ -122,9 +122,15 @@ export default function LoginPage() {
 
           <p style={{ textAlign: 'center', fontSize: 14, color: '#94a3b8', marginTop: 24 }}>
             {mode === 'login' ? 'Não tem uma conta?' : 'Já tem uma conta?'}{' '}
-            <button onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError(''); }} style={{ background: 'none', border: 'none', color: '#22c55e', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>
-              {mode === 'login' ? 'Cadastre-se grátis' : 'Fazer login'}
-            </button>
+            {mode === 'login' ? (
+              <a href="/assinar" style={{ background: 'none', border: 'none', color: '#22c55e', fontWeight: 600, cursor: 'pointer', fontSize: 14, textDecoration: 'none' }}>
+                Cadastre-se
+              </a>
+            ) : (
+              <button onClick={() => { setMode('login'); setError(''); }} style={{ background: 'none', border: 'none', color: '#22c55e', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>
+                Fazer login
+              </button>
+            )}
           </p>
         </div>
       </div>
