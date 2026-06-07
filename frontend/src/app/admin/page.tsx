@@ -420,45 +420,85 @@ export default function AdminPage() {
                         {/* Expanded */}
                         {isExpanded && d && (
                           <div style={{ padding: '0 20px 20px', borderTop: `1px solid ${c.borderLight}`, background: c.inputBg }}>
-                            <div style={{ paddingTop: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
-                              <div style={{ background: c.surface, borderRadius: 12, padding: '14px 16px', border: `1px solid ${c.border}` }}>
-                                <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 700, color: c.textFaint, textTransform: 'uppercase' }}>📊 Este mês</p>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <div><p style={{ margin: '0 0 1px', fontSize: 10, color: c.textFaint }}>Receitas</p><p style={{ margin: 0, fontWeight: 700, color: '#22c55e', fontSize: 14 }}>{formatCurrency(d.monthIncome)}</p></div>
-                                  <div><p style={{ margin: '0 0 1px', fontSize: 10, color: c.textFaint }}>Despesas</p><p style={{ margin: 0, fontWeight: 700, color: '#ef4444', fontSize: 14 }}>{formatCurrency(d.monthExpense)}</p></div>
+                            <div style={{ paddingTop: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 12 }}>
+
+                              {/* === ASSINATURA === */}
+                              <div style={{ background: c.surface, borderRadius: 12, padding: '16px', border: `1px solid ${c.border}` }}>
+                                <p style={{ margin: '0 0 12px', fontSize: 11, fontWeight: 700, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.05em' }}>💳 Assinatura</p>
+
+                                {/* Status atual */}
+                                {(() => {
+                                  const now = new Date();
+                                  const trialEnds = user.trial_ends_at ? new Date(user.trial_ends_at) : null;
+                                  const inTrial = trialEnds ? now < trialEnds : false;
+                                  const trialLeft = trialEnds ? Math.max(0, Math.ceil((trialEnds.getTime() - now.getTime()) / 86400000)) : 0;
+                                  const ps = inTrial ? 'trial' : (user.plan_status || 'none');
+                                  const statusLabel: Record<string, { label: string; color: string }> = {
+                                    trial:     { label: `Trial — ${trialLeft}d restantes`, color: '#f59e0b' },
+                                    active:    { label: 'Ativo',     color: '#22c55e' },
+                                    paused:    { label: 'Pausado',   color: '#f59e0b' },
+                                    cancelled: { label: 'Cancelado', color: '#ef4444' },
+                                    none:      { label: 'Sem plano', color: '#ef4444' },
+                                  };
+                                  const sc = statusLabel[ps] || statusLabel.none;
+                                  return (
+                                    <div style={{ marginBottom: 12 }}>
+                                      <span style={{ fontSize: 12, fontWeight: 700, color: sc.color, background: sc.color + '18', padding: '3px 10px', borderRadius: 99 }}>{sc.label}</span>
+                                      {user.plan_expires_at && <p style={{ margin: '6px 0 0', fontSize: 11, color: c.textFaint }}>Expira: {dayjs(user.plan_expires_at).format('DD/MM/YYYY')}</p>}
+                                      {inTrial && <p style={{ margin: '6px 0 0', fontSize: 11, color: c.textFaint }}>Trial até: {dayjs(user.trial_ends_at).format('DD/MM/YYYY')}</p>}
+                                    </div>
+                                  );
+                                })()}
+
+                                {/* Tipo de plano */}
+                                <p style={{ margin: '0 0 6px', fontSize: 11, color: c.textFaint }}>Tipo de plano</p>
+                                <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+                                  {(['monthly', 'annual'] as const).map(pt => (
+                                    <button
+                                      key={pt}
+                                      onClick={async () => {
+                                        await adminFetch('/api/admin/users', { method: 'PATCH', body: JSON.stringify({ id: user.id, plan_type: pt }) });
+                                        setUsers(prev => prev.map(u => u.id === user.id ? { ...u, plan_type: pt } : u));
+                                        showToast(`Plano de ${user.email} → ${pt === 'monthly' ? 'Mensal' : 'Anual'}`);
+                                      }}
+                                      style={{ flex: 1, padding: '7px', borderRadius: 8, border: `2px solid ${user.plan_type === pt ? '#22c55e' : c.border}`, background: user.plan_type === pt ? '#052e1620' : 'transparent', color: user.plan_type === pt ? '#22c55e' : c.textMuted, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}
+                                    >
+                                      {pt === 'monthly' ? '📅 Mensal\nR$ 29' : '📆 Anual\nR$ 199'}
+                                    </button>
+                                  ))}
                                 </div>
+
+                                {/* Status override */}
+                                <p style={{ margin: '0 0 6px', fontSize: 11, color: c.textFaint }}>Alterar status</p>
+                                <select
+                                  value={user.plan_status || 'trial'}
+                                  onChange={async e => {
+                                    const ps = e.target.value;
+                                    await adminFetch('/api/admin/users', { method: 'PATCH', body: JSON.stringify({ id: user.id, plan_status: ps }) });
+                                    setUsers(prev => prev.map(u => u.id === user.id ? { ...u, plan_status: ps } : u));
+                                    showToast(`Status de ${user.email} → "${ps}"`);
+                                  }}
+                                  style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: `1px solid ${c.border}`, background: c.inputBg, color: c.text, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                                >
+                                  <option value="trial">⏳ Trial</option>
+                                  <option value="active">✅ Ativo</option>
+                                  <option value="paused">⏸ Pausado</option>
+                                  <option value="cancelled">❌ Cancelado</option>
+                                </select>
                               </div>
-                              <div style={{ background: c.surface, borderRadius: 12, padding: '14px 16px', border: `1px solid ${c.border}` }}>
-                                <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 700, color: c.textFaint, textTransform: 'uppercase' }}>🏦 Contas ({d.wallets.length})</p>
-                                {d.wallets.slice(0, 3).map((w: any) => <p key={w.name} style={{ margin: '0 0 3px', fontSize: 12, color: c.textSecondary }}>{w.icon} {w.name}</p>)}
-                                {!d.wallets.length && <p style={{ margin: 0, fontSize: 12, color: c.textFaint }}>Nenhuma</p>}
-                              </div>
-                              <div style={{ background: c.surface, borderRadius: 12, padding: '14px 16px', border: `1px solid ${c.border}` }}>
-                                <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 700, color: c.textFaint, textTransform: 'uppercase' }}>🎯 Metas ({d.goals.length})</p>
-                                {d.goals.slice(0, 3).map((g: any) => <p key={g.name} style={{ margin: '0 0 3px', fontSize: 12, color: c.textSecondary }}>{g.name}</p>)}
-                                {!d.goals.length && <p style={{ margin: 0, fontSize: 12, color: c.textFaint }}>Nenhuma</p>}
-                              </div>
-                              <div style={{ background: c.surface, borderRadius: 12, padding: '14px 16px', border: `1px solid ${c.border}` }}>
-                                <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 700, color: c.textFaint, textTransform: 'uppercase' }}>⏱ Histórico</p>
-                                <p style={{ margin: '0 0 3px', fontSize: 12, color: c.textSecondary }}>Cadastro: {dayjs(user.created_at).format('DD/MM/YYYY')}</p>
-                                <p style={{ margin: '0 0 3px', fontSize: 12, color: c.textSecondary }}>Último login: {user.last_sign_in_at ? dayjs(user.last_sign_in_at).format('DD/MM/YYYY HH:mm') : 'Nunca'}</p>
-                                <p style={{ margin: 0, fontSize: 12, color: user.confirmed ? '#22c55e' : '#f97316' }}>{user.confirmed ? '✅ E-mail confirmado' : '⏳ E-mail pendente'}</p>
+
+                              {/* === HISTÓRICO === */}
+                              <div style={{ background: c.surface, borderRadius: 12, padding: '16px', border: `1px solid ${c.border}` }}>
+                                <p style={{ margin: '0 0 12px', fontSize: 11, fontWeight: 700, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.05em' }}>⏱ Histórico</p>
+                                <p style={{ margin: '0 0 6px', fontSize: 12, color: c.textSecondary }}>📅 Cadastro: {dayjs(user.created_at).format('DD/MM/YYYY')}</p>
+                                <p style={{ margin: '0 0 6px', fontSize: 12, color: c.textSecondary }}>🕐 Último login: {user.last_sign_in_at ? dayjs(user.last_sign_in_at).format('DD/MM/YYYY HH:mm') : 'Nunca'}</p>
+                                <p style={{ margin: '0 0 6px', fontSize: 12, color: user.confirmed ? '#22c55e' : '#f97316' }}>{user.confirmed ? '✅ E-mail confirmado' : '⏳ E-mail pendente'}</p>
+                                <p style={{ margin: '0 0 6px', fontSize: 12, color: c.textSecondary }}>💸 Transações: {user.transactions}</p>
+                                <p style={{ margin: 0, fontSize: 12, color: c.textSecondary }}>🏦 Contas: {d.wallets?.length || 0} · 🎯 Metas: {d.goals?.length || 0}</p>
                               </div>
                             </div>
 
-                            {d.recentTransactions?.length > 0 && (
-                              <div style={{ background: c.surface, borderRadius: 12, padding: '14px 16px', border: `1px solid ${c.border}`, marginTop: 12 }}>
-                                <p style={{ margin: '0 0 10px', fontSize: 11, fontWeight: 700, color: c.textFaint, textTransform: 'uppercase' }}>💸 Últimas transações</p>
-                                {d.recentTransactions.slice(0, 5).map((t: any, ti: number) => (
-                                  <div key={ti} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderBottom: ti < 4 ? `1px solid ${c.borderLight}` : 'none' }}>
-                                    <span>{t.type === 'income' ? '💰' : '💸'}</span>
-                                    <div style={{ flex: 1 }}><p style={{ margin: 0, fontSize: 12, color: c.textSecondary }}>{t.description}</p><p style={{ margin: 0, fontSize: 10, color: c.textFaint }}>{t.date}</p></div>
-                                    <span style={{ fontWeight: 700, fontSize: 12, color: t.type === 'income' ? '#22c55e' : '#ef4444' }}>{t.type === 'income' ? '+' : '-'}{formatCurrency(Number(t.amount))}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-
+                            {/* Ações */}
                             <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
                               <button onClick={() => toggleRole(user)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 14px', borderRadius: 9, border: `1.5px solid ${user.role === 'admin' ? '#ef4444' : '#3b82f6'}`, background: 'transparent', color: user.role === 'admin' ? '#ef4444' : '#3b82f6', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                                 {user.role === 'admin' ? <><User size={13}/>Remover admin</> : <><Shield size={13}/>Tornar admin</>}
@@ -472,22 +512,6 @@ export default function AdminPage() {
                               <button onClick={() => setConfirmDelete(user)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 14px', borderRadius: 9, border: 'none', background: '#fef2f2', color: '#dc2626', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                                 <Trash2 size={13}/>Excluir conta
                               </button>
-                              {/* Plan override */}
-                              <select
-                                value={user.plan_status || 'trial'}
-                                onChange={async e => {
-                                  const ps = e.target.value;
-                                  await adminFetch('/api/admin/users', { method: 'PATCH', body: JSON.stringify({ id: user.id, plan_status: ps }) });
-                                  setUsers(prev => prev.map(u => u.id === user.id ? { ...u, plan_status: ps } : u));
-                                  showToast(`Plano de ${user.email} alterado para "${ps}"`);
-                                }}
-                                style={{ padding: '8px 12px', borderRadius: 9, border: `1.5px solid ${c.border}`, background: c.surface, color: c.text, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-                              >
-                                <option value="trial">⏳ Trial</option>
-                                <option value="active">✅ Ativo</option>
-                                <option value="paused">⏸ Pausado</option>
-                                <option value="cancelled">❌ Cancelado</option>
-                              </select>
                             </div>
                           </div>
                         )}
