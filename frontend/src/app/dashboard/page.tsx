@@ -29,6 +29,9 @@ export default function DashboardPage() {
     if (!session) return;
     const uid = session.user.id;
 
+    // Auto-generate recurring transactions
+    import('@/lib/recurring').then(({ checkRecurring }) => checkRecurring(uid)).catch(() => {});
+
     const now         = dayjs();
     const monthStart  = now.startOf('month').format('YYYY-MM-DD');
     const monthEnd    = now.endOf('month').format('YYYY-MM-DD');

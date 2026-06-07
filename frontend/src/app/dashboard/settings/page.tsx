@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Check, User, Shield, MessageSquare, Camera, Loader } from 'lucide-react';
+import { Check, User, Shield, MessageSquare, Camera, Loader, Bell, BellOff, Palette } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 
 export default function SettingsPage() {
@@ -13,6 +13,33 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [user, setUser] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [notifStatus, setNotifStatus] = useState<'default'|'granted'|'denied'>('default');
+  const [accentColor, setAccentColor] = useState('#22c55e');
+  const [accentSaved, setAccentSaved] = useState(false);
+
+  const ACCENT_COLORS = ['#22c55e','#6366f1','#3b82f6','#f97316','#ec4899','#8b5cf6','#06b6d4','#ef4444'];
+
+  useEffect(() => {
+    if (typeof Notification !== 'undefined') setNotifStatus(Notification.permission as any);
+    const saved = localStorage.getItem('finora_accent');
+    if (saved) setAccentColor(saved);
+  }, []);
+
+  async function requestNotifications() {
+    if (!('Notification' in window)) { alert('Seu navegador não suporta notificações.'); return; }
+    const perm = await Notification.requestPermission();
+    setNotifStatus(perm as any);
+    if (perm === 'granted') {
+      new Notification('Finora', { body: '🎉 Notificações ativadas! Você será avisado sobre contas vencendo.' });
+    }
+  }
+
+  function saveAccent() {
+    localStorage.setItem('finora_accent', accentColor);
+    document.documentElement.style.setProperty('--accent', accentColor);
+    setAccentSaved(true);
+    setTimeout(() => setAccentSaved(false), 2000);
+  }
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -202,6 +229,51 @@ export default function SettingsPage() {
           background: c.surface, color: c.textSecondary, fontSize: 13, fontWeight: 500, cursor: 'pointer',
         }}>
           Enviar link de redefinição
+        </button>
+      </Section>
+
+      {/* Push notifications */}
+      <Section icon={<Bell size={17}/>} title="Notificações">
+        <p style={{ margin: '0 0 16px', fontSize: 14, color: c.textMuted }}>
+          Receba alertas do navegador quando uma conta estiver próxima do vencimento.
+        </p>
+        {notifStatus === 'granted' ? (
+          <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 16px', borderRadius:10, background:'#f0fdf4', border:'1px solid #bbf7d0' }}>
+            <Check size={16} color="#16a34a"/>
+            <span style={{ fontSize:14, color:'#166534', fontWeight:500 }}>Notificações ativadas!</span>
+          </div>
+        ) : notifStatus === 'denied' ? (
+          <div style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 16px', borderRadius:10, background:'#fef2f2', border:'1px solid #fecaca' }}>
+            <BellOff size={16} color="#dc2626"/>
+            <div>
+              <p style={{ margin:0, fontSize:14, color:'#dc2626', fontWeight:500 }}>Notificações bloqueadas</p>
+              <p style={{ margin:'2px 0 0', fontSize:12, color:'#ef4444' }}>Habilite nas configurações do navegador.</p>
+            </div>
+          </div>
+        ) : (
+          <button onClick={requestNotifications} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 18px', borderRadius:10, border:'none', background:'linear-gradient(135deg,#6366f1,#4f46e5)', color:'#fff', fontSize:14, fontWeight:600, cursor:'pointer', boxShadow:'0 4px 14px rgba(99,102,241,0.3)' }}>
+            <Bell size={16}/> Ativar notificações
+          </button>
+        )}
+      </Section>
+
+      {/* Accent color */}
+      <Section icon={<Palette size={17}/>} title="Cor de Destaque">
+        <p style={{ margin: '0 0 16px', fontSize: 14, color: c.textMuted }}>
+          Personalize a cor principal do Finora.
+        </p>
+        <div style={{ display:'flex', gap:10, flexWrap:'wrap', marginBottom:16 }}>
+          {ACCENT_COLORS.map(col => (
+            <button key={col} onClick={() => setAccentColor(col)} style={{ width:36, height:36, borderRadius:'50%', background:col, border:accentColor===col?`4px solid ${c.text}`:'4px solid transparent', cursor:'pointer', transition:'transform 0.15s', transform:accentColor===col?'scale(1.2)':'scale(1)' }}/>
+          ))}
+        </div>
+        <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+          <label style={{ fontSize:13, color:c.textMuted, fontWeight:500 }}>Cor personalizada:</label>
+          <input type="color" value={accentColor} onChange={e => setAccentColor(e.target.value)} style={{ width:40, height:36, border:'none', borderRadius:8, cursor:'pointer', background:'none' }}/>
+          <span style={{ fontSize:13, color:c.textFaint, fontFamily:'monospace' }}>{accentColor}</span>
+        </div>
+        <button onClick={saveAccent} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 18px', borderRadius:10, border:'none', background:accentSaved?'#22c55e':accentColor, color:'#fff', fontSize:14, fontWeight:600, cursor:'pointer' }}>
+          <Check size={16}/>{accentSaved?'Salvo!':'Aplicar cor'}
         </button>
       </Section>
 

@@ -4,18 +4,151 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Download, TrendingUp, TrendingDown } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, Upload, X, Check, AlertCircle } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useTheme } from '@/lib/theme-context';
 
 function fmt(v: number) { return formatCurrency(v); }
 function fmtK(v: number) { return v >= 1000 ? `R$${(v/1000).toFixed(1)}k` : `R$${v}`; }
 
+// ──────────────── CSV Import ────────────────
+type CsvRow = { date: string; description: string; amount: number; type: 'income' | 'expense' };
+
+function parseCSV(text: string): CsvRow[] {
+  const lines = text.trim().split('\n').filter(Boolean);
+  if (lines.length < 2) return [];
+  // Auto-detect separator
+  const sep = lines[0].includes(';') ? ';' : ',';
+  const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
+  const idxDate  = headers.findIndex(h => h.includes('data') || h.includes('date'));
+  const idxDesc  = headers.findIndex(h => h.includes('descri') || h.includes('desc') || h.includes('memo'));
+  const idxAmt   = headers.findIndex(h => h.includes('valor') || h.includes('amount') || h.includes('value'));
+  const idxType  = headers.findIndex(h => h.includes('tipo') || h.includes('type'));
+  if (idxDate < 0 || idxAmt < 0) return [];
+  const rows: CsvRow[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(sep).map(c => c.trim().replace(/^["']|["']$/g, ''));
+    const rawDate = cols[idxDate] || '';
+    // Try to parse DD/MM/YYYY or YYYY-MM-DD
+    let date = rawDate;
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(rawDate)) {
+      const [d, m, y] = rawDate.split('/');
+      date = `${y}-${m}-${d}`;
+    }
+    const rawAmt = (cols[idxAmt] || '0').replace(/\./g, '').replace(',', '.').replace(/[^\d.-]/g, '');
+    const amount = Math.abs(parseFloat(rawAmt) || 0);
+    if (!amount) continue;
+    let type: 'income' | 'expense' = 'expense';
+    if (idxType >= 0) {
+      const t = (cols[idxType] || '').toLowerCase();
+      if (t.includes('receita') || t.includes('income') || t.includes('entrada') || t.includes('crédito') || t.includes('credito')) type = 'income';
+    } else if (parseFloat(rawAmt) > 0) {
+      type = 'income';
+    }
+    rows.push({ date, description: cols[idxDesc] || 'Importado', amount, type });
+  }
+  return rows;
+}
+
+function ImportModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const { c } = useTheme();
+  const [rows, setRows]     = useState<CsvRow[]>([]);
+  const [error, setError]   = useState('');
+  const [saving, setSaving] = useState(false);
+  const [done, setDone]     = useState(false);
+
+  function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const text = ev.target?.result as string;
+      const parsed = parseCSV(text);
+      if (!parsed.length) { setError('Não foi possível ler o arquivo. Verifique o formato.'); return; }
+      setError('');
+      setRows(parsed);
+    };
+    reader.readAsText(file, 'utf-8');
+  }
+
+  async function doImport() {
+    setSaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const payload = rows.map(r => ({ ...r, user_id: user.id, source: 'csv' }));
+    const { error: err } = await supabase.from('transactions').insert(payload);
+    if (err) { setError(err.message); setSaving(false); return; }
+    setDone(true);
+    setTimeout(() => { onSuccess(); onClose(); }, 1500);
+  }
+
+  const inputStyle: React.CSSProperties = { display:'block', width:'100%', padding:'10px 14px', borderRadius:10, border:`1.5px solid ${c.border}`, fontSize:14, color:c.text, background:c.input, outline:'none', boxSizing:'border-box' };
+
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:200, padding:16 }}>
+      <div style={{ background:c.surface, borderRadius:20, width:'100%', maxWidth:540, boxShadow:'0 20px 60px rgba(0,0,0,0.25)', border:`1px solid ${c.border}`, maxHeight:'90vh', overflowY:'auto' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'20px 24px', borderBottom:`1px solid ${c.borderLight}` }}>
+          <h2 style={{ margin:0, fontSize:17, fontWeight:700, color:c.text }}>Importar Extrato CSV</h2>
+          <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:c.textFaint }}><X size={20}/></button>
+        </div>
+        <div style={{ padding:24 }}>
+          {/* Format hint */}
+          <div style={{ background: c.inputBg, borderRadius:12, padding:'12px 16px', marginBottom:20, fontSize:12, color:c.textMuted, lineHeight:1.6 }}>
+            <strong>Colunas esperadas:</strong> <code>data</code>, <code>descricao</code>, <code>valor</code>, <code>tipo</code> (receita/despesa)<br/>
+            Separador: ponto-e-vírgula (<code>;</code>) ou vírgula (<code>,</code>). Datas: DD/MM/AAAA ou AAAA-MM-DD.
+          </div>
+
+          {!rows.length ? (
+            <label style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, padding:'40px 20px', borderRadius:14, border:`2px dashed ${c.border}`, cursor:'pointer', background:c.inputBg }}>
+              <Upload size={32} color={c.textFaint}/>
+              <span style={{ fontSize:14, fontWeight:600, color:c.textMuted }}>Clique para selecionar o arquivo CSV</span>
+              <span style={{ fontSize:12, color:c.textFaint }}>ou arraste e solte aqui</span>
+              <input type="file" accept=".csv,.txt" style={{ display:'none' }} onChange={handleFile}/>
+            </label>
+          ) : (
+            <>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+                <p style={{ margin:0, fontSize:14, fontWeight:600, color:c.text }}>{rows.length} transações encontradas</p>
+                <button onClick={() => setRows([])} style={{ fontSize:12, color:'#ef4444', background:'none', border:'none', cursor:'pointer' }}>Limpar</button>
+              </div>
+              <div style={{ maxHeight:240, overflowY:'auto', borderRadius:10, border:`1px solid ${c.border}` }}>
+                {rows.slice(0,20).map((r, i) => (
+                  <div key={i} style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px', borderBottom:i<rows.length-1?`1px solid ${c.borderLight}`:'none' }}>
+                    <span style={{ fontSize:18 }}>{r.type==='income'?'💰':'💸'}</span>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <p style={{ margin:0, fontSize:13, color:c.text, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.description}</p>
+                      <p style={{ margin:0, fontSize:11, color:c.textFaint }}>{r.date}</p>
+                    </div>
+                    <span style={{ fontSize:13, fontWeight:700, color:r.type==='income'?'#22c55e':'#ef4444', flexShrink:0 }}>{r.type==='income'?'+':'-'}{formatCurrency(r.amount)}</span>
+                  </div>
+                ))}
+                {rows.length > 20 && <p style={{ textAlign:'center', padding:'8px 0', fontSize:12, color:c.textFaint }}>...e mais {rows.length-20} transações</p>}
+              </div>
+            </>
+          )}
+
+          {error && <div style={{ background:'#fef2f2', border:'1px solid #fecaca', borderRadius:10, padding:'10px 14px', color:'#dc2626', fontSize:13, marginTop:12, display:'flex', gap:8, alignItems:'center' }}><AlertCircle size={14}/>{error}</div>}
+
+          {rows.length > 0 && (
+            <div style={{ display:'flex', gap:10, marginTop:20 }}>
+              <button onClick={onClose} style={{ flex:1, padding:'12px', borderRadius:12, border:`1.5px solid ${c.border}`, background:c.surface, color:c.textMuted, fontSize:14, fontWeight:500, cursor:'pointer' }}>Cancelar</button>
+              <button onClick={doImport} disabled={saving||done} style={{ flex:2, padding:'12px', borderRadius:12, border:'none', background:done?'#22c55e':'linear-gradient(135deg,#6366f1,#4f46e5)', color:'#fff', fontSize:14, fontWeight:700, cursor:saving?'wait':'pointer', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                {done ? <><Check size={16}/>Importado!</> : saving ? 'Importando...' : <><Upload size={16}/>Importar {rows.length} transações</>}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ReportsPage() {
   const { c } = useTheme();
   const [data, setData]     = useState<any>(null);
   const [months, setMonths] = useState(6);
   const [loading, setLoading] = useState(true);
+  const [showImport, setShowImport] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -121,9 +254,14 @@ export default function ReportsPage() {
           <h1 style={{ fontSize: 24, fontWeight: 700, color: c.text, margin: '0 0 2px' }}>Relatórios</h1>
           <p style={{ color: c.textFaint, fontSize: 14, margin: 0 }}>Análise detalhada das suas finanças</p>
         </div>
-        <button onClick={exportCSV} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', borderRadius:10, border:`1.5px solid ${c.border}`, background:c.surface, color:c.textSecondary, fontSize:13, fontWeight:500, cursor:'pointer' }}>
-          <Download size={15}/> Exportar CSV
-        </button>
+        <div style={{ display:'flex', gap:8 }}>
+          <button onClick={() => setShowImport(true)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', borderRadius:10, border:'none', background:'linear-gradient(135deg,#6366f1,#4f46e5)', color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer' }}>
+            <Upload size={15}/> Importar CSV
+          </button>
+          <button onClick={exportCSV} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', borderRadius:10, border:`1.5px solid ${c.border}`, background:c.surface, color:c.textSecondary, fontSize:13, fontWeight:500, cursor:'pointer' }}>
+            <Download size={15}/> Exportar CSV
+          </button>
+        </div>
       </div>
 
       {/* Period toggle */}
@@ -210,6 +348,8 @@ export default function ReportsPage() {
           }
         </div>
       </div>
+
+      {showImport && <ImportModal onClose={() => setShowImport(false)} onSuccess={load}/>}
 
       {/* Bills due */}
       {data.billsDueThisWeek.length > 0 && (

@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import {
   LayoutDashboard, ArrowLeftRight, Tag, Target,
-  BarChart2, Settings, LogOut, ChevronRight, Bell, Receipt, AlertTriangle, Clock, Sun, Moon, CalendarDays, Wallet, LandmarkIcon,
+  BarChart2, Settings, LogOut, ChevronRight, Bell, Receipt, AlertTriangle, Clock, Sun, Moon, CalendarDays, Wallet, LandmarkIcon, RefreshCw, Shield,
 } from 'lucide-react';
 import GlobalSearch from '@/components/ui/GlobalSearch';
 import { formatCurrency } from '@/lib/utils';
@@ -22,6 +22,7 @@ const NAV = [
   { href: '/dashboard/goals',        label: 'Metas',        icon: Target           },
   { href: '/dashboard/budget',       label: 'Orçamento',    icon: LandmarkIcon     },
   { href: '/dashboard/agenda',       label: 'Agenda',       icon: CalendarDays     },
+  { href: '/dashboard/recurring',     label: 'Recorrentes',  icon: RefreshCw        },
   { href: '/dashboard/reports',      label: 'Relatórios',   icon: BarChart2        },
   { href: '/dashboard/settings',     label: 'Config.',      icon: Settings         },
 ];
@@ -39,7 +40,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router   = useRouter();
   const pathname = usePathname();
   const { isDark, c, toggleTheme } = useTheme();
-  const [user, setUser] = useState<{ email?: string; name?: string; avatar_url?: string } | null>(null);
+  const [user, setUser] = useState<{ email?: string; name?: string; avatar_url?: string; isAdmin?: boolean } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [alerts, setAlerts] = useState<any[]>([]);
   const [showAlerts, setShowAlerts] = useState(false);
@@ -55,8 +56,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { router.replace('/auth/login'); return; }
-      supabase.from('profiles').select('name,avatar_url').eq('id', session.user.id).single()
-        .then(({ data: p }) => setUser({ email: session.user.email, name: p?.name, avatar_url: p?.avatar_url }));
+      supabase.from('profiles').select('name,avatar_url,onboarded,role').eq('id', session.user.id).single()
+        .then(({ data: p }) => {
+          setUser({ email: session.user.email, name: p?.name, avatar_url: p?.avatar_url, isAdmin: p?.role === 'admin' });
+          if (p && p.onboarded === false && !window.location.pathname.includes('/onboarding')) {
+            router.replace('/dashboard/onboarding');
+          }
+        });
       const today = dayjs();
       const in7 = today.add(7, 'day').format('YYYY-MM-DD');
       const uid = session.user.id;
@@ -211,11 +217,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   );
 
   const Avatar = () => (
-    <Link href="/dashboard/settings" style={{ display: 'block', borderRadius: '50%', cursor: 'pointer', textDecoration: 'none' }}>
+    <Link href={user?.isAdmin ? '/admin' : '/dashboard/settings'} style={{ display: 'block', borderRadius: '50%', cursor: 'pointer', textDecoration: 'none', position: 'relative' }}>
       {user?.avatar_url
         ? <img src={user.avatar_url} alt="avatar" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', display: 'block' }}/>
         : <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 13, fontWeight: 700 }}>{initial}</div>
       }
+      {user?.isAdmin && (
+        <div style={{ position: 'absolute', bottom: -2, right: -2, width: 14, height: 14, borderRadius: '50%', background: '#6366f1', border: '2px solid #0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Shield size={7} color="#fff"/>
+        </div>
+      )}
     </Link>
   );
 
@@ -283,7 +294,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </div>
 
-        <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
           {NAV.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
             return (
@@ -294,6 +305,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Link>
             );
           })}
+
+          {user?.isAdmin && (
+            <Link href="/admin" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, textDecoration: 'none', background: 'rgba(99,102,241,0.12)', color: '#818cf8', fontWeight: 600, fontSize: 14, marginTop: 8, border: '1px solid rgba(99,102,241,0.2)' }}>
+              <Shield size={17}/>
+              Painel Admin
+              <span style={{ marginLeft: 'auto', fontSize: 9, padding: '2px 6px', borderRadius: 99, background: '#6366f1', color: '#fff', fontWeight: 700 }}>ADM</span>
+            </Link>
+          )}
         </nav>
 
         <div style={{ padding: '12px 10px', borderTop: `1px solid ${c.sidebarBorder}` }}>

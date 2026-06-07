@@ -18,11 +18,17 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const { error } = mode === 'login'
+    const { data, error } = mode === 'login'
       ? await supabase.auth.signInWithPassword({ email, password })
       : await supabase.auth.signUp({ email, password });
-    if (error) { setError(error.message); setLoading(false); }
-    else router.push('/dashboard');
+    if (error) { setError(error.message); setLoading(false); return; }
+
+    // Check if admin → redirect to /admin
+    if (data?.user) {
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
+      if (profile?.role === 'admin') { router.push('/admin'); return; }
+    }
+    router.push('/dashboard');
   }
 
   return (

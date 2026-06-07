@@ -4,10 +4,23 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
 import { Plus, X, Check, Trash2, Pencil, AlertCircle, CreditCard } from 'lucide-react';
+import { useRef } from 'react';
 import dayjs from 'dayjs';
 import { useTheme } from '@/lib/theme-context';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 const uuidv4 = () => crypto.randomUUID();
+
+function fmtDisplay(raw: string): string {
+  const digits = raw.replace(/\D/g, '');
+  if (!digits) return '';
+  return (parseInt(digits, 10) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function parseDisplay(display: string): number {
+  return parseFloat(display.replace(/\./g, '').replace(',', '.')) || 0;
+}
+function toRawDigits(n: number): string {
+  return Math.round(n * 100).toString();
+}
 
 type Bill = {
   id: string;
@@ -38,6 +51,7 @@ export default function BillsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing]   = useState<Bill | null>(null);
   const [form, setForm]         = useState(emptyForm);
+  const [amountRaw, setAmountRaw] = useState('');
   const [filter, setFilter]     = useState<'all' | 'pending' | 'paid'>('pending');
   const [confirmBill, setConfirmBill] = useState<Bill | null>(null);
   const [confirmInstallments, setConfirmInstallments] = useState<Bill | null>(null);
@@ -59,10 +73,11 @@ export default function BillsPage() {
   }
   useEffect(() => { load(); }, []);
 
-  function openCreate() { setEditing(null); setForm(emptyForm); setShowForm(true); }
+  function openCreate() { setEditing(null); setForm(emptyForm); setAmountRaw(''); setShowForm(true); }
 
   function openEdit(b: Bill) {
     setEditing(b);
+    setAmountRaw(b.amount ? toRawDigits(b.amount) : '');
     setForm({
       description: b.description, amount: String(b.amount), due_date: b.due_date,
       recurrent: b.recurrent, category_id: b.category_id || '',
@@ -77,10 +92,12 @@ export default function BillsPage() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
 
+    const amountVal = parseDisplay(fmtDisplay(amountRaw));
+
     const base = {
       user_id: session.user.id,
       description: form.description,
-      amount: parseFloat(form.amount),
+      amount: amountVal,
       due_date: form.due_date,
       category_id: form.category_id || null,
       paid: false,
@@ -89,7 +106,7 @@ export default function BillsPage() {
     if (editing) {
       const { error } = await supabase.from('bills').update({
         description: form.description,
-        amount: parseFloat(form.amount),
+        amount: amountVal,
         due_date: form.due_date,
         recurrent: form.tipo === 'recurrent',
         category_id: form.category_id || null,
@@ -232,7 +249,8 @@ export default function BillsPage() {
           const isInstallment = bill.installments > 1;
 
           return (
-            <div key={bill.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px', borderBottom: i < filtered.length - 1 ? `1px solid ${c.bg}` : 'none', opacity: bill.paid ? 0.65 : 1 }}>
+            <SwipeableBillRow key={bill.id} bill={bill} isLast={i === filtered.length - 1} onPay={() => togglePaid(bill)} onDelete={() => handleDelete(bill)} c={c}>
+
               {/* Check */}
               <button onClick={() => togglePaid(bill)} style={{ width: 34, height: 34, borderRadius: 9, border: `2px solid ${bill.paid ? '#22c55e' : c.border}`, background: bill.paid ? '#22c55e' : c.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
                 {bill.paid && <Check size={15} color="#fff"/>}
@@ -275,7 +293,7 @@ export default function BillsPage() {
                   <Trash2 size={13}/>
                 </button>
               </div>
-            </div>
+            </SwipeableBillRow>
           );
         })}
       </div>
@@ -354,16 +372,19 @@ export default function BillsPage() {
 
               <div>
                 <Label c={c}>{form.tipo === 'installment' ? 'Valor por parcela (R$)' : 'Valor (R$)'}</Label>
-                <input required type="number" step="0.01" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} style={inputStyle} placeholder="0,00"/>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: c.textMuted, pointerEvents: 'none' }}>R$</span>
+                  <input type="text" inputMode="numeric" required value={fmtDisplay(amountRaw)} onChange={e => setAmountRaw(e.target.value.replace(/\D/g, ''))} placeholder="0,00" style={{ ...inputStyle, paddingLeft: 36 }}/>
+                </div>
               </div>
 
               {form.tipo === 'installment' && (
                 <div>
                   <Label c={c}>Número de parcelas</Label>
                   <input required type="number" min="2" max="60" value={form.installments} onChange={e => setForm({ ...form, installments: e.target.value })} style={inputStyle} placeholder="Ex: 12"/>
-                  {form.amount && form.installments && (
+                  {amountRaw && form.installments && (
                     <p style={{ margin: '6px 0 0', fontSize: 12, color: '#6366f1', fontWeight: 500 }}>
-                      Total: {formatCurrency(parseFloat(form.amount || '0') * parseInt(form.installments || '1'))} em {form.installments}x de {formatCurrency(parseFloat(form.amount || '0'))}
+                      Total: {formatCurrency(parseDisplay(fmtDisplay(amountRaw)) * parseInt(form.installments || '1'))} em {form.installments}x de {formatCurrency(parseDisplay(fmtDisplay(amountRaw)))}
                     </p>
                   )}
                 </div>
@@ -402,4 +423,49 @@ function Label({ children, c }: any) {
   const { c: themeC } = useTheme();
   const colors = c || themeC;
   return <label style={{ fontSize: 12, fontWeight: 600, color: colors.textMuted, letterSpacing: '0.04em', textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>{children}</label>;
+}
+
+function SwipeableBillRow({ bill, isLast, onPay, onDelete, c, children }: { bill: any; isLast: boolean; onPay: () => void; onDelete: () => void; c: any; children: React.ReactNode }) {
+  const startX = useRef(0);
+  const [offset, setOffset] = useState(0);
+  const THRESHOLD = 80;
+
+  function onTouchStart(e: React.TouchEvent) { startX.current = e.touches[0].clientX; }
+  function onTouchMove(e: React.TouchEvent) {
+    const dx = e.touches[0].clientX - startX.current;
+    setOffset(Math.max(-100, Math.min(100, dx)));
+  }
+  function onTouchEnd() {
+    if (offset > THRESHOLD) { onPay(); }
+    else if (offset < -THRESHOLD) { onDelete(); }
+    setOffset(0);
+  }
+
+  const isPaying  = offset > THRESHOLD / 2;
+  const isDeleting = offset < -THRESHOLD / 2;
+
+  return (
+    <div style={{ position: 'relative', overflow: 'hidden', borderBottom: isLast ? 'none' : `1px solid ${c.bg}` }}>
+      {/* Background hints */}
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', pointerEvents: 'none' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#fff', opacity: isPaying ? 1 : 0, transition: 'opacity 0.1s' }}>
+          <Check size={20}/><span style={{ fontWeight: 700, fontSize: 14 }}>Marcar como pago</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#fff', opacity: isDeleting ? 1 : 0, transition: 'opacity 0.1s' }}>
+          <span style={{ fontWeight: 700, fontSize: 14 }}>Excluir</span><Trash2 size={20}/>
+        </div>
+      </div>
+      {/* Colored background strip */}
+      <div style={{ position: 'absolute', inset: 0, background: isPaying ? '#22c55e' : isDeleting ? '#ef4444' : 'transparent', transition: 'background 0.15s', pointerEvents: 'none' }}/>
+      {/* Row content */}
+      <div
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        style={{ transform: `translateX(${offset}px)`, transition: offset === 0 ? 'transform 0.3s' : 'none', display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px', opacity: bill.paid ? 0.65 : 1, position: 'relative', background: c.surface }}
+      >
+        {children}
+      </div>
+    </div>
+  );
 }
