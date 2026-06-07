@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import {
   LayoutDashboard, ArrowLeftRight, Tag, Target,
-  BarChart2, Settings, LogOut, ChevronRight, Bell, Receipt, AlertTriangle, Clock, Sun, Moon, CalendarDays, Wallet,
+  BarChart2, Settings, LogOut, ChevronRight, Bell, Receipt, AlertTriangle, Clock, Sun, Moon, CalendarDays, Wallet, LandmarkIcon,
 } from 'lucide-react';
 import GlobalSearch from '@/components/ui/GlobalSearch';
 import { formatCurrency } from '@/lib/utils';
@@ -16,10 +16,11 @@ import { useTheme } from '@/lib/theme-context';
 const NAV = [
   { href: '/dashboard',              label: 'Início',       icon: LayoutDashboard },
   { href: '/dashboard/transactions', label: 'Transações',   icon: ArrowLeftRight   },
-  { href: '/dashboard/bills',        label: 'Contas',       icon: Receipt          },
+  { href: '/dashboard/wallets',      label: 'Contas',       icon: Wallet           },
+  { href: '/dashboard/bills',        label: 'Faturas',      icon: Receipt          },
   { href: '/dashboard/categories',   label: 'Categorias',   icon: Tag              },
   { href: '/dashboard/goals',        label: 'Metas',        icon: Target           },
-  { href: '/dashboard/budget',       label: 'Orçamento',    icon: Wallet           },
+  { href: '/dashboard/budget',       label: 'Orçamento',    icon: LandmarkIcon     },
   { href: '/dashboard/agenda',       label: 'Agenda',       icon: CalendarDays     },
   { href: '/dashboard/reports',      label: 'Relatórios',   icon: BarChart2        },
   { href: '/dashboard/settings',     label: 'Config.',      icon: Settings         },
@@ -28,10 +29,9 @@ const NAV = [
 const NAV_MOBILE = [
   { href: '/dashboard',              label: 'Início',       icon: LayoutDashboard },
   { href: '/dashboard/transactions', label: 'Transações',   icon: ArrowLeftRight   },
-  { href: '/dashboard/bills',        label: 'Contas',       icon: Receipt          },
-  { href: '/dashboard/budget',       label: 'Orçamento',    icon: Wallet           },
-  { href: '/dashboard/agenda',       label: 'Agenda',       icon: CalendarDays     },
-  { href: '/dashboard/goals',        label: 'Metas',        icon: Target           },
+  { href: '/dashboard/wallets',      label: 'Contas',       icon: Wallet           },
+  { href: '/dashboard/bills',        label: 'Faturas',      icon: Receipt          },
+  { href: '/dashboard/budget',       label: 'Orçamento',    icon: LandmarkIcon     },
   { href: '/dashboard/settings',     label: 'Config.',      icon: Settings         },
 ];
 
