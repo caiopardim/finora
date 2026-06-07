@@ -44,6 +44,7 @@ export default function AdminPage() {
   const [editName, setEditName] = useState('');
   const [toast, setToast]       = useState('');
   const [toastType, setToastType] = useState<'ok' | 'err'>('ok');
+  const [apiError, setApiError] = useState('');
 
   // Broadcast
   const [broadcastMsg, setBroadcastMsg]   = useState('');
@@ -68,17 +69,26 @@ export default function AdminPage() {
 
   async function loadAll() {
     setLoading(true);
-    const [usersRes, statsRes, broadcastRes, maintenanceRes] = await Promise.all([
-      adminFetch('/api/admin/users').then(r => r.json()),
-      adminFetch('/api/admin/stats').then(r => r.json()),
-      adminFetch('/api/admin/broadcast').then(r => r.json()),
-      adminFetch('/api/admin/maintenance').then(r => r.json()),
-    ]);
-    setUsers(usersRes.users || []);
-    setStats(statsRes);
-    setActiveBroadcast(broadcastRes.broadcast);
-    if (broadcastRes.broadcast) { setBroadcastMsg(broadcastRes.broadcast.message); setBroadcastType(broadcastRes.broadcast.type); }
-    if (maintenanceRes.maintenance) { setMaintenanceOn(true); setMaintenanceMsg(maintenanceRes.maintenance.message); }
+    setApiError('');
+    try {
+      const [usersRes, statsRes, broadcastRes, maintenanceRes] = await Promise.all([
+        adminFetch('/api/admin/users').then(r => r.json()),
+        adminFetch('/api/admin/stats').then(r => r.json()),
+        adminFetch('/api/admin/broadcast').then(r => r.json()),
+        adminFetch('/api/admin/maintenance').then(r => r.json()),
+      ]);
+
+      if (usersRes.error)  { setApiError('Erro na API: ' + usersRes.error); setLoading(false); return; }
+      if (statsRes.error)  { setApiError('Erro em stats: ' + statsRes.error); setLoading(false); return; }
+
+      setUsers(usersRes.users || []);
+      setStats(statsRes);
+      setActiveBroadcast(broadcastRes.broadcast);
+      if (broadcastRes.broadcast) { setBroadcastMsg(broadcastRes.broadcast.message); setBroadcastType(broadcastRes.broadcast.type); }
+      if (maintenanceRes.maintenance) { setMaintenanceOn(true); setMaintenanceMsg(maintenanceRes.maintenance.message); }
+    } catch (err: any) {
+      setApiError('Falha ao conectar com a API: ' + (err?.message || String(err)));
+    }
     setLoading(false);
   }
   useEffect(() => { loadAll(); }, []);
@@ -198,7 +208,21 @@ export default function AdminPage() {
         })}
       </div>
 
-      {loading ? <p style={{ textAlign: 'center', padding: 80, color: c.textFaint }}>Carregando...</p> : (
+      {apiError ? (
+        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 14, padding: '24px 28px', maxWidth: 600 }}>
+          <p style={{ margin: '0 0 8px', fontWeight: 700, fontSize: 15, color: '#dc2626' }}>❌ Erro ao carregar o painel</p>
+          <p style={{ margin: '0 0 16px', fontSize: 13, color: '#ef4444', fontFamily: 'monospace' }}>{apiError}</p>
+          <p style={{ margin: '0 0 12px', fontSize: 13, color: '#7f1d1d' }}>
+            Verifique se a variável <code style={{ background: '#fee2e2', padding: '2px 6px', borderRadius: 4 }}>SUPABASE_SERVICE_KEY</code> está configurada nas variáveis de ambiente da Vercel.
+          </p>
+          <p style={{ margin: '0 0 16px', fontSize: 12, color: '#991b1b' }}>
+            Vercel → projeto → Settings → Environment Variables → adicione <strong>SUPABASE_SERVICE_KEY</strong> com a service role key do Supabase (Project Settings → API → service_role).
+          </p>
+          <button onClick={loadAll} style={{ padding: '9px 18px', borderRadius: 9, border: 'none', background: '#dc2626', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+            <RefreshCw size={14}/> Tentar novamente
+          </button>
+        </div>
+      ) : loading ? <p style={{ textAlign: 'center', padding: 80, color: c.textFaint }}>Carregando...</p> : (
         <>
           {/* ── OVERVIEW ── */}
           {tab === 'overview' && stats && (
