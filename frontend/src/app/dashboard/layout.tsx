@@ -45,6 +45,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [alerts, setAlerts] = useState<any[]>([]);
   const [showAlerts, setShowAlerts] = useState(false);
   const alertRef = useRef<HTMLDivElement>(null);
+  const [broadcast, setBroadcast] = useState<{ message: string; type: string } | null>(null);
+  const [maintenance, setMaintenance] = useState<{ message: string } | null>(null);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -113,6 +115,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }
 
       setAlerts([...(billsRes.data || []).map(b => ({ ...b, alertType: 'bill' })), ...budgetAlerts.map(a => ({ ...a, alertType: 'budget' }))]);
+
+      // Fetch broadcast + maintenance
+      fetch('/api/admin/broadcast').then(r => r.json()).then(d => setBroadcast(d.broadcast));
+      fetch('/api/admin/maintenance').then(r => r.json()).then(d => setMaintenance(d.maintenance));
     });
   }, [router, pathname]);
 
@@ -248,6 +254,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
 
+        {maintenance && (
+          <div style={{ background: '#7f1d1d', color: '#fca5a5', padding: '8px 16px', fontSize: 13, fontWeight: 500 }}>🔧 {maintenance.message}</div>
+        )}
+        {broadcast && !maintenance && (
+          <div style={{ background: broadcast.type === 'warning' ? '#78350f' : broadcast.type === 'error' ? '#7f1d1d' : '#1e3a5f', color: broadcast.type === 'warning' ? '#fcd34d' : broadcast.type === 'error' ? '#fca5a5' : '#93c5fd', padding: '8px 16px', fontSize: 13, fontWeight: 500 }}>
+            {broadcast.type === 'warning' ? '⚠️' : broadcast.type === 'error' ? '🚨' : 'ℹ️'} {broadcast.message}
+          </div>
+        )}
         {/* Page content */}
         <main style={{ flex: 1, padding: '20px 16px', paddingBottom: 90, overflowY: 'auto' }}>
           {children}
@@ -340,6 +354,16 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           <BellButton/>
         </header>
+        {maintenance && (
+          <div style={{ background: '#7f1d1d', color: '#fca5a5', padding: '10px 32px', fontSize: 14, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 10 }}>
+            🔧 <span>{maintenance.message}</span>
+          </div>
+        )}
+        {broadcast && !maintenance && (
+          <div style={{ background: broadcast.type === 'warning' ? '#78350f' : broadcast.type === 'error' ? '#7f1d1d' : '#1e3a5f', color: broadcast.type === 'warning' ? '#fcd34d' : broadcast.type === 'error' ? '#fca5a5' : '#93c5fd', padding: '10px 32px', fontSize: 14, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 10 }}>
+            {broadcast.type === 'warning' ? '⚠️' : broadcast.type === 'error' ? '🚨' : 'ℹ️'} <span>{broadcast.message}</span>
+          </div>
+        )}
         <main style={{ flex: 1, padding: '32px', overflowY: 'auto' }}>{children}</main>
       </div>
     </div>

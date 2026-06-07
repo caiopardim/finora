@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
   const userIds = authData.users.map(u => u.id);
 
   // Get profiles
-  const { data: profiles } = await admin.from('profiles').select('id,name,avatar_url,role,created_at,onboarded').in('id', userIds);
+  const { data: profiles } = await admin.from('profiles').select('id,name,avatar_url,role,created_at,onboarded,blocked').in('id', userIds);
 
   // Get transaction counts per user
   const { data: txCounts } = await admin
@@ -74,6 +74,7 @@ export async function GET(req: NextRequest) {
     avatar_url: profileMap[u.id]?.avatar_url || null,
     role: profileMap[u.id]?.role || 'user',
     onboarded: profileMap[u.id]?.onboarded ?? true,
+    blocked: profileMap[u.id]?.blocked || false,
     transactions: txMap[u.id] || 0,
     bills: billMap[u.id] || 0,
   }));
@@ -97,17 +98,30 @@ export async function DELETE(req: NextRequest) {
   return NextResponse.json({ ok: true });
 }
 
-// PATCH /api/admin/users — update role
+// PATCH /api/admin/users — update role / name / blocked
 export async function PATCH(req: NextRequest) {
   const caller = await checkAdmin(req);
   if (!caller) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { id, role } = await req.json();
-  if (!id || !role) return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+  const body = await req.json();
+  const { id, role, name, blocked } = body;
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
   const admin = getAdmin();
-  const { error } = await admin.from('profiles').update({ role }).eq('id', id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const updates: Record<string, any> = {};
+  if (role     !== undefined) updates.role    = role;
+  if (name     !== undefined) updates.name    = name;
+  if (blocked  !== undefined) updates.blocked = blocked;
+
+  if (Object.keys(updates).length > 0) {
+    const { error } = await admin.from('profiles').update(updates).eq('id', id);
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  // If blocked, also ban the user in auth
+  if (blocked !== undefined) {
+    await admin.auth.admin.updateUserById(id, { ban_duration: blocked ? '876600h' : 'none' });
+  }
 
   return NextResponse.json({ ok: true });
 }
