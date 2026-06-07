@@ -1,7 +1,13 @@
 import { Module, Global } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import ws from 'ws';
+
+// Polyfill WebSocket for Node.js < 22
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const ws = require('ws');
+if (!globalThis.WebSocket) {
+  (globalThis as any).WebSocket = ws;
+}
 
 export const SUPABASE_CLIENT = 'SUPABASE_CLIENT';
 
@@ -15,7 +21,7 @@ export const SUPABASE_CLIENT = 'SUPABASE_CLIENT';
         return createClient(
           config.get<string>('SUPABASE_URL'),
           config.get<string>('SUPABASE_SERVICE_KEY'),
-          { global: { fetch: fetch as any }, realtime: { transport: ws as any } }
+          { realtime: { transport: ws } }
         );
       },
     },
