@@ -145,7 +145,16 @@ export default function Home() {
       `}</style>
 
       {/* Header */}
-      <header style={{
+      <style>{`
+        .header-nav-links { display: flex; }
+        .header-btn-cliente { display: flex; }
+        @media (max-width: 640px) {
+          .header-nav-links { display: none !important; }
+          .header-btn-cliente { display: none !important; }
+          .header-inner { padding: 14px 20px !important; }
+        }
+      `}</style>
+      <header className="header-inner" style={{
         background: 'rgba(255,255,255,0.85)',
         backdropFilter: 'blur(12px)',
         borderBottom: '1px solid #e2e8f0',
@@ -161,11 +170,13 @@ export default function Home() {
           <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#22c55e,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}>💰</div>
           <span style={{ fontWeight: 700, fontSize: 18, color: '#0f172a' }}>Finora</span>
         </div>
-        <nav style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
-          <a href="#funcionalidades" className="nav-link" style={{ color: '#64748b', fontSize: 14, textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s' }}>Funcionalidades</a>
-          <a href="#planos" className="nav-link" style={{ color: '#64748b', fontSize: 14, textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s' }}>Planos</a>
-          <Link href="/auth/login" style={{ padding: '9px 20px', borderRadius: 9, border: '1.5px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 14, fontWeight: 500, textDecoration: 'none', transition: 'all 0.2s' }}>Já sou cliente</Link>
-          <Link href="/assinar" className="btn-glow" style={{ padding: '9px 20px', borderRadius: 9, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none', boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}>Assinar</Link>
+        <nav style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+          <div className="header-nav-links" style={{ gap: 24, alignItems: 'center' }}>
+            <a href="#funcionalidades" className="nav-link" style={{ color: '#64748b', fontSize: 14, textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s' }}>Funcionalidades</a>
+            <a href="#planos" className="nav-link" style={{ color: '#64748b', fontSize: 14, textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s' }}>Planos</a>
+          </div>
+          <Link href="/auth/login" className="header-btn-cliente" style={{ padding: '9px 18px', borderRadius: 9, border: '1.5px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 14, fontWeight: 500, textDecoration: 'none', transition: 'all 0.2s', whiteSpace: 'nowrap' }}>Já sou cliente</Link>
+          <Link href="/assinar" className="btn-glow" style={{ padding: '9px 18px', borderRadius: 9, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none', boxShadow: '0 4px 14px rgba(34,197,94,0.3)', whiteSpace: 'nowrap' }}>Assinar</Link>
         </nav>
       </header>
 
