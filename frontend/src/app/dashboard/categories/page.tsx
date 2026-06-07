@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
 import { Plus, X, Check, Pencil, Trash2 } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 const ICONS  = ['🍔','🚗','🏠','💊','🎮','📚','👕','📱','🔧','📦','💼','💻','📈','💰','✈️','🎵','🐾','⚽','🎓','🌴'];
 const COLORS = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f59e0b','#10b981','#6366f1'];
@@ -16,6 +17,7 @@ export default function CategoriesPage() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<any>(null);
   const [form, setForm] = useState({ name: '', icon: '📦', color: '#6366f1', type: 'expense', budget_limit: '' });
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   async function load() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -44,8 +46,13 @@ export default function CategoriesPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Excluir categoria?')) return;
-    await supabase.from('categories').delete().eq('id', id);
+    setConfirmDelete(id);
+  }
+
+  async function doDelete() {
+    if (!confirmDelete) return;
+    await supabase.from('categories').delete().eq('id', confirmDelete);
+    setConfirmDelete(null);
     load();
   }
 
@@ -97,6 +104,16 @@ export default function CategoriesPage() {
             </div>
           ))}
         </>
+      )}
+
+      {confirmDelete && (
+        <ConfirmModal
+          title="Excluir categoria?"
+          message="Esta ação não pode ser desfeita. As transações associadas perderão a categoria."
+          confirmLabel="Excluir"
+          onConfirm={doDelete}
+          onCancel={() => setConfirmDelete(null)}
+        />
       )}
 
       {showForm && (

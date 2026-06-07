@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
 import { Plus, X, TrendingUp, Trash2, Pencil } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 
 const GOAL_ICONS   = ['🎯','🏠','🚗','✈️','📱','💻','💍','📚','🎓','🌴','💰','🏋️','🐾','🎵','🎮'];
 const GOAL_COLORS  = ['#6366f1','#f97316','#10b981','#3b82f6','#ec4899','#eab308','#8b5cf6','#06b6d4'];
@@ -19,6 +20,7 @@ export default function GoalsPage() {
   const [progressAmount, setProgressAmount] = useState('');
   const [form, setForm] = useState({ name: '', target_amount: '', deadline: '', icon: '🎯', color: '#6366f1' });
   const [editForm, setEditForm] = useState({ name: '', target_amount: '', deadline: '', icon: '🎯', color: '#6366f1' });
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   async function load() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -127,7 +129,7 @@ export default function GoalsPage() {
                       <button onClick={() => openEdit(goal)} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', cursor: 'pointer', background: '#eff6ff', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Pencil size={13}/>
                       </button>
-                      <button onClick={async () => { if (!confirm('Excluir?')) return; await supabase.from('goals').delete().eq('id', goal.id); load(); }} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', cursor: 'pointer', background: '#fef2f2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <button onClick={() => setConfirmDeleteId(goal.id)} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', cursor: 'pointer', background: '#fef2f2', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Trash2 size={13}/>
                       </button>
                     </div>
@@ -171,6 +173,16 @@ export default function GoalsPage() {
             </div>
           </div>
         </>
+      )}
+
+      {confirmDeleteId && (
+        <ConfirmModal
+          title="Excluir meta?"
+          message="Esta meta e todo o seu progresso serão removidos permanentemente."
+          confirmLabel="Excluir"
+          onConfirm={async () => { await supabase.from('goals').delete().eq('id', confirmDeleteId); setConfirmDeleteId(null); load(); }}
+          onCancel={() => setConfirmDeleteId(null)}
+        />
       )}
 
       {showCreate && (

@@ -10,6 +10,7 @@ import {
 import { Plus, ArrowUpRight, ArrowDownRight, AlertTriangle, Clock } from 'lucide-react';
 import Link from 'next/link';
 import AddTransactionModal from '@/components/ui/AddTransactionModal';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 import dayjs from 'dayjs';
 import { useTheme } from '@/lib/theme-context';
 
@@ -260,13 +261,26 @@ function StatCard({ title, value, icon, subtitle, accent, trend, trendLabel }: a
 
 function TxList({ txs, onRefresh }: { txs: any[]; onRefresh: () => void }) {
   const { c } = useTheme();
-  async function del(id: string) {
-    if (!confirm('Excluir esta transação?')) return;
-    await supabase.from('transactions').delete().eq('id', id);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
+
+  async function doDelete() {
+    if (!confirmId) return;
+    await supabase.from('transactions').delete().eq('id', confirmId);
+    setConfirmId(null);
     onRefresh();
   }
+
   return (
     <div>
+      {confirmId && (
+        <ConfirmModal
+          title="Excluir transação?"
+          message="Esta transação será removida permanentemente do seu histórico."
+          confirmLabel="Excluir"
+          onConfirm={doDelete}
+          onCancel={() => setConfirmId(null)}
+        />
+      )}
       {txs.map((tx: any, i: number) => (
         <div key={tx.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'11px 0', borderBottom:i<txs.length-1?`1px solid ${c.borderLight}`:'none' }}>
           <div style={{ width:40, height:40, borderRadius:12, background:((tx.categories as any)?.color||'#6366f1')+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:19, flexShrink:0 }}>
@@ -284,7 +298,7 @@ function TxList({ txs, onRefresh }: { txs: any[]; onRefresh: () => void }) {
           <p style={{ margin:0, fontWeight:700, fontSize:15, color:tx.type==='income'?'#16a34a':'#dc2626', flexShrink:0 }}>
             {tx.type==='income'?'+':'-'} {fmt(Number(tx.amount))}
           </p>
-          <button onClick={() => del(tx.id)} style={{ background:'none', border:'none', cursor:'pointer', color:c.border, padding:4, display:'flex', alignItems:'center' }}>✕</button>
+          <button onClick={() => setConfirmId(tx.id)} style={{ background:'none', border:'none', cursor:'pointer', color:c.border, padding:4, display:'flex', alignItems:'center' }}>✕</button>
         </div>
       ))}
     </div>

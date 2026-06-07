@@ -6,6 +6,7 @@ import { formatCurrency } from '@/lib/utils';
 import { Plus, X, Check, Trash2, Pencil, AlertCircle, CreditCard } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useTheme } from '@/lib/theme-context';
+import ConfirmModal from '@/components/ui/ConfirmModal';
 const uuidv4 = () => crypto.randomUUID();
 
 type Bill = {
@@ -38,6 +39,8 @@ export default function BillsPage() {
   const [editing, setEditing]   = useState<Bill | null>(null);
   const [form, setForm]         = useState(emptyForm);
   const [filter, setFilter]     = useState<'all' | 'pending' | 'paid'>('pending');
+  const [confirmBill, setConfirmBill] = useState<Bill | null>(null);
+  const [confirmInstallments, setConfirmInstallments] = useState<Bill | null>(null);
 
   async function load() {
     setLoading(true);
@@ -128,16 +131,25 @@ export default function BillsPage() {
 
   async function handleDelete(bill: Bill) {
     if (bill.installment_group && bill.installments > 1) {
-      const choice = confirm('Excluir todas as parcelas?\n\nOK = todas as parcelas\nCancelar = só esta');
-      if (choice) {
-        await supabase.from('bills').delete().eq('installment_group', bill.installment_group);
-      } else {
-        await supabase.from('bills').delete().eq('id', bill.id);
-      }
+      setConfirmInstallments(bill);
     } else {
-      if (!confirm('Excluir conta?')) return;
-      await supabase.from('bills').delete().eq('id', bill.id);
+      setConfirmBill(bill);
     }
+  }
+
+  async function doDeleteAll() {
+    if (!confirmInstallments) return;
+    await supabase.from('bills').delete().eq('installment_group', confirmInstallments.installment_group!);
+    setConfirmInstallments(null);
+    load();
+  }
+
+  async function doDeleteOne() {
+    const bill = confirmInstallments || confirmBill;
+    if (!bill) return;
+    await supabase.from('bills').delete().eq('id', bill.id);
+    setConfirmInstallments(null);
+    setConfirmBill(null);
     load();
   }
 
@@ -267,6 +279,43 @@ export default function BillsPage() {
           );
         })}
       </div>
+
+      {/* Confirm delete single bill */}
+      {confirmBill && (
+        <ConfirmModal
+          title="Excluir conta?"
+          message={`"${confirmBill.description}" será removida permanentemente.`}
+          confirmLabel="Excluir"
+          onConfirm={doDeleteOne}
+          onCancel={() => setConfirmBill(null)}
+        />
+      )}
+
+      {/* Confirm delete installments */}
+      {confirmInstallments && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }} onClick={() => setConfirmInstallments(null)}>
+          <div style={{ background: c.surface, borderRadius: 20, padding: 28, width: '100%', maxWidth: 380, boxShadow: '0 20px 60px rgba(0,0,0,0.3)', border: `1px solid ${c.border}` }} onClick={e => e.stopPropagation()}>
+            <div style={{ width: 52, height: 52, borderRadius: 14, background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 18 }}>
+              <Trash2 size={24} color="#dc2626" />
+            </div>
+            <p style={{ margin: '0 0 8px', fontWeight: 700, fontSize: 17, color: c.text }}>Excluir parcelas</p>
+            <p style={{ margin: '0 0 24px', fontSize: 14, color: c.textMuted, lineHeight: 1.5 }}>
+              Deseja excluir apenas esta parcela ou todas as {confirmInstallments.installments} parcelas?
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <button onClick={doDeleteAll} style={{ padding: '11px 0', borderRadius: 11, border: 'none', background: 'linear-gradient(135deg,#ef4444,#dc2626)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(239,68,68,0.3)' }}>
+                Excluir todas as parcelas
+              </button>
+              <button onClick={doDeleteOne} style={{ padding: '11px 0', borderRadius: 11, border: `1.5px solid ${c.border}`, background: c.surface, color: c.textMuted, fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
+                Excluir só esta parcela
+              </button>
+              <button onClick={() => setConfirmInstallments(null)} style={{ padding: '9px 0', borderRadius: 11, border: 'none', background: 'none', color: c.textFaint, fontSize: 13, cursor: 'pointer' }}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal */}
       {showForm && (
