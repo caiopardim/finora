@@ -28,7 +28,11 @@
       "Bash(npm run *)",
       "Bash(mkdir -p /Users/caiopardim/Desktop/Finora/frontend/src/app/api/admin/users/\\\\[id\\\\])",
       "Bash(grep -v \"^$\")",
-      "Bash(xargs sed -i '' 's/Finanças pelo WhatsApp/Mais controle, menos planilhas/g')"
+      "Bash(xargs sed -i '' 's/Finanças pelo WhatsApp/Mais controle, menos planilhas/g')",
+      "Bash(sed -i '' 's/>Começar grátis</>Assinar</g' /Users/caiopardim/Desktop/Finora/frontend/src/app/page.tsx)",
+      "Bash(sed -i '' 's/Começar grátis <ArrowRight size={17}\\\\/>/Assinar agora <ArrowRight size={17}\\\\/>/g' /Users/caiopardim/Desktop/Finora/frontend/src/app/page.tsx)",
+      "Bash(sed -i '' 's/Criar conta grátis <ArrowRight size={17}\\\\/>/Assinar agora <ArrowRight size={17}\\\\/>/g' /Users/caiopardim/Desktop/Finora/frontend/src/app/page.tsx)",
+      "Bash(sed -i '' 's/Começar trial grátis/Assinar mensal/g' /Users/caiopardim/Desktop/Finora/frontend/src/app/page.tsx)"
     ]
   }
 }
