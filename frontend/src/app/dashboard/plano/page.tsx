@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { useTheme } from '@/context/ThemeContext';
+import { useTheme } from '@/lib/theme-context';
 import { CreditCard, Calendar, CheckCircle, XCircle, Clock, AlertTriangle, ArrowRight, Trash2 } from 'lucide-react';
 
 interface SubInfo {
@@ -92,7 +92,7 @@ export default function PlanoPage() {
       ) : (
         <>
           {/* Status card */}
-          <div style={{ background: c.card, border: `1px solid ${c.border}`, borderRadius: 16, padding: 24, marginBottom: 20 }}>
+          <div style={{ background: c.surface, border: `1px solid ${c.border}`, borderRadius: 16, padding: 24, marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
               <span style={{ fontSize: 13, fontWeight: 600, color: c.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Status da assinatura</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '5px 12px', borderRadius: 99, background: `${sc.color}15`, color: sc.color, fontSize: 13, fontWeight: 600 }}>
@@ -141,7 +141,7 @@ export default function PlanoPage() {
 
           {/* Actions */}
           {(info.in_trial || !info.is_active || info.plan_status === 'cancelled') && (
-            <div style={{ background: c.card, border: `1px solid ${c.border}`, borderRadius: 16, padding: 24, marginBottom: 20 }}>
+            <div style={{ background: c.surface, border: `1px solid ${c.border}`, borderRadius: 16, padding: 24, marginBottom: 20 }}>
               <h2 style={{ fontSize: 16, fontWeight: 700, color: c.text, margin: '0 0 16px' }}>
                 {info.in_trial ? 'Assine agora para continuar após o trial' : 'Reativar assinatura'}
               </h2>
@@ -168,7 +168,7 @@ export default function PlanoPage() {
 
           {/* Cancel */}
           {info.plan_status === 'active' && (
-            <div style={{ background: c.card, border: `1px solid ${c.border}`, borderRadius: 16, padding: 20 }}>
+            <div style={{ background: c.surface, border: `1px solid ${c.border}`, borderRadius: 16, padding: 20 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
                 <div>
                   <p style={{ margin: '0 0 2px', fontSize: 14, fontWeight: 600, color: c.text }}>Cancelar assinatura</p>

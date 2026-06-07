@@ -8,7 +8,7 @@ import {
   Search, Trash2, Shield, User, ChevronDown, ChevronUp,
   RefreshCw, X, Check, AlertTriangle, Download, Ban,
   Send, Bell, Wrench, BarChart2, Users, TrendingUp,
-  Mail, Pencil, UserCheck,
+  Mail, Pencil, UserCheck, CreditCard, DollarSign, Clock, XCircle, CheckCircle,
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import dayjs from 'dayjs';
@@ -25,7 +25,7 @@ async function adminFetch(path: string, opts: RequestInit = {}) {
   });
 }
 
-type Tab = 'overview' | 'users' | 'broadcast' | 'maintenance';
+type Tab = 'overview' | 'revenue' | 'users' | 'broadcast' | 'maintenance';
 
 export default function AdminPage() {
   const { c, isDark } = useTheme();
@@ -64,6 +64,11 @@ export default function AdminPage() {
   const [emailTarget, setEmailTarget]   = useState('');
   const [emailType, setEmailType]       = useState('reset_password');
   const [emailSending, setEmailSending] = useState(false);
+
+  // Revenue / invoice
+  const [invoiceEmail, setInvoiceEmail]   = useState('');
+  const [invoicePlan, setInvoicePlan]     = useState<'monthly' | 'annual'>('monthly');
+  const [invoiceSending, setInvoiceSending] = useState(false);
 
   function showToast(msg: string, type: 'ok' | 'err' = 'ok') {
     setToast(msg); setToastType(type);
@@ -179,6 +184,22 @@ export default function AdminPage() {
     setMaintenanceSaving(false);
   }
 
+  async function sendInvoiceLink() {
+    if (!invoiceEmail) return;
+    setInvoiceSending(true);
+    // Find user by email
+    const target = users.find(u => u.email === invoiceEmail);
+    if (!target) { showToast('Usuário não encontrado', 'err'); setInvoiceSending(false); return; }
+    // Activate plan directly for now (admin-granted) and send magic link
+    await adminFetch('/api/admin/users', { method: 'PATCH', body: JSON.stringify({ id: target.id, plan_status: 'active', plan_type: invoicePlan }) });
+    setUsers(prev => prev.map(u => u.id === target.id ? { ...u, plan_status: 'active', plan_type: invoicePlan } : u));
+    // Send magic link so user can log in to see their plan
+    await adminFetch('/api/admin/email', { method: 'POST', body: JSON.stringify({ email: invoiceEmail, type: 'magic_link' }) });
+    showToast(`✅ Plano ${invoicePlan === 'monthly' ? 'Mensal' : 'Anual'} ativado e link enviado para ${invoiceEmail}`);
+    setInvoiceEmail('');
+    setInvoiceSending(false);
+  }
+
   function exportCSV() {
     const headers = ['Email', 'Nome', 'Role', 'Transações', 'Faturas', 'Último acesso', 'Cadastro'];
     const rows = users.map(u => [
@@ -202,10 +223,29 @@ export default function AdminPage() {
   const inputStyle: React.CSSProperties = { padding: '10px 14px', borderRadius: 10, border: `1.5px solid ${c.border}`, fontSize: 14, color: c.text, background: c.input, outline: 'none', boxSizing: 'border-box' as const };
   const TABS: { id: Tab; label: string; icon: any }[] = [
     { id: 'overview',    label: 'Visão Geral',  icon: BarChart2 },
+    { id: 'revenue',     label: 'Receita',      icon: DollarSign },
     { id: 'users',       label: 'Usuários',     icon: Users },
     { id: 'broadcast',   label: 'Avisos',       icon: Bell },
     { id: 'maintenance', label: 'Manutenção',   icon: Wrench },
   ];
+
+  // Revenue computed from users list
+  const now = new Date();
+  const payingUsers    = users.filter(u => u.plan_status === 'active');
+  const trialUsers     = users.filter(u => {
+    const te = u.trial_ends_at ? new Date(u.trial_ends_at) : null;
+    return te ? now < te : false;
+  });
+  const expiredUsers   = users.filter(u => {
+    const te = u.trial_ends_at ? new Date(u.trial_ends_at) : null;
+    const trialOk = te ? now < te : false;
+    return !trialOk && u.plan_status !== 'active';
+  });
+  const cancelledUsers = users.filter(u => u.plan_status === 'cancelled');
+  const monthlyPaying  = payingUsers.filter(u => u.plan_type === 'monthly');
+  const annualPaying   = payingUsers.filter(u => u.plan_type === 'annual');
+  const mrr = monthlyPaying.length * 29 + annualPaying.length * (199 / 12);
+  const arr = mrr * 12;
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
@@ -302,6 +342,147 @@ export default function AdminPage() {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* ── REVENUE ── */}
+          {tab === 'revenue' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+              {/* KPI cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 14 }}>
+                {[
+                  { label: 'MRR', value: `R$ ${mrr.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <TrendingUp size={18} color="#22c55e"/>, color: '#22c55e', sub: 'Receita mensal recorrente' },
+                  { label: 'ARR', value: `R$ ${arr.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: <DollarSign size={18} color="#6366f1"/>, color: '#6366f1', sub: 'Receita anual projetada' },
+                  { label: 'Pagantes', value: payingUsers.length, icon: <CheckCircle size={18} color="#22c55e"/>, color: '#22c55e', sub: `${monthlyPaying.length} mensal · ${annualPaying.length} anual` },
+                  { label: 'Em Trial', value: trialUsers.length, icon: <Clock size={18} color="#f59e0b"/>, color: '#f59e0b', sub: 'Período de teste' },
+                  { label: 'Expirados', value: expiredUsers.length, icon: <XCircle size={18} color="#ef4444"/>, color: '#ef4444', sub: 'Trial vencido, sem plano' },
+                  { label: 'Cancelados', value: cancelledUsers.length, icon: <Ban size={18} color="#94a3b8"/>, color: '#94a3b8', sub: 'Assinatura cancelada' },
+                ].map(k => (
+                  <div key={k.label} style={{ background: c.surface, borderRadius: 14, border: `1px solid ${c.border}`, padding: '18px 20px', borderTop: `3px solid ${k.color}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{k.label}</span>
+                      {k.icon}
+                    </div>
+                    <p style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 800, color: c.text }}>{k.value}</p>
+                    <p style={{ margin: 0, fontSize: 11, color: c.textFaint }}>{k.sub}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Send invoice / activate plan */}
+              <div style={{ background: c.surface, borderRadius: 16, border: `1px solid ${c.border}`, padding: 24 }}>
+                <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: 15, color: c.text }}>📨 Enviar Fatura / Ativar Plano</p>
+                <p style={{ margin: '0 0 16px', fontSize: 13, color: c.textFaint }}>Ativa o plano do usuário manualmente e envia um link de acesso por e-mail.</p>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                  <div style={{ flex: 2, minWidth: 220 }}>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>E-mail do cliente</label>
+                    <input
+                      value={invoiceEmail} onChange={e => setInvoiceEmail(e.target.value)}
+                      placeholder="cliente@email.com" list="users-datalist"
+                      style={{ ...inputStyle, width: '100%' }}
+                    />
+                    <datalist id="users-datalist">
+                      {users.map(u => <option key={u.id} value={u.email}/>)}
+                    </datalist>
+                  </div>
+                  <div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Plano</label>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      {(['monthly', 'annual'] as const).map(p => (
+                        <button key={p} onClick={() => setInvoicePlan(p)} style={{ padding: '10px 16px', borderRadius: 10, border: `2px solid ${invoicePlan === p ? '#22c55e' : c.border}`, background: invoicePlan === p ? '#052e1620' : 'transparent', color: invoicePlan === p ? '#22c55e' : c.textMuted, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                          {p === 'monthly' ? '📅 Mensal R$29' : '📆 Anual R$199'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <button onClick={sendInvoiceLink} disabled={invoiceSending || !invoiceEmail} style={{ padding: '11px 22px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: invoiceSending ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 7, boxShadow: '0 4px 12px rgba(34,197,94,0.3)', whiteSpace: 'nowrap' }}>
+                    {invoiceSending ? <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }}/> : <Send size={14}/>}
+                    Ativar e Enviar Link
+                  </button>
+                </div>
+              </div>
+
+              {/* Paying clients table */}
+              <div style={{ background: c.surface, borderRadius: 16, border: `1px solid ${c.border}`, overflow: 'hidden' }}>
+                <div style={{ padding: '16px 20px', borderBottom: `1px solid ${c.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: c.text }}>✅ Clientes Pagantes ({payingUsers.length})</p>
+                  <button onClick={() => {
+                    const headers = ['Email', 'Plano', 'Status', 'Expira em'];
+                    const rows = payingUsers.map(u => [u.email, u.plan_type || '', u.plan_status, u.plan_expires_at ? dayjs(u.plan_expires_at).format('DD/MM/YYYY') : '']);
+                    const csv = [headers, ...rows].map(r => r.join(';')).join('\n');
+                    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' }));
+                    a.download = 'clientes-pagantes.csv'; a.click();
+                  }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 9, border: `1px solid ${c.border}`, background: 'transparent', color: c.textMuted, fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>
+                    <Download size={13}/>Exportar CSV
+                  </button>
+                </div>
+                {payingUsers.length === 0 ? (
+                  <p style={{ textAlign: 'center', padding: 40, color: c.textFaint }}>Nenhum cliente pagante ainda</p>
+                ) : (
+                  <div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 120px 140px 110px', padding: '10px 20px', background: c.inputBg, borderBottom: `1px solid ${c.border}` }}>
+                      {['Cliente', 'Plano', 'Valor/mês', 'Expira em', 'Ações'].map(h => (
+                        <span key={h} style={{ fontSize: 11, fontWeight: 700, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</span>
+                      ))}
+                    </div>
+                    {payingUsers.map((u, i) => (
+                      <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '1fr 120px 120px 140px 110px', padding: '13px 20px', borderBottom: i < payingUsers.length - 1 ? `1px solid ${c.borderLight}` : 'none', alignItems: 'center' }}>
+                        <div>
+                          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: c.text }}>{u.name || u.email}</p>
+                          {u.name && <p style={{ margin: 0, fontSize: 11, color: c.textFaint }}>{u.email}</p>}
+                        </div>
+                        <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 10px', borderRadius: 99, background: u.plan_type === 'annual' ? '#052e1640' : '#1e293b', color: u.plan_type === 'annual' ? '#4ade80' : '#94a3b8', width: 'fit-content' }}>
+                          {u.plan_type === 'monthly' ? '📅 Mensal' : '📆 Anual'}
+                        </span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#22c55e' }}>
+                          R$ {u.plan_type === 'monthly' ? '29,00' : (199/12).toFixed(2).replace('.', ',')}
+                        </span>
+                        <span style={{ fontSize: 12, color: c.textSecondary }}>
+                          {u.plan_expires_at ? dayjs(u.plan_expires_at).format('DD/MM/YYYY') : '—'}
+                        </span>
+                        <button onClick={() => { setInvoiceEmail(u.email); setInvoicePlan(u.plan_type || 'monthly'); }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: `1px solid ${c.border}`, background: 'transparent', color: c.textMuted, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                          <Mail size={11}/>Reenviar
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Pending (trial expired, no plan) */}
+              <div style={{ background: c.surface, borderRadius: 16, border: `1px solid ${c.border}`, overflow: 'hidden' }}>
+                <div style={{ padding: '16px 20px', borderBottom: `1px solid ${c.border}` }}>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: c.text }}>⏰ Clientes Pendentes ({expiredUsers.length})</p>
+                  <p style={{ margin: '2px 0 0', fontSize: 12, color: c.textFaint }}>Trial expirado — ainda não assinaram</p>
+                </div>
+                {expiredUsers.length === 0 ? (
+                  <p style={{ textAlign: 'center', padding: 40, color: c.textFaint }}>Nenhum pendente 🎉</p>
+                ) : (
+                  <div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 110px', padding: '10px 20px', background: c.inputBg, borderBottom: `1px solid ${c.border}` }}>
+                      {['Cliente', 'Trial encerrado em', 'Cobrar'].map(h => (
+                        <span key={h} style={{ fontSize: 11, fontWeight: 700, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</span>
+                      ))}
+                    </div>
+                    {expiredUsers.map((u, i) => (
+                      <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 110px', padding: '13px 20px', borderBottom: i < expiredUsers.length - 1 ? `1px solid ${c.borderLight}` : 'none', alignItems: 'center' }}>
+                        <div>
+                          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: c.text }}>{u.name || u.email}</p>
+                          {u.name && <p style={{ margin: 0, fontSize: 11, color: c.textFaint }}>{u.email}</p>}
+                        </div>
+                        <span style={{ fontSize: 12, color: '#f87171' }}>
+                          {u.trial_ends_at ? dayjs(u.trial_ends_at).format('DD/MM/YYYY') : '—'}
+                        </span>
+                        <button onClick={() => { setInvoiceEmail(u.email); setInvoicePlan('monthly'); }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: 'none', background: '#22c55e20', color: '#22c55e', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                          <Send size={11}/>Ativar plano
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
             </div>
           )}
 
