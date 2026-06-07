@@ -283,65 +283,168 @@ export default function AdminPage() {
         </div>
       ) : loading ? <p style={{ textAlign: 'center', padding: 80, color: c.textFaint }}>Carregando...</p> : (
         <>
-          {/* ── OVERVIEW ── */}
+          {/* ── OVERVIEW / RELATÓRIOS ── */}
           {tab === 'overview' && stats && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {/* KPIs */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 14 }}>
-                {[
-                  { label: 'Usuários', value: stats.totalUsers, icon: '👥', color: '#6366f1' },
-                  { label: 'Ativos 7 dias', value: stats.activeWeek, icon: '🟢', color: '#22c55e' },
-                  { label: 'Transações', value: stats.totalTx.toLocaleString('pt-BR'), icon: '💸', color: '#f97316' },
-                  { label: 'Receitas totais', value: formatCurrency(stats.totalIncome), icon: '📈', color: '#22c55e' },
-                  { label: 'Despesas totais', value: formatCurrency(stats.totalExpense), icon: '📉', color: '#ef4444' },
-                  { label: 'Saldo geral', value: formatCurrency(stats.totalIncome - stats.totalExpense), icon: '💰', color: stats.totalIncome >= stats.totalExpense ? '#22c55e' : '#ef4444' },
-                ].map(k => (
-                  <div key={k.label} style={{ background: c.surface, borderRadius: 14, border: `1px solid ${c.border}`, padding: '16px 20px', borderTop: `3px solid ${k.color}` }}>
-                    <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{k.icon} {k.label}</p>
-                    <p style={{ margin: 0, fontSize: 20, fontWeight: 800, color: c.text }}>{k.value}</p>
-                  </div>
-                ))}
+
+              {/* Linha 1 — KPIs de assinatura */}
+              <div>
+                <p style={{ margin: '0 0 12px', fontSize: 12, fontWeight: 700, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>💳 Assinaturas</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12 }}>
+                  {[
+                    { label: 'MRR', value: `R$ ${mrr.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`, sub: 'Receita mensal recorrente', color: '#22c55e' },
+                    { label: 'ARR', value: `R$ ${arr.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}`, sub: 'Projeção anual', color: '#6366f1' },
+                    { label: 'Pagantes', value: String(payingUsers.length), sub: `${monthlyPaying.length} mensal · ${annualPaying.length} anual`, color: '#22c55e' },
+                    { label: 'Em Trial', value: String(trialUsers.length), sub: 'Período de teste ativo', color: '#f59e0b' },
+                    { label: 'Pendentes', value: String(expiredUsers.length), sub: 'Trial expirado, sem plano', color: '#ef4444' },
+                    { label: 'Cancelados', value: String(cancelledUsers.length), sub: 'Assinatura cancelada', color: '#94a3b8' },
+                  ].map(k => (
+                    <div key={k.label} style={{ background: c.surface, borderRadius: 14, border: `1px solid ${c.border}`, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: k.color, borderRadius: '14px 14px 0 0' }}/>
+                      <p style={{ margin: '4px 0 6px', fontSize: 11, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{k.label}</p>
+                      <p style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 800, color: k.color }}>{k.value}</p>
+                      <p style={{ margin: 0, fontSize: 11, color: c.textFaint }}>{k.sub}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              {/* New users chart */}
+              {/* Linha 2 — KPIs de usuários */}
+              <div>
+                <p style={{ margin: '0 0 12px', fontSize: 12, fontWeight: 700, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>👥 Usuários</p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(160px,1fr))', gap: 12 }}>
+                  {[
+                    { label: 'Total', value: String(stats.totalUsers), sub: 'Cadastros na plataforma', color: '#6366f1' },
+                    { label: 'Ativos (7d)', value: String(stats.activeWeek), sub: 'Login nos últimos 7 dias', color: '#22c55e' },
+                    { label: 'Conversão', value: stats.totalUsers > 0 ? `${((payingUsers.length / stats.totalUsers) * 100).toFixed(1)}%` : '0%', sub: 'Trial → Pagante', color: '#f97316' },
+                    { label: 'Churn', value: stats.totalUsers > 0 ? `${((cancelledUsers.length / Math.max(payingUsers.length + cancelledUsers.length, 1)) * 100).toFixed(1)}%` : '0%', sub: 'Cancelamentos / total pago', color: '#ef4444' },
+                  ].map(k => (
+                    <div key={k.label} style={{ background: c.surface, borderRadius: 14, border: `1px solid ${c.border}`, padding: '16px 18px', position: 'relative', overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: k.color, borderRadius: '14px 14px 0 0' }}/>
+                      <p style={{ margin: '4px 0 6px', fontSize: 11, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{k.label}</p>
+                      <p style={{ margin: '0 0 4px', fontSize: 22, fontWeight: 800, color: k.color }}>{k.value}</p>
+                      <p style={{ margin: 0, fontSize: 11, color: c.textFaint }}>{k.sub}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Gráfico novos usuários */}
               <div style={{ background: c.surface, borderRadius: 16, border: `1px solid ${c.border}`, padding: 24 }}>
-                <p style={{ margin: '0 0 4px', fontWeight: 700, fontSize: 15, color: c.text }}>Novos Usuários — últimos 30 dias</p>
-                <p style={{ margin: '0 0 20px', fontSize: 12, color: c.textFaint }}>Cadastros por dia</p>
-                <ResponsiveContainer width="100%" height={200}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
+                  <div>
+                    <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: 15, color: c.text }}>📈 Novos Cadastros — últimos 30 dias</p>
+                    <p style={{ margin: 0, fontSize: 12, color: c.textFaint }}>Usuários registrados por dia</p>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#6366f1' }}>{stats.newUsersPerDay.reduce((s: number, d: any) => s + d.count, 0)}</p>
+                    <p style={{ margin: 0, fontSize: 11, color: c.textFaint }}>no período</p>
+                  </div>
+                </div>
+                <ResponsiveContainer width="100%" height={180}>
                   <AreaChart data={stats.newUsersPerDay} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="gU" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.25}/>
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
                         <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke={c.borderLight}/>
                     <XAxis dataKey="date" tick={{ fontSize: 10, fill: c.textFaint }} axisLine={false} tickLine={false} tickFormatter={d => dayjs(d).format('DD/MM')} interval={4}/>
                     <YAxis tick={{ fontSize: 10, fill: c.textFaint }} axisLine={false} tickLine={false} allowDecimals={false}/>
-                    <Tooltip contentStyle={{ borderRadius: 10, border: `1px solid ${c.border}`, background: c.surface, color: c.text, fontSize: 12 }} formatter={(v: any) => [v, 'Novos usuários']}/>
-                    <Area type="monotone" dataKey="count" stroke="#6366f1" strokeWidth={2} fill="url(#gU)"/>
+                    <Tooltip contentStyle={{ borderRadius: 10, border: `1px solid ${c.border}`, background: c.surface, color: c.text, fontSize: 12 }} formatter={(v: any) => [v, 'Novos usuários']} labelFormatter={l => dayjs(l).format('DD/MM/YYYY')}/>
+                    <Area type="monotone" dataKey="count" stroke="#6366f1" strokeWidth={2.5} fill="url(#gU)"/>
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
 
-              {/* Ranking */}
-              <div style={{ background: c.surface, borderRadius: 16, border: `1px solid ${c.border}`, padding: 24 }}>
-                <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: 15, color: c.text }}>🏆 Usuários Mais Ativos</p>
-                {stats.ranking.map((r: any, i: number) => (
-                  <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '10px 0', borderBottom: i < stats.ranking.length - 1 ? `1px solid ${c.borderLight}` : 'none' }}>
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: i === 0 ? '#fef9c3' : i === 1 ? '#f1f5f9' : i === 2 ? '#fff7ed' : c.inputBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: i === 0 ? '#ca8a04' : i === 1 ? '#64748b' : i === 2 ? '#c2410c' : c.textFaint }}>
-                      {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: c.text }}>{r.email}</p>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: '#6366f1' }}>{r.count}</p>
-                      <p style={{ margin: 0, fontSize: 11, color: c.textFaint }}>transações</p>
-                    </div>
-                  </div>
-                ))}
+              {/* Grid: distribuição de planos + últimas atividades */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 20 }}>
+
+                {/* Distribuição de planos */}
+                <div style={{ background: c.surface, borderRadius: 16, border: `1px solid ${c.border}`, padding: 24 }}>
+                  <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: 15, color: c.text }}>🥧 Distribuição de Planos</p>
+                  {[
+                    { label: 'Pagantes mensal', count: monthlyPaying.length, total: users.length, color: '#22c55e', value: `R$ ${(monthlyPaying.length * 29).toLocaleString('pt-BR')}/mês` },
+                    { label: 'Pagantes anual', count: annualPaying.length, total: users.length, color: '#6366f1', value: `R$ ${(annualPaying.length * 199).toLocaleString('pt-BR')}/ano` },
+                    { label: 'Em trial', count: trialUsers.length, total: users.length, color: '#f59e0b', value: `${trialUsers.length} usuários` },
+                    { label: 'Pendentes', count: expiredUsers.length, total: users.length, color: '#ef4444', value: 'Sem plano ativo' },
+                  ].map(item => {
+                    const pct = users.length > 0 ? (item.count / users.length) * 100 : 0;
+                    return (
+                      <div key={item.label} style={{ marginBottom: 14 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.color }}/>
+                            <span style={{ fontSize: 13, color: c.text }}>{item.label}</span>
+                          </div>
+                          <div style={{ textAlign: 'right' }}>
+                            <span style={{ fontSize: 13, fontWeight: 700, color: c.text }}>{item.count}</span>
+                            <span style={{ fontSize: 11, color: c.textFaint, marginLeft: 4 }}>({pct.toFixed(0)}%)</span>
+                          </div>
+                        </div>
+                        <div style={{ height: 6, borderRadius: 99, background: c.borderLight }}>
+                          <div style={{ height: '100%', borderRadius: 99, background: item.color, width: `${pct}%`, transition: 'width 0.5s' }}/>
+                        </div>
+                        <p style={{ margin: '3px 0 0', fontSize: 11, color: c.textFaint, textAlign: 'right' }}>{item.value}</p>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Clientes recentes */}
+                <div style={{ background: c.surface, borderRadius: 16, border: `1px solid ${c.border}`, padding: 24 }}>
+                  <p style={{ margin: '0 0 16px', fontWeight: 700, fontSize: 15, color: c.text }}>🆕 Últimos Cadastros</p>
+                  {[...users].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 6).map((u, i, arr) => {
+                    const te = u.trial_ends_at ? new Date(u.trial_ends_at) : null;
+                    const inTrial = te ? new Date() < te : false;
+                    const ps = u.plan_status === 'active' ? { label: 'Pago', color: '#22c55e' } : inTrial ? { label: 'Trial', color: '#f59e0b' } : { label: 'Expirado', color: '#ef4444' };
+                    return (
+                      <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: i < arr.length - 1 ? `1px solid ${c.borderLight}` : 'none' }}>
+                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#6366f120', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#6366f1', flexShrink: 0 }}>
+                          {(u.name || u.email || '?')[0].toUpperCase()}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: c.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{u.name || u.email}</p>
+                          <p style={{ margin: 0, fontSize: 11, color: c.textFaint }}>{dayjs(u.created_at).format('DD/MM/YYYY')}</p>
+                        </div>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, background: ps.color + '20', color: ps.color, flexShrink: 0 }}>{ps.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
               </div>
+
+              {/* Clientes que precisam de atenção */}
+              {expiredUsers.length > 0 && (
+                <div style={{ background: c.surface, borderRadius: 16, border: `1px solid #ef444430`, padding: 24 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                    <div>
+                      <p style={{ margin: '0 0 2px', fontWeight: 700, fontSize: 15, color: c.text }}>⚠️ Atenção — Clientes sem plano ativo ({expiredUsers.length})</p>
+                      <p style={{ margin: 0, fontSize: 12, color: c.textFaint }}>Trial expirado — oportunidade de conversão</p>
+                    </div>
+                    <button onClick={() => setTab('revenue')} style={{ padding: '8px 16px', borderRadius: 9, border: 'none', background: '#22c55e', color: '#fff', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                      Ver na aba Receita →
+                    </button>
+                  </div>
+                  {expiredUsers.slice(0, 4).map((u, i) => (
+                    <div key={u.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderBottom: i < Math.min(expiredUsers.length, 4) - 1 ? `1px solid ${c.borderLight}` : 'none' }}>
+                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', flexShrink: 0 }}/>
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontSize: 13, color: c.text }}>{u.name || u.email}</span>
+                        {u.name && <span style={{ fontSize: 11, color: c.textFaint, marginLeft: 8 }}>{u.email}</span>}
+                      </div>
+                      <span style={{ fontSize: 11, color: '#f87171' }}>Trial encerrou {u.trial_ends_at ? dayjs(u.trial_ends_at).fromNow() : ''}</span>
+                      <button onClick={() => { setInvoiceEmail(u.email); setInvoicePlan('monthly'); setTab('revenue'); }} style={{ padding: '5px 12px', borderRadius: 7, border: 'none', background: '#22c55e20', color: '#22c55e', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}>
+                        Ativar
+                      </button>
+                    </div>
+                  ))}
+                  {expiredUsers.length > 4 && <p style={{ margin: '10px 0 0', fontSize: 12, color: c.textFaint, textAlign: 'center' }}>+{expiredUsers.length - 4} mais na aba Receita</p>}
+                </div>
+              )}
+
             </div>
           )}
 
