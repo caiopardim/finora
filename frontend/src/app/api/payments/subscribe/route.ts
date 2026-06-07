@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 export const runtime = 'nodejs';
 
 const MP_TOKEN   = process.env.MERCADO_PAGO_ACCESS_TOKEN!;
-const APP_URL    = process.env.NEXT_PUBLIC_APP_URL || 'https://finora-nine-beta.vercel.app';
+const APP_URL    = process.env.NEXT_PUBLIC_APP_URL || 'https://meufinora.com.br';
 
 const PLANS = {
   monthly: {

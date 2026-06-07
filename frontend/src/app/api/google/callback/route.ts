@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
   const state = searchParams.get('state'); // user_id
   const error = searchParams.get('error');
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://finora-nine-beta.vercel.app';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://meufinora.com.br';
 
   if (error || !code || !state) {
     return NextResponse.redirect(`${baseUrl}/dashboard/agenda?google=error`);

@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   if (type === 'reset_password') {
     // Send password reset email
     const { error } = await admin.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://finora-nine-beta.vercel.app'}/auth/reset`,
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'https://meufinora.com.br'}/auth/reset`,
     });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ ok: true, message: 'E-mail de redefinição enviado' });
