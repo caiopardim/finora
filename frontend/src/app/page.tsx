@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
-import { Check, Star, ArrowRight, Zap } from 'lucide-react';
+import { Check, Star, ArrowRight, Zap, Menu, X } from 'lucide-react';
 
 /* ── Animação de entrada ao scroll ── */
 function useInView(threshold = 0.15) {
@@ -114,6 +114,7 @@ function FeatureCard({ f, delay }: { f: typeof FEATURES[0]; delay: number }) {
 export default function Home() {
   const [billing, setBilling] = useState<'monthly' | 'annual'>('annual');
   const [heroVisible, setHeroVisible] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setHeroVisible(true), 80);
@@ -148,9 +149,11 @@ export default function Home() {
       <style>{`
         .header-nav-links { display: flex; }
         .header-btn-cliente { display: flex; }
+        .header-hamburger { display: none !important; }
         @media (max-width: 640px) {
           .header-nav-links { display: none !important; }
           .header-btn-cliente { display: none !important; }
+          .header-hamburger { display: flex !important; }
           .header-inner { padding: 14px 20px !important; }
         }
       `}</style>
@@ -177,8 +180,24 @@ export default function Home() {
           </div>
           <Link href="/auth/login" className="header-btn-cliente" style={{ padding: '9px 18px', borderRadius: 9, border: '1.5px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 14, fontWeight: 500, textDecoration: 'none', transition: 'all 0.2s', whiteSpace: 'nowrap' }}>Já sou cliente</Link>
           <Link href="/assinar" className="btn-glow" style={{ padding: '9px 18px', borderRadius: 9, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none', boxShadow: '0 4px 14px rgba(34,197,94,0.3)', whiteSpace: 'nowrap' }}>Assinar</Link>
+          {/* Hamburger — mobile only */}
+          <button className="header-hamburger" onClick={() => setMenuOpen(v => !v)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4, color: '#0f172a', display: 'flex', alignItems: 'center' }}>
+            {menuOpen ? <X size={22}/> : <Menu size={22}/>}
+          </button>
         </nav>
       </header>
+
+      {/* Mobile menu drawer */}
+      {menuOpen && (
+        <div style={{ position: 'fixed', top: 65, left: 0, right: 0, zIndex: 49, background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #e2e8f0', padding: '8px 0 16px', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}>
+          <a href="#funcionalidades" onClick={() => setMenuOpen(false)} style={{ display: 'block', padding: '14px 24px', color: '#374151', fontSize: 15, fontWeight: 500, textDecoration: 'none', borderBottom: '1px solid #f1f5f9' }}>Funcionalidades</a>
+          <a href="#planos" onClick={() => setMenuOpen(false)} style={{ display: 'block', padding: '14px 24px', color: '#374151', fontSize: 15, fontWeight: 500, textDecoration: 'none', borderBottom: '1px solid #f1f5f9' }}>Planos</a>
+          <Link href="/auth/login" onClick={() => setMenuOpen(false)} style={{ display: 'block', padding: '14px 24px', color: '#374151', fontSize: 15, fontWeight: 500, textDecoration: 'none', borderBottom: '1px solid #f1f5f9' }}>Já sou cliente</Link>
+          <div style={{ padding: '12px 24px 0' }}>
+            <Link href="/assinar" onClick={() => setMenuOpen(false)} style={{ display: 'block', textAlign: 'center', padding: '13px', borderRadius: 10, background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 15, fontWeight: 700, textDecoration: 'none', boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}>Assinar</Link>
+          </div>
+        </div>
+      )}
 
       {/* Hero */}
       <section style={{ background: 'linear-gradient(160deg,#0f172a 0%,#1e293b 100%)', padding: '110px 48px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
