@@ -165,7 +165,7 @@ export default function Home() {
           <a href="#funcionalidades" className="nav-link" style={{ color: '#64748b', fontSize: 14, textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s' }}>Funcionalidades</a>
           <a href="#planos" className="nav-link" style={{ color: '#64748b', fontSize: 14, textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s' }}>Planos</a>
           <Link href="/auth/login" style={{ padding: '9px 20px', borderRadius: 9, border: '1.5px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 14, fontWeight: 500, textDecoration: 'none', transition: 'all 0.2s' }}>Já sou cliente</Link>
-          <Link href="/auth/login" className="btn-glow" style={{ padding: '9px 20px', borderRadius: 9, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none', boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}>Assinar</Link>
+          <Link href="/assinar" className="btn-glow" style={{ padding: '9px 20px', borderRadius: 9, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none', boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}>Assinar</Link>
         </nav>
       </header>
 
@@ -238,7 +238,7 @@ export default function Home() {
             transition: 'all 0.7s ease 0.2s',
             display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap',
           }}>
-            <Link href="/auth/login" className="btn-glow" style={{ padding: '16px 36px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 16, fontWeight: 700, textDecoration: 'none', boxShadow: '0 6px 24px rgba(34,197,94,0.4)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <Link href="/assinar" className="btn-glow" style={{ padding: '16px 36px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 16, fontWeight: 700, textDecoration: 'none', boxShadow: '0 6px 24px rgba(34,197,94,0.4)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               Assinar agora <ArrowRight size={17}/>
             </Link>
             <a href="#planos" style={{ padding: '16px 36px', borderRadius: 12, border: '1.5px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.05)', color: '#e2e8f0', fontSize: 16, fontWeight: 500, textDecoration: 'none', transition: 'all 0.2s' }}>
@@ -380,7 +380,7 @@ export default function Home() {
           <div style={{ maxWidth: 600, margin: '0 auto', position: 'relative' }}>
             <h2 style={{ color: '#fff', fontSize: 40, fontWeight: 800, margin: '0 0 16px', letterSpacing: '-0.5px' }}>Comece hoje, de graça</h2>
             <p style={{ color: '#64748b', fontSize: 16, margin: '0 0 36px', lineHeight: 1.7 }}>14 dias para testar tudo, sem precisar de cartão. Depois escolha o plano que fizer mais sentido pra você.</p>
-            <Link href="/auth/login" className="btn-glow" style={{ padding: '16px 40px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 16, fontWeight: 700, textDecoration: 'none', boxShadow: '0 6px 24px rgba(34,197,94,0.4)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <Link href="/assinar" className="btn-glow" style={{ padding: '16px 40px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 16, fontWeight: 700, textDecoration: 'none', boxShadow: '0 6px 24px rgba(34,197,94,0.4)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               Assinar agora <ArrowRight size={17}/>
             </Link>
           </div>
@@ -468,7 +468,7 @@ function PlanCard({ type, billing }: { type: 'monthly' | 'annual'; billing: 'mon
           </li>
         ))}
       </ul>
-      <Link href="/auth/login" className="btn-glow" style={{ width: '100%', padding: '14px', borderRadius: 12, border: isAnnual ? 'none' : '2px solid #22c55e', background: isAnnual ? 'linear-gradient(135deg,#22c55e,#16a34a)' : 'transparent', color: isAnnual ? '#fff' : '#22c55e', fontSize: 15, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: isAnnual ? '0 4px 16px rgba(34,197,94,0.4)' : 'none', boxSizing: 'border-box' }}>
+      <Link href={isAnnual ? '/assinar?plan=annual' : '/assinar?plan=monthly'} className="btn-glow" style={{ width: '100%', padding: '14px', borderRadius: 12, border: isAnnual ? 'none' : '2px solid #22c55e', background: isAnnual ? 'linear-gradient(135deg,#22c55e,#16a34a)' : 'transparent', color: isAnnual ? '#fff' : '#22c55e', fontSize: 15, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: isAnnual ? '0 4px 16px rgba(34,197,94,0.4)' : 'none', boxSizing: 'border-box' }}>
         {isAnnual ? <><Star size={15} fill="#fff"/>Assinar por R$ 199/ano</> : <><ArrowRight size={16}/>Assinar mensal</>}
       </Link>
     </div>

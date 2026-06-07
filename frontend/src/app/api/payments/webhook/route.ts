@@ -22,6 +22,46 @@ export async function POST(req: NextRequest) {
 
   if (!id) return NextResponse.json({ ok: true });
 
+  // PIX / one-time payment
+  if (type === 'payment' || type === 'payment.updated') {
+    const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${id}`, {
+      headers: { Authorization: `Bearer ${MP_TOKEN}` },
+    });
+    if (!mpRes.ok) return NextResponse.json({ ok: true });
+
+    const payment = await mpRes.json();
+    if (payment.status !== 'approved') return NextResponse.json({ ok: true });
+
+    const externalRef = payment.external_reference; // "userId|plan_type"
+    if (!externalRef) return NextResponse.json({ ok: true });
+
+    const [userRef, planType] = externalRef.split('|');
+    if (!userRef) return NextResponse.json({ ok: true });
+
+    const admin = getAdmin();
+
+    // Find user by id or email
+    let userId = userRef;
+    if (userRef.includes('@')) {
+      const { data: profile } = await admin.from('profiles').select('id').eq('email', userRef).single();
+      if (!profile) return NextResponse.json({ ok: true });
+      userId = profile.id;
+    }
+
+    const now = new Date();
+    const expires = new Date(now);
+    if (planType === 'annual') expires.setFullYear(expires.getFullYear() + 1);
+    else expires.setMonth(expires.getMonth() + 1);
+
+    await admin.from('profiles').update({
+      plan_status: 'active',
+      plan_type: planType,
+      plan_expires_at: expires.toISOString(),
+    }).eq('id', userId);
+
+    return NextResponse.json({ ok: true });
+  }
+
   // Fetch subscription details from MP
   if (type === 'subscription_preapproval' || type?.includes('preapproval')) {
     const mpRes = await fetch(`https://api.mercadopago.com/preapproval/${id}`, {
