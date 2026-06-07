@@ -164,7 +164,7 @@ export default function Home() {
         <nav style={{ display: 'flex', gap: 28, alignItems: 'center' }}>
           <a href="#funcionalidades" className="nav-link" style={{ color: '#64748b', fontSize: 14, textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s' }}>Funcionalidades</a>
           <a href="#planos" className="nav-link" style={{ color: '#64748b', fontSize: 14, textDecoration: 'none', fontWeight: 500, transition: 'color 0.2s' }}>Planos</a>
-          <Link href="/auth/login" style={{ padding: '9px 20px', borderRadius: 9, border: '1.5px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 14, fontWeight: 500, textDecoration: 'none', transition: 'all 0.2s' }}>Login</Link>
+          <Link href="/auth/login" style={{ padding: '9px 20px', borderRadius: 9, border: '1.5px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 14, fontWeight: 500, textDecoration: 'none', transition: 'all 0.2s' }}>Já sou cliente</Link>
           <Link href="/auth/login" className="btn-glow" style={{ padding: '9px 20px', borderRadius: 9, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none', boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}>Assinar</Link>
         </nav>
       </header>
