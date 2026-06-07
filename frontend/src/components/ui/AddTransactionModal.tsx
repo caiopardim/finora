@@ -3,19 +3,32 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { X } from 'lucide-react';
+import { useTheme } from '@/lib/theme-context';
 
 interface Props {
   onClose: () => void;
   onSuccess: () => void;
+  /** Pass an existing transaction to open in edit mode */
+  transaction?: {
+    id: string;
+    type: 'income' | 'expense';
+    amount: number;
+    description: string;
+    category_id?: string | null;
+    date: string;
+  };
 }
 
-export default function AddTransactionModal({ onClose, onSuccess }: Props) {
+export default function AddTransactionModal({ onClose, onSuccess, transaction }: Props) {
+  const { c } = useTheme();
+  const isEdit = !!transaction;
+
   const [form, setForm] = useState({
-    type: 'expense' as 'income' | 'expense',
-    amount: '',
-    description: '',
-    category_id: '',
-    date: new Date().toISOString().split('T')[0],
+    type: (transaction?.type ?? 'expense') as 'income' | 'expense',
+    amount: transaction ? String(transaction.amount) : '',
+    description: transaction?.description ?? '',
+    category_id: transaction?.category_id ?? '',
+    date: transaction?.date ?? new Date().toISOString().split('T')[0],
   });
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -37,27 +50,47 @@ export default function AddTransactionModal({ onClose, onSuccess }: Props) {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setError('Não autenticado'); setLoading(false); return; }
 
-    const { error: err } = await supabase.from('transactions').insert({
-      user_id: user.id,
+    const payload = {
       type: form.type,
       amount: parseFloat(form.amount),
       description: form.description,
       category_id: form.category_id || null,
       date: form.date,
-      source: 'web',
-    });
+    };
 
-    if (err) setError(err.message);
-    else onSuccess();
+    if (isEdit) {
+      const { error: err } = await supabase
+        .from('transactions')
+        .update(payload)
+        .eq('id', transaction!.id);
+      if (err) { setError(err.message); setLoading(false); return; }
+    } else {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setError('Não autenticado'); setLoading(false); return; }
+      const { error: err } = await supabase.from('transactions').insert({
+        ...payload, user_id: user.id, source: 'web',
+      });
+      if (err) { setError(err.message); setLoading(false); return; }
+    }
+
+    onSuccess();
     setLoading(false);
   }
 
   const filteredCategories = categories.filter(
-    (c) => c.type === form.type || c.type === 'both',
+    (cat) => cat.type === form.type || cat.type === 'both',
   );
+
+  const inputStyle: React.CSSProperties = {
+    display: 'block', width: '100%', padding: '10px 12px',
+    borderRadius: 10, border: `1.5px solid ${c.border}`,
+    fontSize: 14, color: c.text, background: c.input,
+    outline: 'none', boxSizing: 'border-box',
+  };
+  const labelStyle: React.CSSProperties = {
+    display: 'block', fontSize: 13, fontWeight: 500, color: c.textMuted, marginBottom: 6,
+  };
 
   return (
     <div style={{
@@ -65,11 +98,13 @@ export default function AddTransactionModal({ onClose, onSuccess }: Props) {
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       zIndex: 200, padding: 16,
     }}>
-      <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.18)' }}>
+      <div style={{ background: c.surface, borderRadius: 20, width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.25)', border: `1px solid ${c.border}` }}>
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid #f1f5f9' }}>
-          <h2 style={{ margin: 0, fontWeight: 600, fontSize: 17, color: '#0f172a' }}>Nova Transação</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: `1px solid ${c.borderLight}` }}>
+          <h2 style={{ margin: 0, fontWeight: 700, fontSize: 17, color: c.text }}>
+            {isEdit ? 'Editar Transação' : 'Nova Transação'}
+          </h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.textFaint, display: 'flex' }}>
             <X size={20}/>
           </button>
         </div>
@@ -83,13 +118,13 @@ export default function AddTransactionModal({ onClose, onSuccess }: Props) {
                 onClick={() => setForm({ ...form, type: t, category_id: '' })}
                 style={{
                   flex: 1, padding: '10px', borderRadius: 10, border: 'none',
-                  fontSize: 14, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s',
+                  fontSize: 14, fontWeight: 500, cursor: 'pointer',
                   background: form.type === t
                     ? (t === 'expense' ? '#fee2e2' : '#dcfce7')
-                    : '#f1f5f9',
+                    : c.inputBg,
                   color: form.type === t
                     ? (t === 'expense' ? '#dc2626' : '#16a34a')
-                    : '#64748b',
+                    : c.textMuted,
                 }}
               >
                 {t === 'expense' ? '💸 Despesa' : '💰 Receita'}
@@ -130,8 +165,8 @@ export default function AddTransactionModal({ onClose, onSuccess }: Props) {
               style={inputStyle}
             >
               <option value="">Selecionar categoria</option>
-              {filteredCategories.map((c) => (
-                <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+              {filteredCategories.map((cat) => (
+                <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
               ))}
             </select>
           </div>
@@ -154,28 +189,18 @@ export default function AddTransactionModal({ onClose, onSuccess }: Props) {
           {/* Actions */}
           <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
             <button type="button" onClick={onClose} style={{
-              flex: 1, padding: '12px', borderRadius: 12, border: '1.5px solid #e2e8f0',
-              background: '#fff', color: '#64748b', fontSize: 14, fontWeight: 500, cursor: 'pointer',
+              flex: 1, padding: '12px', borderRadius: 12, border: `1.5px solid ${c.border}`,
+              background: c.surface, color: c.textMuted, fontSize: 14, fontWeight: 500, cursor: 'pointer',
             }}>Cancelar</button>
             <button type="submit" disabled={loading} style={{
               flex: 1, padding: '12px', borderRadius: 12, border: 'none',
               background: loading ? '#94a3b8' : 'linear-gradient(135deg,#22c55e,#16a34a)',
               color: '#fff', fontSize: 14, fontWeight: 600, cursor: loading ? 'wait' : 'pointer',
               boxShadow: loading ? 'none' : '0 4px 14px rgba(34,197,94,0.3)',
-            }}>{loading ? 'Salvando...' : 'Salvar'}</button>
+            }}>{loading ? 'Salvando...' : isEdit ? 'Salvar alterações' : 'Salvar'}</button>
           </div>
         </form>
       </div>
     </div>
   );
 }
-
-const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: 13, fontWeight: 500, color: '#374151', marginBottom: 6,
-};
-const inputStyle: React.CSSProperties = {
-  display: 'block', width: '100%', padding: '10px 12px',
-  borderRadius: 10, border: '1.5px solid #e2e8f0',
-  fontSize: 14, color: '#1e293b', background: '#fff',
-  outline: 'none', boxSizing: 'border-box',
-};

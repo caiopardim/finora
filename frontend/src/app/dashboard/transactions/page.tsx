@@ -17,6 +17,7 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [editTx, setEditTx] = useState<any | null>(null);
   const [filters, setFilters] = useState({ type: '', start_date: '', end_date: '' });
   const [page, setPage] = useState(0);
   const limit = 20;
@@ -116,6 +117,8 @@ export default function TransactionsPage() {
                 <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: tx.type==='income'?'#16a34a':'#dc2626', flexShrink: 0 }}>
                   {tx.type==='income'?'+':'-'} {fmt(Number(tx.amount))}
                 </p>
+                <button onClick={() => setEditTx(tx)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.textFaint, fontSize: 13, padding: '0 4px' }}>✏️</button>
                 <button onClick={() => setConfirmDeleteId(tx.id)}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.borderLight, fontSize: 16, padding: '0 4px' }}>✕</button>
               </div>
@@ -142,6 +145,7 @@ export default function TransactionsPage() {
         />
       )}
       {showAdd && <AddTransactionModal onClose={() => setShowAdd(false)} onSuccess={() => { setShowAdd(false); load(); }}/>}
+      {editTx && <AddTransactionModal transaction={editTx} onClose={() => setEditTx(null)} onSuccess={() => { setEditTx(null); load(); }}/>}
     </div>
   );
 }

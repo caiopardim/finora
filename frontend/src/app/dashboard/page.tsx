@@ -262,6 +262,7 @@ function StatCard({ title, value, icon, subtitle, accent, trend, trendLabel }: a
 function TxList({ txs, onRefresh }: { txs: any[]; onRefresh: () => void }) {
   const { c } = useTheme();
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [editTx, setEditTx] = useState<any | null>(null);
 
   async function doDelete() {
     if (!confirmId) return;
@@ -281,6 +282,13 @@ function TxList({ txs, onRefresh }: { txs: any[]; onRefresh: () => void }) {
           onCancel={() => setConfirmId(null)}
         />
       )}
+      {editTx && (
+        <AddTransactionModal
+          transaction={editTx}
+          onClose={() => setEditTx(null)}
+          onSuccess={() => { setEditTx(null); onRefresh(); }}
+        />
+      )}
       {txs.map((tx: any, i: number) => (
         <div key={tx.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'11px 0', borderBottom:i<txs.length-1?`1px solid ${c.borderLight}`:'none' }}>
           <div style={{ width:40, height:40, borderRadius:12, background:((tx.categories as any)?.color||'#6366f1')+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:19, flexShrink:0 }}>
@@ -298,6 +306,7 @@ function TxList({ txs, onRefresh }: { txs: any[]; onRefresh: () => void }) {
           <p style={{ margin:0, fontWeight:700, fontSize:15, color:tx.type==='income'?'#16a34a':'#dc2626', flexShrink:0 }}>
             {tx.type==='income'?'+':'-'} {fmt(Number(tx.amount))}
           </p>
+          <button onClick={() => setEditTx(tx)} style={{ background:'none', border:'none', cursor:'pointer', color:c.textFaint, padding:4, display:'flex', alignItems:'center', fontSize:13 }}>✏️</button>
           <button onClick={() => setConfirmId(tx.id)} style={{ background:'none', border:'none', cursor:'pointer', color:c.border, padding:4, display:'flex', alignItems:'center' }}>✕</button>
         </div>
       ))}
