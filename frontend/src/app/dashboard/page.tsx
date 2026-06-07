@@ -11,11 +11,13 @@ import { Plus, ArrowUpRight, ArrowDownRight, AlertTriangle, Clock } from 'lucide
 import Link from 'next/link';
 import AddTransactionModal from '@/components/ui/AddTransactionModal';
 import dayjs from 'dayjs';
+import { useTheme } from '@/lib/theme-context';
 
 function fmt(v: number) { return formatCurrency(v); }
 function fmtK(v: number) { return v >= 1000 ? `R$${(v/1000).toFixed(1)}k` : `R$${v}`; }
 
 export default function DashboardPage() {
+  const { c, isDark } = useTheme();
   const [data, setData]         = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [showAdd, setShowAdd]   = useState(false);
@@ -95,8 +97,8 @@ export default function DashboardPage() {
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', margin: '0 0 2px' }}>Visão Geral</h1>
-          <p style={{ color: '#94a3b8', fontSize: 14, margin: 0 }}>{new Date().toLocaleString('pt-BR',{month:'long',year:'numeric'})}</p>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: c.text, margin: '0 0 2px' }}>Visão Geral</h1>
+          <p style={{ color: c.textFaint, fontSize: 14, margin: 0 }}>{new Date().toLocaleString('pt-BR',{month:'long',year:'numeric'})}</p>
         </div>
         <button onClick={() => setShowAdd(true)} style={{
           display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px',
@@ -118,20 +120,20 @@ export default function DashboardPage() {
 
       {/* Bills alert */}
       {data.bills.length > 0 && (
-        <div style={{ background: '#fff', border: '1px solid #fde68a', borderRadius: 16, marginBottom: 24, overflow: 'hidden' }}>
-          <div style={{ background: 'linear-gradient(135deg,#fffbeb,#fef3c7)', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ background: c.surface, border: `1px solid ${isDark ? '#854d0e' : '#fde68a'}`, borderRadius: 16, marginBottom: 24, overflow: 'hidden' }}>
+          <div style={{ background: isDark ? 'rgba(120,53,15,0.3)' : 'linear-gradient(135deg,#fffbeb,#fef3c7)', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 18 }}>⏰</span>
               <div>
-                <p style={{ margin: 0, fontWeight: 700, color: '#92400e', fontSize: 14 }}>
+                <p style={{ margin: 0, fontWeight: 700, color: isDark ? '#fbbf24' : '#92400e', fontSize: 14 }}>
                   {data.bills.length} {data.bills.length === 1 ? 'conta pendente' : 'contas pendentes'} esta semana
                 </p>
-                <p style={{ margin: 0, color: '#b45309', fontSize: 12 }}>
+                <p style={{ margin: 0, color: isDark ? '#f59e0b' : '#b45309', fontSize: 12 }}>
                   Total: {fmt(data.bills.reduce((s: number, b: any) => s + Number(b.amount), 0))}
                 </p>
               </div>
             </div>
-            <Link href="/dashboard/bills" style={{ fontSize: 12, fontWeight: 600, color: '#92400e', textDecoration: 'none', background: '#fde68a', padding: '5px 12px', borderRadius: 8 }}>
+            <Link href="/dashboard/bills" style={{ fontSize: 12, fontWeight: 600, color: isDark ? '#fbbf24' : '#92400e', textDecoration: 'none', background: isDark ? 'rgba(251,191,36,0.15)' : '#fde68a', padding: '5px 12px', borderRadius: 8 }}>
               Ver todas →
             </Link>
           </div>
@@ -141,17 +143,17 @@ export default function DashboardPage() {
               const diff = due.diff(dayjs(), 'day');
               const overdue = diff < 0;
               return (
-                <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px', borderBottom: i < data.bills.length - 1 ? '1px solid #f8fafc' : 'none' }}>
+                <div key={b.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 20px', borderBottom: i < data.bills.length - 1 ? `1px solid ${c.borderLight}` : 'none' }}>
                   <div style={{ width: 32, height: 32, borderRadius: 9, background: overdue ? '#fef2f2' : '#fffbeb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {overdue ? <AlertTriangle size={14} color="#dc2626"/> : <Clock size={14} color="#d97706"/>}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ margin: '0 0 1px', fontSize: 13, fontWeight: 600, color: '#1e293b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.description}</p>
+                    <p style={{ margin: '0 0 1px', fontSize: 13, fontWeight: 600, color: c.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.description}</p>
                     <p style={{ margin: 0, fontSize: 11, color: overdue ? '#dc2626' : '#d97706', fontWeight: 500 }}>
                       {overdue ? `Venceu há ${Math.abs(diff)} dia${Math.abs(diff) !== 1 ? 's' : ''}` : diff === 0 ? 'Vence hoje!' : `Vence em ${diff} dia${diff !== 1 ? 's' : ''}`}
                     </p>
                   </div>
-                  <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: overdue ? '#dc2626' : '#0f172a', flexShrink: 0 }}>{fmt(Number(b.amount))}</p>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: 13, color: overdue ? '#dc2626' : c.text, flexShrink: 0 }}>{fmt(Number(b.amount))}</p>
                 </div>
               );
             })}
@@ -217,13 +219,14 @@ export default function DashboardPage() {
 // ── Shared UI ─────────────────────────────────────────────────────────
 
 function Card({ title, subtitle, action, children }: any) {
+  const { c } = useTheme();
   return (
-    <div style={{ background:'#fff', borderRadius:16, border:'1px solid #e2e8f0', boxShadow:'0 1px 4px rgba(0,0,0,0.04)', overflow:'hidden', marginBottom:20 }}>
+    <div style={{ background:c.surface, borderRadius:16, border:`1px solid ${c.border}`, boxShadow:c.shadow, overflow:'hidden', marginBottom:20 }}>
       {title && (
-        <div style={{ padding:'16px 20px', borderBottom:'1px solid #f1f5f9', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ padding:'16px 20px', borderBottom:`1px solid ${c.borderLight}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div>
-            <p style={{ margin:0, fontWeight:600, fontSize:15, color:'#1e293b' }}>{title}</p>
-            {subtitle && <p style={{ margin:0, fontSize:12, color:'#94a3b8', marginTop:1 }}>{subtitle}</p>}
+            <p style={{ margin:0, fontWeight:600, fontSize:15, color:c.textSecondary }}>{title}</p>
+            {subtitle && <p style={{ margin:0, fontSize:12, color:c.textFaint, marginTop:1 }}>{subtitle}</p>}
           </div>
           {action}
         </div>
@@ -234,14 +237,15 @@ function Card({ title, subtitle, action, children }: any) {
 }
 
 function StatCard({ title, value, icon, subtitle, accent, trend, trendLabel }: any) {
+  const { c } = useTheme();
   return (
-    <div style={{ background:'#fff', borderRadius:16, border:'1px solid #e2e8f0', boxShadow:'0 1px 4px rgba(0,0,0,0.04)', padding:20, borderTop:`3px solid ${accent}` }}>
+    <div style={{ background:c.surface, borderRadius:16, border:`1px solid ${c.border}`, boxShadow:c.shadow, padding:20, borderTop:`3px solid ${accent}` }}>
       <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:12 }}>
-        <p style={{ margin:0, fontSize:11, fontWeight:600, color:'#94a3b8', letterSpacing:'0.06em', textTransform:'uppercase' }}>{title}</p>
+        <p style={{ margin:0, fontSize:11, fontWeight:600, color:c.textFaint, letterSpacing:'0.06em', textTransform:'uppercase' }}>{title}</p>
         <div style={{ width:34, height:34, borderRadius:9, background:accent+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>{icon}</div>
       </div>
-      <p style={{ margin:'0 0 4px', fontSize:22, fontWeight:700, color:'#0f172a' }}>{value}</p>
-      {subtitle && <p style={{ margin:0, fontSize:12, color:'#94a3b8' }}>{subtitle}</p>}
+      <p style={{ margin:'0 0 4px', fontSize:22, fontWeight:700, color:c.text }}>{value}</p>
+      {subtitle && <p style={{ margin:0, fontSize:12, color:c.textFaint }}>{subtitle}</p>}
       {trendLabel && (
         <div style={{ display:'flex', alignItems:'center', gap:5, marginTop:10 }}>
           <div style={{ display:'flex', alignItems:'center', gap:3, padding:'2px 8px', borderRadius:99, background:trend==='up'?'#dcfce7':'#fee2e2' }}>
@@ -255,6 +259,7 @@ function StatCard({ title, value, icon, subtitle, accent, trend, trendLabel }: a
 }
 
 function TxList({ txs, onRefresh }: { txs: any[]; onRefresh: () => void }) {
+  const { c } = useTheme();
   async function del(id: string) {
     if (!confirm('Excluir esta transação?')) return;
     await supabase.from('transactions').delete().eq('id', id);
@@ -263,23 +268,23 @@ function TxList({ txs, onRefresh }: { txs: any[]; onRefresh: () => void }) {
   return (
     <div>
       {txs.map((tx: any, i: number) => (
-        <div key={tx.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'11px 0', borderBottom:i<txs.length-1?'1px solid #f8fafc':'none' }}>
+        <div key={tx.id} style={{ display:'flex', alignItems:'center', gap:14, padding:'11px 0', borderBottom:i<txs.length-1?`1px solid ${c.borderLight}`:'none' }}>
           <div style={{ width:40, height:40, borderRadius:12, background:((tx.categories as any)?.color||'#6366f1')+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:19, flexShrink:0 }}>
             {(tx.categories as any)?.icon || (tx.type==='income'?'💰':'💸')}
           </div>
           <div style={{ flex:1, minWidth:0 }}>
-            <p style={{ margin:'0 0 2px', fontWeight:500, fontSize:14, color:'#1e293b', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{tx.description}</p>
+            <p style={{ margin:'0 0 2px', fontWeight:500, fontSize:14, color:c.textSecondary, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{tx.description}</p>
             <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <span style={{ fontSize:12, color:'#94a3b8' }}>{(tx.categories as any)?.name||'Sem categoria'}</span>
-              <span style={{ fontSize:11, color:'#cbd5e1' }}>·</span>
-              <span style={{ fontSize:12, color:'#94a3b8' }}>{new Date(tx.date+'T12:00').toLocaleDateString('pt-BR')}</span>
+              <span style={{ fontSize:12, color:c.textFaint }}>{(tx.categories as any)?.name||'Sem categoria'}</span>
+              <span style={{ fontSize:11, color:c.border }}>·</span>
+              <span style={{ fontSize:12, color:c.textFaint }}>{new Date(tx.date+'T12:00').toLocaleDateString('pt-BR')}</span>
               {tx.source==='whatsapp' && <span style={{ fontSize:10, background:'#dcfce7', color:'#15803d', fontWeight:600, padding:'1px 6px', borderRadius:99 }}>💬 WhatsApp</span>}
             </div>
           </div>
           <p style={{ margin:0, fontWeight:700, fontSize:15, color:tx.type==='income'?'#16a34a':'#dc2626', flexShrink:0 }}>
             {tx.type==='income'?'+':'-'} {fmt(Number(tx.amount))}
           </p>
-          <button onClick={() => del(tx.id)} style={{ background:'none', border:'none', cursor:'pointer', color:'#cbd5e1', padding:4, display:'flex', alignItems:'center' }}>✕</button>
+          <button onClick={() => del(tx.id)} style={{ background:'none', border:'none', cursor:'pointer', color:c.border, padding:4, display:'flex', alignItems:'center' }}>✕</button>
         </div>
       ))}
     </div>
@@ -287,9 +292,11 @@ function TxList({ txs, onRefresh }: { txs: any[]; onRefresh: () => void }) {
 }
 
 function Spinner() {
-  return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:300, color:'#94a3b8', fontSize:14 }}>Carregando...</div>;
+  const { c } = useTheme();
+  return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:300, color:c.textFaint, fontSize:14 }}>Carregando...</div>;
 }
 
 function Empty({ text }: { text: string }) {
-  return <p style={{ textAlign:'center', color:'#94a3b8', fontSize:14, padding:'24px 0', margin:0 }}>{text}</p>;
+  const { c } = useTheme();
+  return <p style={{ textAlign:'center', color:c.textFaint, fontSize:14, padding:'24px 0', margin:0 }}>{text}</p>;
 }

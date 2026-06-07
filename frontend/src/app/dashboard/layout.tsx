@@ -6,10 +6,11 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import {
   LayoutDashboard, ArrowLeftRight, Tag, Target,
-  BarChart2, Settings, LogOut, ChevronRight, Bell, Receipt, AlertTriangle, Clock,
+  BarChart2, Settings, LogOut, ChevronRight, Bell, Receipt, AlertTriangle, Clock, Sun, Moon,
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 import dayjs from 'dayjs';
+import { useTheme } from '@/lib/theme-context';
 
 const NAV = [
   { href: '/dashboard',              label: 'Início',       icon: LayoutDashboard },
@@ -33,6 +34,7 @@ const NAV_MOBILE = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router   = useRouter();
   const pathname = usePathname();
+  const { isDark, c, toggleTheme } = useTheme();
   const [user, setUser] = useState<{ email?: string; name?: string; avatar_url?: string } | null>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [alerts, setAlerts] = useState<any[]>([]);
@@ -144,14 +146,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (isMobile) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#f8fafc', fontFamily: 'Inter, system-ui, sans-serif' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: c.bg, fontFamily: 'Inter, system-ui, sans-serif', transition: 'background 0.2s' }}>
         {/* Mobile topbar */}
-        <header style={{ background: '#0f172a', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 40 }}>
+        <header style={{ background: isDark ? '#020617' : '#0f172a', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 40 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg,#22c55e,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>💰</div>
             <span style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>Finora</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button onClick={toggleTheme} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 8 }}>
+              {isDark ? <Sun size={16} color="#fbbf24"/> : <Moon size={16} color="#94a3b8"/>}
+            </button>
             <BellButton dark/>
             <Avatar/>
           </div>
@@ -165,7 +170,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         {/* Bottom nav */}
         <nav style={{
           position: 'fixed', bottom: 0, left: 0, right: 0,
-          background: '#fff', borderTop: '1px solid #e2e8f0',
+          background: c.surface, borderTop: `1px solid ${c.border}`,
           display: 'flex', zIndex: 50,
           paddingBottom: 'env(safe-area-inset-bottom)',
         }}>
@@ -175,7 +180,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Link key={href} href={href} style={{
                 flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
                 padding: '10px 4px 8px', textDecoration: 'none', gap: 3,
-                color: active ? '#22c55e' : '#94a3b8',
+                color: active ? '#22c55e' : c.textFaint,
                 borderTop: active ? '2px solid #22c55e' : '2px solid transparent',
               }}>
                 <Icon size={19}/>
@@ -190,10 +195,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // Desktop layout
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: 'Inter, system-ui, sans-serif' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: c.bg, fontFamily: 'Inter, system-ui, sans-serif', transition: 'background 0.2s' }}>
       {/* Sidebar */}
-      <aside style={{ width: 240, minHeight: '100vh', flexShrink: 0, background: 'linear-gradient(160deg,#0f172a 0%,#1e293b 100%)', display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh' }}>
-        <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+      <aside style={{ width: 240, minHeight: '100vh', flexShrink: 0, background: c.sidebar, display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh' }}>
+        <div style={{ padding: '24px 20px 20px', borderBottom: `1px solid ${c.sidebarBorder}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#22c55e,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>💰</div>
             <div>
@@ -216,7 +221,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
         </nav>
 
-        <div style={{ padding: '12px 10px', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+        <div style={{ padding: '12px 10px', borderTop: `1px solid ${c.sidebarBorder}` }}>
+          <button onClick={toggleTheme} style={{ display: 'flex', width: '100%', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'rgba(255,255,255,0.06)', color: isDark ? '#fbbf24' : '#94a3b8', fontSize: 13, marginBottom: 6 }}>
+            {isDark ? <Sun size={15}/> : <Moon size={15}/>}
+            {isDark ? 'Modo Claro' : 'Modo Escuro'}
+          </button>
           <button onClick={handleLogout} style={{ display: 'flex', width: '100%', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10, border: 'none', cursor: 'pointer', background: 'transparent', color: '#64748b', fontSize: 13, marginBottom: 10 }}>
             <LogOut size={15}/> Sair
           </button>
@@ -231,9 +240,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       </aside>
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        <header style={{ background: '#fff', borderBottom: '1px solid #e2e8f0', padding: '12px 32px', display: 'flex', alignItems: 'center', gap: 16, position: 'sticky', top: 0, zIndex: 10 }}>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, background: '#f1f5f9', borderRadius: 10, padding: '8px 14px', maxWidth: 400 }}>
-            <span style={{ color: '#94a3b8', fontSize: 14 }}>Buscar transações...</span>
+        <header style={{ background: c.topbar, borderBottom: `1px solid ${c.topbarBorder}`, padding: '12px 32px', display: 'flex', alignItems: 'center', gap: 16, position: 'sticky', top: 0, zIndex: 10, transition: 'background 0.2s' }}>
+          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, background: c.inputBg, borderRadius: 10, padding: '8px 14px', maxWidth: 400 }}>
+            <span style={{ color: c.textFaint, fontSize: 14 }}>Buscar transações...</span>
           </div>
           <BellButton/>
         </header>
