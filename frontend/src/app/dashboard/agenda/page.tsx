@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/lib/theme-context';
-import { Plus, X, Check, Clock, ChevronLeft, ChevronRight, Pencil, Trash2 } from 'lucide-react';
+import { Plus, X, Check, Clock, ChevronLeft, ChevronRight, Pencil, Trash2, RefreshCw, CalendarDays, Unlink } from 'lucide-react';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
@@ -35,10 +35,29 @@ export default function AgendaPage() {
   const [editing, setEditing]   = useState<Appt | null>(null);
   const [form, setForm]         = useState(emptyForm);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const [googleConnected, setGoogleConnected] = useState(false);
+  const [syncing, setSyncing]   = useState(false);
+  const [syncMsg, setSyncMsg]   = useState('');
 
   async function load() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setLoading(false); return; }
+
+    // Check Google connection
+    const { data: gtok } = await supabase
+      .from('user_google_tokens')
+      .select('user_id')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+    setGoogleConnected(!!gtok);
+
+    // Check URL params for google connect result
+    if (typeof window !== 'undefined') {
+      const p = new URLSearchParams(window.location.search);
+      if (p.get('google') === 'connected') { setSyncMsg('Google Agenda conectado! ✅'); window.history.replaceState({}, '', window.location.pathname); }
+      if (p.get('google') === 'error')     { setSyncMsg('Erro ao conectar. Tente novamente.'); window.history.replaceState({}, '', window.location.pathname); }
+    }
+
     const start = currentMonth.format('YYYY-MM-DD');
     const end   = currentMonth.endOf('month').format('YYYY-MM-DD');
     const { data } = await supabase
@@ -99,6 +118,43 @@ export default function AgendaPage() {
     load();
   }
 
+  async function connectGoogle() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const clientId   = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    const baseUrl    = window.location.origin;
+    const redirectUri = `${baseUrl}/api/google/callback`;
+    const scope = 'https://www.googleapis.com/auth/calendar.events';
+    const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&access_type=offline&prompt=consent&state=${session.user.id}`;
+    window.location.href = url;
+  }
+
+  async function syncGoogle() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    setSyncing(true);
+    setSyncMsg('');
+    try {
+      const res  = await fetch('/api/google/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: session.user.id }) });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setSyncMsg(`${data.synced} compromisso(s) sincronizado(s) ✅`);
+    } catch (e: any) {
+      setSyncMsg('Erro ao sincronizar: ' + e.message);
+    }
+    setSyncing(false);
+    setTimeout(() => setSyncMsg(''), 4000);
+  }
+
+  async function disconnectGoogle() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    await fetch('/api/google/disconnect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: session.user.id }) });
+    setGoogleConnected(false);
+    setSyncMsg('Google Agenda desconectado.');
+    setTimeout(() => setSyncMsg(''), 3000);
+  }
+
   // Calendar helpers
   const daysInMonth = currentMonth.daysInMonth();
   const firstDow    = currentMonth.day(); // 0=sun
@@ -129,15 +185,37 @@ export default function AgendaPage() {
   return (
     <div style={{ maxWidth: 960, margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: syncMsg ? 12 : 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: c.text, margin: '0 0 2px' }}>Agenda</h1>
           <p style={{ color: c.textFaint, fontSize: 14, margin: 0 }}>Seus compromissos organizados</p>
         </div>
-        <button onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: 'linear-gradient(135deg,#6366f1,#4f46e5)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(99,102,241,0.35)' }}>
-          <Plus size={16}/> Novo compromisso
-        </button>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          {googleConnected ? (
+            <>
+              <button onClick={syncGoogle} disabled={syncing} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 10, border: '1.5px solid #4285f4', background: '#eff6ff', color: '#4285f4', fontSize: 13, fontWeight: 600, cursor: syncing ? 'wait' : 'pointer' }}>
+                <RefreshCw size={14} style={{ animation: syncing ? 'spin 1s linear infinite' : 'none' }}/> {syncing ? 'Sincronizando...' : 'Sincronizar'}
+              </button>
+              <button onClick={disconnectGoogle} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 10, border: `1.5px solid ${c.border}`, background: c.surface, color: c.textMuted, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                <Unlink size={13}/> Desconectar Google
+              </button>
+            </>
+          ) : (
+            <button onClick={connectGoogle} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: 10, border: '1.5px solid #4285f4', background: '#fff', color: '#4285f4', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+              <CalendarDays size={15}/> Conectar Google Agenda
+            </button>
+          )}
+          <button onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: 'linear-gradient(135deg,#6366f1,#4f46e5)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(99,102,241,0.35)' }}>
+            <Plus size={16}/> Novo compromisso
+          </button>
+        </div>
       </div>
+
+      {syncMsg && (
+        <div style={{ marginBottom: 20, padding: '10px 16px', borderRadius: 10, background: syncMsg.includes('Erro') ? '#fef2f2' : '#f0fdf4', border: `1px solid ${syncMsg.includes('Erro') ? '#fecaca' : '#bbf7d0'}`, color: syncMsg.includes('Erro') ? '#dc2626' : '#16a34a', fontSize: 13, fontWeight: 500 }}>
+          {syncMsg}
+        </div>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20, alignItems: 'start' }}>
 

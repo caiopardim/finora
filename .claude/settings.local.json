@@ -17,7 +17,15 @@
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
       "Bash(curl -s https://ofpyuzdqfpqienlnzjwi.supabase.co/rest/v1/ -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mcHl1emRxZnBxaWVubG56andpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2OTI3NzUsImV4cCI6MjA5NjI2ODc3NX0.MS1saFBaxmHel8BIMbIbfBPGbPtBpnZsQZo0QpT8680' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mcHl1emRxZnBxaWVubG56andpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA2OTI3NzUsImV4cCI6MjA5NjI2ODc3NX0.MS1saFBaxmHel8BIMbIbfBPGbPtBpnZsQZo0QpT8680')",
       "Bash(curl -s -X POST https://ofpyuzdqfpqienlnzjwi.supabase.co/rest/v1/categories -H 'apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mcHl1emRxZnBxaWVubG56andpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDY5Mjc3NSwiZXhwIjoyMDk2MjY4Nzc1fQ.Ekfj2fgpX-dhIkI7JwtDeWkUXLk08kkR9elmKsJ7s9Q' -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9mcHl1emRxZnBxaWVubG56andpIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MDY5Mjc3NSwiZXhwIjoyMDk2MjY4Nzc1fQ.Ekfj2fgpX-dhIkI7JwtDeWkUXLk08kkR9elmKsJ7s9Q' -H 'Content-Type: application/json' -H 'Prefer: return=minimal' -d '[ *)",
-      "Bash(echo \"status: $?\")"
+      "Bash(echo \"status: $?\")",
+      "Bash(npx tsc *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "WebFetch(domain:finora-nine-beta.vercel.app)",
+      "Bash(npm install *)",
+      "Bash(npx --prefix frontend tsc --noEmit)",
+      "Bash(npm run *)"
     ]
   }
 }
