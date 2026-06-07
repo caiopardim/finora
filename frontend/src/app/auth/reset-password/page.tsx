@@ -6,16 +6,15 @@ import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, ArrowRight, CheckCircle } from 'lucide-react';
 
 export default function ResetPasswordPage() {
-  const [password, setPassword]   = useState('');
-  const [confirm, setConfirm]     = useState('');
-  const [showPw, setShowPw]       = useState(false);
-  const [loading, setLoading]     = useState(false);
-  const [error, setError]         = useState('');
-  const [done, setDone]           = useState(false);
-  const [ready, setReady]         = useState(false);
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm]   = useState('');
+  const [showPw, setShowPw]     = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
+  const [done, setDone]         = useState(false);
+  const [ready, setReady]       = useState(false);
   const router = useRouter();
 
-  // Supabase sets the session from the URL hash when user arrives from the email link
   useEffect(() => {
     supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') setReady(true);
@@ -36,16 +35,16 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg,#f0fdf4,#ecfdf5,#f8fafc)', fontFamily: 'Inter, system-ui, sans-serif', padding: 24 }}>
-      <div style={{ width: '100%', maxWidth: 400, background: '#fff', borderRadius: 20, padding: 40, boxShadow: '0 8px 40px rgba(0,0,0,0.08)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg,#f0fdf4,#ecfdf5,#f8fafc)', fontFamily: 'Inter, system-ui, sans-serif', padding: '24px 16px' }}>
+      <div style={{ width: '100%', maxWidth: 420, background: '#fff', borderRadius: 20, padding: 'clamp(28px, 5vw, 44px)', boxShadow: '0 8px 40px rgba(0,0,0,0.08)' }}>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#22c55e,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>💰</div>
-          <span style={{ fontWeight: 700, fontSize: 16, color: '#0f172a' }}>Finora</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32, justifyContent: 'center' }}>
+          <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg,#22c55e,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>💰</div>
+          <span style={{ fontWeight: 700, fontSize: 18, color: '#0f172a' }}>Finora</span>
         </div>
 
         {done ? (
-          <div style={{ textAlign: 'center' }}>
+          <div style={{ textAlign: 'center', padding: '16px 0' }}>
             <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#f0fdf4', border: '2px solid #22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
               <CheckCircle size={32} color="#22c55e"/>
             </div>
@@ -54,8 +53,8 @@ export default function ResetPasswordPage() {
           </div>
         ) : (
           <>
-            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>Nova senha</h1>
-            <p style={{ color: '#94a3b8', fontSize: 14, margin: '0 0 28px' }}>Digite sua nova senha abaixo.</p>
+            <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: '0 0 6px', textAlign: 'center' }}>Nova senha</h1>
+            <p style={{ color: '#94a3b8', fontSize: 14, margin: '0 0 24px', textAlign: 'center' }}>Digite sua nova senha abaixo.</p>
 
             {!ready && (
               <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: 10, padding: '10px 14px', color: '#92400e', fontSize: 13, marginBottom: 16 }}>
@@ -80,7 +79,7 @@ export default function ResetPasswordPage() {
 
               {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 14px', color: '#dc2626', fontSize: 13 }}>{error}</div>}
 
-              <button type="submit" disabled={loading || !ready} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px', borderRadius: 11, border: 'none', background: loading || !ready ? '#94a3b8' : 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 15, fontWeight: 600, cursor: loading || !ready ? 'not-allowed' : 'pointer', boxShadow: loading || !ready ? 'none' : '0 4px 14px rgba(34,197,94,0.35)', transition: 'all 0.2s' }}>
+              <button type="submit" disabled={loading || !ready} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '14px', borderRadius: 11, border: 'none', background: loading || !ready ? '#94a3b8' : 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 15, fontWeight: 600, cursor: loading || !ready ? 'not-allowed' : 'pointer', boxShadow: loading || !ready ? 'none' : '0 4px 14px rgba(34,197,94,0.35)', transition: 'all 0.2s' }}>
                 {loading ? 'Salvando...' : 'Redefinir senha'} {!loading && <ArrowRight size={16}/>}
               </button>
             </form>
@@ -97,8 +96,8 @@ const labelStyle: React.CSSProperties = {
 };
 
 const inputStyle: React.CSSProperties = {
-  display: 'block', width: '100%', padding: '11px 14px',
+  display: 'block', width: '100%', padding: '13px 14px',
   borderRadius: 10, border: '1.5px solid #e2e8f0',
-  fontSize: 14, color: '#1e293b', background: '#fff',
+  fontSize: 15, color: '#1e293b', background: '#fff',
   outline: 'none', boxSizing: 'border-box',
 };
