@@ -48,7 +48,7 @@ export default function LoginPage() {
             <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg,#22c55e,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>💰</div>
             <div>
               <p style={{ color: '#fff', fontWeight: 700, fontSize: 20, margin: 0 }}>Finora</p>
-              <p style={{ color: '#475569', fontSize: 12, margin: 0 }}>Finanças pelo WhatsApp</p>
+              <p style={{ color: '#475569', fontSize: 12, margin: 0 }}>Mais controle, menos planilhas</p>
             </div>
           </div>
 

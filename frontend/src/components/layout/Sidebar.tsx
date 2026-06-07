@@ -68,7 +68,7 @@ export default function Sidebar() {
           }}>💰</div>
           <div>
             <p style={{ color: '#fff', fontWeight: 700, fontSize: 16, margin: 0 }}>Finora</p>
-            <p style={{ color: '#475569', fontSize: 11, margin: 0 }}>Finanças pelo WhatsApp</p>
+            <p style={{ color: '#475569', fontSize: 11, margin: 0 }}>Mais controle, menos planilhas</p>
           </div>
         </div>
       </div>

@@ -74,7 +74,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer style={{ padding: '24px 48px', borderTop: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ color: '#94a3b8', fontSize: 13 }}>💰 Finora — Finanças pelo WhatsApp</span>
+        <span style={{ color: '#94a3b8', fontSize: 13 }}>💰 Finora — Mais controle, menos planilhas</span>
         <div style={{ display: 'flex', gap: 24 }}>
           {['Política de Privacidade','Termos de Uso','Suporte'].map(l => (
             <a key={l} href="#" style={{ color: '#94a3b8', fontSize: 13, textDecoration: 'none' }}>{l}</a>

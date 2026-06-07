@@ -305,7 +305,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#22c55e,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>💰</div>
             <div>
               <p style={{ color: '#fff', fontWeight: 700, fontSize: 16, margin: 0 }}>Finora</p>
-              <p style={{ color: '#475569', fontSize: 11, margin: 0 }}>Finanças pelo WhatsApp</p>
+              <p style={{ color: '#475569', fontSize: 11, margin: 0 }}>Mais controle, menos planilhas</p>
             </div>
           </div>
         </div>

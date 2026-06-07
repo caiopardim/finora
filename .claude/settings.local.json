@@ -27,7 +27,8 @@
       "Bash(npx --prefix frontend tsc --noEmit)",
       "Bash(npm run *)",
       "Bash(mkdir -p /Users/caiopardim/Desktop/Finora/frontend/src/app/api/admin/users/\\\\[id\\\\])",
-      "Bash(grep -v \"^$\")"
+      "Bash(grep -v \"^$\")",
+      "Bash(xargs sed -i '' 's/Finanças pelo WhatsApp/Mais controle, menos planilhas/g')"
     ]
   }
 }

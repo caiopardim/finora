@@ -6,7 +6,7 @@ import { ThemeProvider } from '@/lib/theme-context';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Finora — Finanças pelo WhatsApp',
+  title: 'Finora — Mais controle, menos planilhas',
   description: 'Controle suas finanças pelo WhatsApp com inteligência artificial.',
   manifest: '/manifest.json',
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Finora' },
