@@ -19,14 +19,18 @@ export interface MessageIntent {
 
 @Injectable()
 export class AiService {
-  private readonly openai: OpenAI;
+  private readonly openai: OpenAI | null = null;
   private readonly logger = new Logger(AiService.name);
 
   constructor(private config: ConfigService) {
-    this.openai = new OpenAI({ apiKey: config.get('OPENAI_API_KEY') });
+    const apiKey = config.get('OPENAI_API_KEY');
+    if (apiKey) {
+      this.openai = new OpenAI({ apiKey });
+    }
   }
 
   async parseMessage(message: string, userContext?: string): Promise<MessageIntent> {
+    if (!this.openai) return { action: 'unknown' };
     const today = dayjs().format('YYYY-MM-DD');
 
     const response = await this.openai.chat.completions.create({
@@ -84,6 +88,7 @@ Exemplos:
   }
 
   async generateReportResponse(query: string, data: any): Promise<string> {
+    if (!this.openai) return 'IA não configurada.';
     const response = await this.openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
