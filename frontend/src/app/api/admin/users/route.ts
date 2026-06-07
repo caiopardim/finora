@@ -125,3 +125,38 @@ export async function PATCH(req: NextRequest) {
 
   return NextResponse.json({ ok: true });
 }
+
+// POST /api/admin/users — create a new user
+export async function POST(req: NextRequest) {
+  const caller = await checkAdmin(req);
+  if (!caller) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+  const { email, password, name, role, send_invite } = await req.json();
+  if (!email) return NextResponse.json({ error: 'E-mail obrigatório' }, { status: 400 });
+
+  const admin = getAdmin();
+
+  // Create user in auth
+  const { data, error } = send_invite
+    ? await admin.auth.admin.inviteUserByEmail(email)
+    : await admin.auth.admin.createUser({
+        email,
+        password: password || undefined,
+        email_confirm: true,
+      });
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  const userId = data.user?.id;
+  if (!userId) return NextResponse.json({ error: 'Usuário criado mas ID não retornado' }, { status: 500 });
+
+  // Create profile
+  await admin.from('profiles').upsert({
+    id: userId,
+    name: name || null,
+    role: role || 'user',
+    onboarded: true,
+  });
+
+  return NextResponse.json({ ok: true, user: data.user });
+}

@@ -42,6 +42,9 @@ export default function AdminPage() {
   const [deleting, setDeleting] = useState(false);
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [editName, setEditName] = useState('');
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState({ email: '', password: '', name: '', role: 'user', send_invite: false });
+  const [creating, setCreating] = useState(false);
   const [toast, setToast]       = useState('');
   const [toastType, setToastType] = useState<'ok' | 'err'>('ok');
   const [apiError, setApiError] = useState('');
@@ -125,6 +128,22 @@ export default function AdminPage() {
     await adminFetch('/api/admin/users', { method: 'PATCH', body: JSON.stringify({ id: user.id, blocked }) });
     setUsers(prev => prev.map(u => u.id === user.id ? { ...u, blocked } : u));
     showToast(blocked ? `🔒 ${user.email} bloqueado` : `✅ ${user.email} desbloqueado`);
+  }
+
+  async function doCreateUser(e: React.FormEvent) {
+    e.preventDefault();
+    setCreating(true);
+    const res = await adminFetch('/api/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(createForm),
+    });
+    const body = await res.json();
+    if (!res.ok) { showToast('Erro: ' + body.error, 'err'); setCreating(false); return; }
+    showToast(`✅ Usuário ${createForm.email} criado!`);
+    setShowCreate(false);
+    setCreateForm({ email: '', password: '', name: '', role: 'user', send_invite: false });
+    setCreating(false);
+    loadAll();
   }
 
   async function saveEditName() {
@@ -290,7 +309,10 @@ export default function AdminPage() {
           {tab === 'users' && (
             <div>
               {/* Toolbar */}
-              <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+                <button onClick={() => setShowCreate(true)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(34,197,94,0.3)' }}>
+                  <Users size={15}/> + Novo Usuário
+                </button>
                 <div style={{ flex: 1, minWidth: 200, position: 'relative' }}>
                   <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: c.textFaint, pointerEvents: 'none' }}/>
                   <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar email ou nome..." style={{ ...inputStyle, width: '100%', paddingLeft: 36 }}/>
@@ -525,6 +547,75 @@ export default function AdminPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Create user modal */}
+      {showCreate && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, padding: 16 }}>
+          <div style={{ background: c.surface, borderRadius: 20, width: '100%', maxWidth: 460, boxShadow: '0 20px 60px rgba(0,0,0,0.3)', border: `1px solid ${c.border}` }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: `1px solid ${c.borderLight}` }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: c.text }}>Criar Novo Usuário</h2>
+                <p style={{ margin: '2px 0 0', fontSize: 12, color: c.textFaint }}>O usuário será criado diretamente no Supabase</p>
+              </div>
+              <button onClick={() => setShowCreate(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.textFaint }}><X size={20}/></button>
+            </div>
+            <form onSubmit={doCreateUser} style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+              {/* Send invite toggle */}
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button type="button" onClick={() => setCreateForm(f => ({ ...f, send_invite: false }))} style={{ flex: 1, padding: '10px', borderRadius: 10, border: `2px solid ${!createForm.send_invite ? '#6366f1' : c.border}`, background: !createForm.send_invite ? '#eef2ff' : c.surface, color: !createForm.send_invite ? '#6366f1' : c.textMuted, fontSize: 13, fontWeight: !createForm.send_invite ? 700 : 400, cursor: 'pointer' }}>
+                  🔑 Criar com senha
+                </button>
+                <button type="button" onClick={() => setCreateForm(f => ({ ...f, send_invite: true }))} style={{ flex: 1, padding: '10px', borderRadius: 10, border: `2px solid ${createForm.send_invite ? '#6366f1' : c.border}`, background: createForm.send_invite ? '#eef2ff' : c.surface, color: createForm.send_invite ? '#6366f1' : c.textMuted, fontSize: 13, fontWeight: createForm.send_invite ? 700 : 400, cursor: 'pointer' }}>
+                  ✉️ Enviar convite
+                </button>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: c.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>E-mail *</label>
+                <input required type="email" value={createForm.email} onChange={e => setCreateForm(f => ({ ...f, email: e.target.value }))} placeholder="usuario@exemplo.com" style={{ ...inputStyle, width: '100%' }}/>
+              </div>
+
+              {!createForm.send_invite && (
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: c.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Senha</label>
+                  <input type="password" value={createForm.password} onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))} placeholder="Deixe em branco para senha aleatória" style={{ ...inputStyle, width: '100%' }}/>
+                  <p style={{ margin: '5px 0 0', fontSize: 11, color: c.textFaint }}>Se deixar em branco, o usuário precisará redefinir a senha.</p>
+                </div>
+              )}
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: c.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Nome (opcional)</label>
+                <input value={createForm.name} onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))} placeholder="Nome completo" style={{ ...inputStyle, width: '100%' }}/>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: c.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Role</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {[{ v: 'user', l: '👤 Usuário' }, { v: 'admin', l: '🛡️ Admin' }].map(r => (
+                    <button key={r.v} type="button" onClick={() => setCreateForm(f => ({ ...f, role: r.v }))} style={{ flex: 1, padding: '10px', borderRadius: 10, border: `2px solid ${createForm.role === r.v ? '#6366f1' : c.border}`, background: createForm.role === r.v ? '#eef2ff' : c.surface, color: createForm.role === r.v ? '#6366f1' : c.textMuted, fontSize: 13, fontWeight: createForm.role === r.v ? 700 : 400, cursor: 'pointer' }}>
+                      {r.l}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {createForm.send_invite && (
+                <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#1e40af' }}>
+                  ✉️ Um e-mail de convite será enviado para <strong>{createForm.email || 'o usuário'}</strong>. Ele poderá definir a própria senha ao aceitar.
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
+                <button type="button" onClick={() => setShowCreate(false)} style={{ flex: 1, padding: '12px', borderRadius: 12, border: `1.5px solid ${c.border}`, background: c.surface, color: c.textMuted, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>Cancelar</button>
+                <button type="submit" disabled={creating || !createForm.email} style={{ flex: 2, padding: '12px', borderRadius: 12, border: 'none', background: creating || !createForm.email ? '#94a3b8' : 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: creating ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  {creating ? <><RefreshCw size={15} style={{ animation: 'spin 1s linear infinite' }}/>Criando...</> : createForm.send_invite ? <>✉️ Enviar convite</> : <><UserCheck size={15}/>Criar usuário</>}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
       {/* Edit name modal */}
