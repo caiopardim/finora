@@ -8,6 +8,7 @@ import {
   LayoutDashboard, ArrowLeftRight, Tag, Target,
   BarChart2, Settings, LogOut, ChevronRight, Bell, Receipt, AlertTriangle, Clock, Sun, Moon, CalendarDays,
 } from 'lucide-react';
+import GlobalSearch from '@/components/ui/GlobalSearch';
 import { formatCurrency } from '@/lib/utils';
 import dayjs from 'dayjs';
 import { useTheme } from '@/lib/theme-context';
@@ -242,8 +243,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <header style={{ background: c.topbar, borderBottom: `1px solid ${c.topbarBorder}`, padding: '12px 32px', display: 'flex', alignItems: 'center', gap: 16, position: 'sticky', top: 0, zIndex: 10, transition: 'background 0.2s' }}>
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, background: c.inputBg, borderRadius: 10, padding: '8px 14px', maxWidth: 400 }}>
-            <span style={{ color: c.textFaint, fontSize: 14 }}>Buscar transações...</span>
+          <div style={{ flex: 1 }}>
+            <GlobalSearch/>
           </div>
           <BellButton/>
         </header>
