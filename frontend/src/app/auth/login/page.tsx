@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
-import { Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
+
+type Mode = 'login' | 'forgot' | 'forgot-sent';
 
 export default function LoginPage() {
   const [email, setEmail]       = useState('');
@@ -11,24 +13,33 @@ export default function LoginPage() {
   const [showPw, setShowPw]     = useState(false);
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
-  const [mode, setMode]         = useState<'login' | 'register'>('login');
+  const [mode, setMode]         = useState<Mode>('login');
   const router = useRouter();
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError('');
-    const { data, error } = mode === 'login'
-      ? await supabase.auth.signInWithPassword({ email, password })
-      : await supabase.auth.signUp({ email, password });
-    if (error) { setError(error.message); setLoading(false); return; }
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) { setError('E-mail ou senha incorretos'); setLoading(false); return; }
 
-    // Check if admin → redirect to /admin
     if (data?.user) {
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
       if (profile?.role === 'admin') { router.push('/admin'); return; }
     }
     router.push('/dashboard');
+  }
+
+  async function handleForgot(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
+    setLoading(false);
+    if (error) { setError('Erro ao enviar e-mail. Verifique o endereço e tente novamente.'); return; }
+    setMode('forgot-sent');
   }
 
   return (
@@ -77,66 +88,105 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right panel — form */}
+      {/* Right panel */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 48 }}>
         <div style={{ width: '100%', maxWidth: 400 }}>
-          <h1 style={{ fontSize: 26, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>
-            {mode === 'login' ? 'Bem-vindo de volta!' : 'Criar sua conta'}
-          </h1>
-          <p style={{ color: '#94a3b8', fontSize: 14, margin: '0 0 32px' }}>
-            {mode === 'login' ? 'Entre para acessar seu dashboard' : 'Comece a controlar suas finanças hoje'}
-          </p>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 7 }}>E-mail</label>
-              <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
-                placeholder="voce@email.com" style={inputStyle} />
-            </div>
-            <div>
-              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 7 }}>Senha</label>
-              <div style={{ position: 'relative' }}>
-                <input type={showPw ? 'text' : 'password'} required value={password} onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••" style={{ ...inputStyle, paddingRight: 44 }} />
-                <button type="button" onClick={() => setShowPw(!showPw)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
-                  {showPw ? <EyeOff size={17}/> : <Eye size={17}/>}
+          {/* ── LOGIN ── */}
+          {mode === 'login' && (
+            <>
+              <h1 style={{ fontSize: 26, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>Bem-vindo de volta!</h1>
+              <p style={{ color: '#94a3b8', fontSize: 14, margin: '0 0 32px' }}>Entre para acessar seu dashboard</p>
+
+              <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div>
+                  <label style={labelStyle}>E-mail</label>
+                  <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="voce@email.com" style={inputStyle}/>
+                </div>
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
+                    <label style={labelStyle}>Senha</label>
+                    <button type="button" onClick={() => { setError(''); setMode('forgot'); }} style={{ background: 'none', border: 'none', color: '#22c55e', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0 }}>
+                      Esqueci minha senha
+                    </button>
+                  </div>
+                  <div style={{ position: 'relative' }}>
+                    <input type={showPw ? 'text' : 'password'} required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" style={{ ...inputStyle, paddingRight: 44 }}/>
+                    <button type="button" onClick={() => setShowPw(!showPw)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
+                      {showPw ? <EyeOff size={17}/> : <Eye size={17}/>}
+                    </button>
+                  </div>
+                </div>
+
+                {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 14px', color: '#dc2626', fontSize: 13 }}>{error}</div>}
+
+                <button type="submit" disabled={loading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px', borderRadius: 11, border: 'none', background: loading ? '#94a3b8' : 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 15, fontWeight: 600, cursor: loading ? 'wait' : 'pointer', boxShadow: loading ? 'none' : '0 4px 14px rgba(34,197,94,0.35)', transition: 'all 0.2s' }}>
+                  {loading ? 'Aguarde...' : 'Entrar'} {!loading && <ArrowRight size={16}/>}
                 </button>
-              </div>
-            </div>
+              </form>
 
-            {error && (
-              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 14px', color: '#dc2626', fontSize: 13 }}>{error}</div>
-            )}
+              <p style={{ textAlign: 'center', fontSize: 14, color: '#94a3b8', marginTop: 24 }}>
+                Não tem uma conta?{' '}
+                <a href="/assinar" style={{ color: '#22c55e', fontWeight: 600, textDecoration: 'none' }}>Cadastre-se</a>
+              </p>
+            </>
+          )}
 
-            <button type="submit" disabled={loading} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-              padding: '12px', borderRadius: 11, border: 'none',
-              background: loading ? '#94a3b8' : 'linear-gradient(135deg,#22c55e,#16a34a)',
-              color: '#fff', fontSize: 15, fontWeight: 600, cursor: loading ? 'wait' : 'pointer',
-              boxShadow: loading ? 'none' : '0 4px 14px rgba(34,197,94,0.35)',
-              transition: 'all 0.2s',
-            }}>
-              {loading ? 'Aguarde...' : mode === 'login' ? 'Entrar' : 'Criar conta'} {!loading && <ArrowRight size={16}/>}
-            </button>
-          </form>
-
-          <p style={{ textAlign: 'center', fontSize: 14, color: '#94a3b8', marginTop: 24 }}>
-            {mode === 'login' ? 'Não tem uma conta?' : 'Já tem uma conta?'}{' '}
-            {mode === 'login' ? (
-              <a href="/assinar" style={{ background: 'none', border: 'none', color: '#22c55e', fontWeight: 600, cursor: 'pointer', fontSize: 14, textDecoration: 'none' }}>
-                Cadastre-se
-              </a>
-            ) : (
-              <button onClick={() => { setMode('login'); setError(''); }} style={{ background: 'none', border: 'none', color: '#22c55e', fontWeight: 600, cursor: 'pointer', fontSize: 14 }}>
-                Fazer login
+          {/* ── ESQUECI SENHA ── */}
+          {mode === 'forgot' && (
+            <>
+              <button onClick={() => { setMode('login'); setError(''); }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#64748b', fontSize: 14, cursor: 'pointer', padding: 0, marginBottom: 28 }}>
+                <ArrowLeft size={15}/> Voltar ao login
               </button>
-            )}
-          </p>
+
+              <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>Recuperar senha</h1>
+              <p style={{ color: '#94a3b8', fontSize: 14, margin: '0 0 28px', lineHeight: 1.6 }}>
+                Informe seu e-mail e enviaremos um link para você criar uma nova senha.
+              </p>
+
+              <form onSubmit={handleForgot} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div>
+                  <label style={labelStyle}>E-mail</label>
+                  <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="voce@email.com" style={inputStyle}/>
+                </div>
+
+                {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 14px', color: '#dc2626', fontSize: 13 }}>{error}</div>}
+
+                <button type="submit" disabled={loading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '12px', borderRadius: 11, border: 'none', background: loading ? '#94a3b8' : 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 15, fontWeight: 600, cursor: loading ? 'wait' : 'pointer', boxShadow: loading ? 'none' : '0 4px 14px rgba(34,197,94,0.35)', transition: 'all 0.2s' }}>
+                  {loading ? 'Enviando...' : 'Enviar link de recuperação'} {!loading && <ArrowRight size={16}/>}
+                </button>
+              </form>
+            </>
+          )}
+
+          {/* ── E-MAIL ENVIADO ── */}
+          {mode === 'forgot-sent' && (
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#f0fdf4', border: '2px solid #22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                <CheckCircle size={32} color="#22c55e"/>
+              </div>
+              <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: '0 0 10px' }}>E-mail enviado!</h1>
+              <p style={{ color: '#64748b', fontSize: 14, lineHeight: 1.7, margin: '0 0 28px' }}>
+                Enviamos um link de recuperação para<br/>
+                <strong style={{ color: '#0f172a' }}>{email}</strong><br/>
+                Verifique sua caixa de entrada (e o spam).
+              </p>
+              <button onClick={() => { setMode('login'); setError(''); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, margin: '0 auto', background: 'none', border: 'none', color: '#22c55e', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+                <ArrowLeft size={15}/> Voltar ao login
+              </button>
+            </div>
+          )}
+
         </div>
       </div>
     </div>
   );
 }
+
+const labelStyle: React.CSSProperties = {
+  display: 'block', fontSize: 12, fontWeight: 600, color: '#64748b',
+  letterSpacing: '0.04em', textTransform: 'uppercase',
+};
 
 const inputStyle: React.CSSProperties = {
   display: 'block', width: '100%', padding: '11px 14px',
