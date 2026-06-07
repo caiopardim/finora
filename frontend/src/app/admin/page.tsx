@@ -391,6 +391,17 @@ export default function AdminPage() {
                               : user.role === 'admin'
                                 ? <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: '#eff6ff', color: '#3b82f6', fontWeight: 700 }}>🛡️ Admin</span>
                                 : <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: c.inputBg, color: c.textMuted, fontWeight: 600 }}>👤 Usuário</span>}
+                            {/* Plan badge */}
+                            {(() => {
+                              const now = new Date();
+                              const trialEnds = user.trial_ends_at ? new Date(user.trial_ends_at) : null;
+                              const inTrial = trialEnds ? now < trialEnds : false;
+                              const ps = user.plan_status;
+                              if (ps === 'active') return <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: '#f0fdf4', color: '#16a34a', fontWeight: 700 }}>✅ Ativo</span>;
+                              if (inTrial) return <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: '#fefce8', color: '#ca8a04', fontWeight: 700 }}>⏳ Trial</span>;
+                              if (ps === 'cancelled') return <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: '#fef2f2', color: '#dc2626', fontWeight: 700 }}>❌ Cancelado</span>;
+                              return <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: '#fef2f2', color: '#dc2626', fontWeight: 700 }}>🔓 Sem plano</span>;
+                            })()}
                           </div>
 
                           {/* Actions */}
@@ -461,6 +472,22 @@ export default function AdminPage() {
                               <button onClick={() => setConfirmDelete(user)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '8px 14px', borderRadius: 9, border: 'none', background: '#fef2f2', color: '#dc2626', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
                                 <Trash2 size={13}/>Excluir conta
                               </button>
+                              {/* Plan override */}
+                              <select
+                                value={user.plan_status || 'trial'}
+                                onChange={async e => {
+                                  const ps = e.target.value;
+                                  await adminFetch('/api/admin/users', { method: 'PATCH', body: JSON.stringify({ id: user.id, plan_status: ps }) });
+                                  setUsers(prev => prev.map(u => u.id === user.id ? { ...u, plan_status: ps } : u));
+                                  showToast(`Plano de ${user.email} alterado para "${ps}"`);
+                                }}
+                                style={{ padding: '8px 12px', borderRadius: 9, border: `1.5px solid ${c.border}`, background: c.surface, color: c.text, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
+                              >
+                                <option value="trial">⏳ Trial</option>
+                                <option value="active">✅ Ativo</option>
+                                <option value="paused">⏸ Pausado</option>
+                                <option value="cancelled">❌ Cancelado</option>
+                              </select>
                             </div>
                           </div>
                         )}

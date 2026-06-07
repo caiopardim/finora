@@ -25,7 +25,9 @@
       "WebFetch(domain:finora-nine-beta.vercel.app)",
       "Bash(npm install *)",
       "Bash(npx --prefix frontend tsc --noEmit)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(mkdir -p /Users/caiopardim/Desktop/Finora/frontend/src/app/api/admin/users/\\\\[id\\\\])",
+      "Bash(grep -v \"^$\")"
     ]
   }
 }

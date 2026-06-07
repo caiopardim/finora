@@ -6,9 +6,10 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import {
   LayoutDashboard, ArrowLeftRight, Tag, Target,
-  BarChart2, Settings, LogOut, ChevronRight, Bell, Receipt, AlertTriangle, Clock, Sun, Moon, CalendarDays, Wallet, LandmarkIcon, RefreshCw, Shield,
+  BarChart2, Settings, LogOut, ChevronRight, Bell, Receipt, AlertTriangle, Clock, Sun, Moon, CalendarDays, Wallet, LandmarkIcon, RefreshCw, Shield, CreditCard,
 } from 'lucide-react';
 import GlobalSearch from '@/components/ui/GlobalSearch';
+import PaywallGuard from '@/components/PaywallGuard';
 import { formatCurrency } from '@/lib/utils';
 import dayjs from 'dayjs';
 import { useTheme } from '@/lib/theme-context';
@@ -25,6 +26,7 @@ const NAV = [
   { href: '/dashboard/recurring',     label: 'Recorrentes',  icon: RefreshCw        },
   { href: '/dashboard/reports',      label: 'Relatórios',   icon: BarChart2        },
   { href: '/dashboard/settings',     label: 'Config.',      icon: Settings         },
+  { href: '/dashboard/plano',        label: 'Meu Plano',    icon: CreditCard       },
 ];
 
 const NAV_MOBILE = [
@@ -364,7 +366,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {broadcast.type === 'warning' ? '⚠️' : broadcast.type === 'error' ? '🚨' : 'ℹ️'} <span>{broadcast.message}</span>
           </div>
         )}
-        <main style={{ flex: 1, padding: '32px', overflowY: 'auto' }}>{children}</main>
+        <main style={{ flex: 1, padding: '32px', overflowY: 'auto' }}><PaywallGuard>{children}</PaywallGuard></main>
       </div>
     </div>
   );

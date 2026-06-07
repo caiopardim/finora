@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
   const userIds = authData.users.map(u => u.id);
 
   // Get profiles
-  const { data: profiles } = await admin.from('profiles').select('id,name,avatar_url,role,created_at,onboarded,blocked').in('id', userIds);
+  const { data: profiles } = await admin.from('profiles').select('id,name,avatar_url,role,created_at,onboarded,blocked,plan_status,plan_type,trial_ends_at,plan_expires_at').in('id', userIds);
 
   // Get transaction counts per user
   const { data: txCounts } = await admin
@@ -77,6 +77,10 @@ export async function GET(req: NextRequest) {
     blocked: profileMap[u.id]?.blocked || false,
     transactions: txMap[u.id] || 0,
     bills: billMap[u.id] || 0,
+    plan_status: profileMap[u.id]?.plan_status || 'trial',
+    plan_type: profileMap[u.id]?.plan_type || null,
+    trial_ends_at: profileMap[u.id]?.trial_ends_at || null,
+    plan_expires_at: profileMap[u.id]?.plan_expires_at || null,
   }));
 
   return NextResponse.json({ users });
@@ -104,14 +108,16 @@ export async function PATCH(req: NextRequest) {
   if (!caller) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await req.json();
-  const { id, role, name, blocked } = body;
+  const { id, role, name, blocked, plan_status, plan_type } = body;
   if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 });
 
   const admin = getAdmin();
   const updates: Record<string, any> = {};
-  if (role     !== undefined) updates.role    = role;
-  if (name     !== undefined) updates.name    = name;
-  if (blocked  !== undefined) updates.blocked = blocked;
+  if (role        !== undefined) updates.role        = role;
+  if (name        !== undefined) updates.name        = name;
+  if (blocked     !== undefined) updates.blocked     = blocked;
+  if (plan_status !== undefined) updates.plan_status = plan_status;
+  if (plan_type   !== undefined) updates.plan_type   = plan_type;
 
   if (Object.keys(updates).length > 0) {
     const { error } = await admin.from('profiles').update(updates).eq('id', id);
