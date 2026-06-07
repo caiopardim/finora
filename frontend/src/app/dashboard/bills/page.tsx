@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
 import { Plus, X, Check, Trash2, Pencil, AlertCircle, CreditCard } from 'lucide-react';
 import dayjs from 'dayjs';
+import { useTheme } from '@/lib/theme-context';
 const uuidv4 = () => crypto.randomUUID();
 
 type Bill = {
@@ -29,6 +30,7 @@ const emptyForm = {
 };
 
 export default function BillsPage() {
+  const { c } = useTheme();
   const [bills, setBills]       = useState<Bill[]>([]);
   const [cats, setCats]         = useState<any[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -41,7 +43,7 @@ export default function BillsPage() {
     setLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setLoading(false); return; }
-    const [{ data: b }, { data: c }] = await Promise.all([
+    const [{ data: b }, { data: c_ }] = await Promise.all([
       supabase.from('bills')
         .select('*, categories(name,icon,color)')
         .eq('user_id', session.user.id)
@@ -49,7 +51,7 @@ export default function BillsPage() {
       supabase.from('categories').select('id,name,icon,color').eq('user_id', session.user.id).eq('type', 'expense'),
     ]);
     setBills(b || []);
-    setCats(c || []);
+    setCats(c_ || []);
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
@@ -157,13 +159,19 @@ export default function BillsPage() {
     return 'ok';
   }
 
+  const inputStyle: React.CSSProperties = {
+    display: 'block', width: '100%', padding: '10px 14px',
+    borderRadius: 10, border: `1.5px solid ${c.border}`, fontSize: 14,
+    color: c.textSecondary, background: c.input, outline: 'none', boxSizing: 'border-box',
+  };
+
   return (
     <div style={{ maxWidth: 900, margin: '0 auto' }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', margin: '0 0 2px' }}>Contas a Pagar</h1>
-          <p style={{ color: '#94a3b8', fontSize: 14, margin: 0 }}>{bills.filter(b => !b.paid).length} pendentes</p>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: c.text, margin: '0 0 2px' }}>Contas a Pagar</h1>
+          <p style={{ color: c.textFaint, fontSize: 14, margin: 0 }}>{bills.filter(b => !b.paid).length} pendentes</p>
         </div>
         <button onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: 'linear-gradient(135deg,#22c55e,#16a34a)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}>
           <Plus size={16}/> Nova Conta
@@ -178,8 +186,8 @@ export default function BillsPage() {
           { label: 'Vencidas',  value: String(overdue.length),       color: overdue.length > 0 ? '#dc2626' : '#16a34a', accent: '#f97316', icon: '⚠️' },
           { label: 'Total mês', value: formatCurrency(totalPending + totalPaid), color: '#6366f1', accent: '#6366f1', icon: '📊' },
         ].map(s => (
-          <div key={s.label} style={{ background: '#fff', borderRadius: 14, border: '1px solid #e2e8f0', padding: '16px 18px', borderTop: `3px solid ${s.accent}` }}>
-            <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.icon} {s.label}</p>
+          <div key={s.label} style={{ background: c.surface, borderRadius: 14, border: `1px solid ${c.border}`, padding: '16px 18px', borderTop: `3px solid ${s.accent}` }}>
+            <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.icon} {s.label}</p>
             <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: s.color }}>{s.value}</p>
           </div>
         ))}
@@ -188,19 +196,19 @@ export default function BillsPage() {
       {/* Filters */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         {([['all','Todas'], ['pending','Pendentes'], ['paid','Pagas']] as const).map(([v, l]) => (
-          <button key={v} onClick={() => setFilter(v)} style={{ padding: '7px 18px', borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, background: filter === v ? '#0f172a' : '#f1f5f9', color: filter === v ? '#fff' : '#64748b' }}>{l}</button>
+          <button key={v} onClick={() => setFilter(v)} style={{ padding: '7px 18px', borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 500, background: filter === v ? c.text : c.inputBg, color: filter === v ? c.surface : c.textMuted }}>{l}</button>
         ))}
       </div>
 
       {/* List */}
-      <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
+      <div style={{ background: c.surface, borderRadius: 16, border: `1px solid ${c.border}`, overflow: 'hidden' }}>
         {loading ? (
-          <p style={{ textAlign: 'center', padding: 48, color: '#94a3b8' }}>Carregando...</p>
+          <p style={{ textAlign: 'center', padding: 48, color: c.textFaint }}>Carregando...</p>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 0' }}>
             <p style={{ fontSize: 36, marginBottom: 8 }}>🎉</p>
-            <p style={{ fontWeight: 600, color: '#475569', margin: '0 0 4px' }}>Nenhuma conta aqui</p>
-            <p style={{ color: '#94a3b8', fontSize: 13, margin: 0 }}>
+            <p style={{ fontWeight: 600, color: c.textSecondary, margin: '0 0 4px' }}>Nenhuma conta aqui</p>
+            <p style={{ color: c.textFaint, fontSize: 13, margin: 0 }}>
               {filter === 'pending' ? 'Sem contas pendentes!' : filter === 'paid' ? 'Nenhuma paga ainda.' : 'Nenhuma conta cadastrada.'}
             </p>
           </div>
@@ -212,24 +220,24 @@ export default function BillsPage() {
           const isInstallment = bill.installments > 1;
 
           return (
-            <div key={bill.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px', borderBottom: i < filtered.length - 1 ? '1px solid #f8fafc' : 'none', opacity: bill.paid ? 0.65 : 1 }}>
+            <div key={bill.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 20px', borderBottom: i < filtered.length - 1 ? `1px solid ${c.bg}` : 'none', opacity: bill.paid ? 0.65 : 1 }}>
               {/* Check */}
-              <button onClick={() => togglePaid(bill)} style={{ width: 34, height: 34, borderRadius: 9, border: `2px solid ${bill.paid ? '#22c55e' : '#e2e8f0'}`, background: bill.paid ? '#22c55e' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+              <button onClick={() => togglePaid(bill)} style={{ width: 34, height: 34, borderRadius: 9, border: `2px solid ${bill.paid ? '#22c55e' : c.border}`, background: bill.paid ? '#22c55e' : c.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
                 {bill.paid && <Check size={15} color="#fff"/>}
               </button>
 
               {/* Icon */}
-              <div style={{ width: 36, height: 36, borderRadius: 9, background: isInstallment ? '#eff6ff' : cat ? (cat.color+'18') : '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 9, background: isInstallment ? '#eff6ff' : cat ? (cat.color+'18') : c.inputBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>
                 {isInstallment ? <CreditCard size={16} color="#3b82f6"/> : (cat?.icon || '📋')}
               </div>
 
               {/* Info */}
               <div style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ margin: '0 0 3px', fontWeight: 600, fontSize: 14, color: bill.paid ? '#94a3b8' : '#1e293b', textDecoration: bill.paid ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <p style={{ margin: '0 0 3px', fontWeight: 600, fontSize: 14, color: bill.paid ? c.textFaint : c.textSecondary, textDecoration: bill.paid ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {bill.description}
                 </p>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 12, color: '#94a3b8' }}>{dueDate.format('DD/MM/YYYY')}</span>
+                  <span style={{ fontSize: 12, color: c.textFaint }}>{dueDate.format('DD/MM/YYYY')}</span>
                   {!bill.paid && st === 'overdue' && (
                     <span style={{ fontSize: 11, fontWeight: 600, padding: '1px 7px', borderRadius: 99, background: '#fef2f2', color: '#dc2626' }}>Vencida</span>
                   )}
@@ -242,7 +250,7 @@ export default function BillsPage() {
               </div>
 
               {/* Amount */}
-              <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: bill.paid ? '#94a3b8' : '#dc2626', flexShrink: 0 }}>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: bill.paid ? c.textFaint : '#dc2626', flexShrink: 0 }}>
                 {formatCurrency(Number(bill.amount))}
               </p>
 
@@ -262,18 +270,18 @@ export default function BillsPage() {
 
       {/* Modal */}
       {showForm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 16 }}>
-          <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.2)', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid #f1f5f9' }}>
-              <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#0f172a' }}>{editing ? 'Editar Conta' : 'Nova Conta'}</h2>
-              <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><X size={20}/></button>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 16 }}>
+          <div style={{ background: c.surface, borderRadius: 20, width: '100%', maxWidth: 440, boxShadow: c.shadowMd, maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: `1px solid ${c.borderLight}` }}>
+              <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: c.text }}>{editing ? 'Editar Conta' : 'Nova Conta'}</h2>
+              <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.textFaint }}><X size={20}/></button>
             </div>
             <form onSubmit={handleSubmit} style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
 
               {/* Tipo */}
               {!editing && (
                 <div>
-                  <Label>Tipo de conta</Label>
+                  <Label c={c}>Tipo de conta</Label>
                   <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                     {[
                       { v: 'normal',      l: 'Normal',      icon: '📋' },
@@ -281,7 +289,7 @@ export default function BillsPage() {
                       { v: 'installment', l: 'Parcelado',   icon: '💳' },
                     ].map(({ v, l, icon }) => (
                       <button key={v} type="button" onClick={() => setForm({ ...form, tipo: v as any })}
-                        style={{ flex: 1, padding: '10px 6px', borderRadius: 10, border: form.tipo === v ? '2px solid #6366f1' : '1.5px solid #e2e8f0', background: form.tipo === v ? '#eff6ff' : '#f8fafc', cursor: 'pointer', fontSize: 12, fontWeight: form.tipo === v ? 700 : 400, color: form.tipo === v ? '#4f46e5' : '#64748b', textAlign: 'center' }}>
+                        style={{ flex: 1, padding: '10px 6px', borderRadius: 10, border: form.tipo === v ? '2px solid #6366f1' : `1.5px solid ${c.border}`, background: form.tipo === v ? '#eff6ff' : c.bg, cursor: 'pointer', fontSize: 12, fontWeight: form.tipo === v ? 700 : 400, color: form.tipo === v ? '#4f46e5' : c.textMuted, textAlign: 'center' }}>
                         <div style={{ fontSize: 18, marginBottom: 3 }}>{icon}</div>
                         {l}
                       </button>
@@ -291,18 +299,18 @@ export default function BillsPage() {
               )}
 
               <div>
-                <Label>Descrição</Label>
+                <Label c={c}>Descrição</Label>
                 <input required value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} style={inputStyle} placeholder={form.tipo === 'installment' ? 'Ex: iPhone 16 Pro' : 'Ex: Aluguel, Energia...'}/>
               </div>
 
               <div>
-                <Label>{form.tipo === 'installment' ? 'Valor por parcela (R$)' : 'Valor (R$)'}</Label>
+                <Label c={c}>{form.tipo === 'installment' ? 'Valor por parcela (R$)' : 'Valor (R$)'}</Label>
                 <input required type="number" step="0.01" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} style={inputStyle} placeholder="0,00"/>
               </div>
 
               {form.tipo === 'installment' && (
                 <div>
-                  <Label>Número de parcelas</Label>
+                  <Label c={c}>Número de parcelas</Label>
                   <input required type="number" min="2" max="60" value={form.installments} onChange={e => setForm({ ...form, installments: e.target.value })} style={inputStyle} placeholder="Ex: 12"/>
                   {form.amount && form.installments && (
                     <p style={{ margin: '6px 0 0', fontSize: 12, color: '#6366f1', fontWeight: 500 }}>
@@ -313,22 +321,22 @@ export default function BillsPage() {
               )}
 
               <div>
-                <Label>{form.tipo === 'installment' ? 'Vencimento da 1ª parcela' : 'Vencimento'}</Label>
+                <Label c={c}>{form.tipo === 'installment' ? 'Vencimento da 1ª parcela' : 'Vencimento'}</Label>
                 <input required type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })} style={inputStyle}/>
               </div>
 
               {cats.length > 0 && (
                 <div>
-                  <Label>Categoria (opcional)</Label>
+                  <Label c={c}>Categoria (opcional)</Label>
                   <select value={form.category_id} onChange={e => setForm({ ...form, category_id: e.target.value })} style={inputStyle}>
                     <option value="">Sem categoria</option>
-                    {cats.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                    {cats.map(ct => <option key={ct.id} value={ct.id}>{ct.icon} {ct.name}</option>)}
                   </select>
                 </div>
               )}
 
               <div style={{ display: 'flex', gap: 10 }}>
-                <button type="button" onClick={() => setShowForm(false)} style={{ flex: 1, padding: '11px', borderRadius: 10, border: '1.5px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>Cancelar</button>
+                <button type="button" onClick={() => setShowForm(false)} style={{ flex: 1, padding: '11px', borderRadius: 10, border: `1.5px solid ${c.border}`, background: c.surface, color: c.textSecondary, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>Cancelar</button>
                 <button type="submit" style={{ flex: 1, padding: '11px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>
                   {form.tipo === 'installment' ? `Criar ${form.installments}x parcelas` : 'Salvar'}
                 </button>
@@ -341,12 +349,8 @@ export default function BillsPage() {
   );
 }
 
-function Label({ children }: any) {
-  return <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>{children}</label>;
+function Label({ children, c }: any) {
+  const { c: themeC } = useTheme();
+  const colors = c || themeC;
+  return <label style={{ fontSize: 12, fontWeight: 600, color: colors.textMuted, letterSpacing: '0.04em', textTransform: 'uppercase', display: 'block', marginBottom: 4 }}>{children}</label>;
 }
-
-const inputStyle: React.CSSProperties = {
-  display: 'block', width: '100%', padding: '10px 14px',
-  borderRadius: 10, border: '1.5px solid #e2e8f0', fontSize: 14,
-  color: '#1e293b', background: '#fff', outline: 'none', boxSizing: 'border-box',
-};

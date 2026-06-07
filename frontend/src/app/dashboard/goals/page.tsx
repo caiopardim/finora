@@ -4,11 +4,13 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
 import { Plus, X, TrendingUp, Trash2, Pencil } from 'lucide-react';
+import { useTheme } from '@/lib/theme-context';
 
 const GOAL_ICONS   = ['🎯','🏠','🚗','✈️','📱','💻','💍','📚','🎓','🌴','💰','🏋️','🐾','🎵','🎮'];
 const GOAL_COLORS  = ['#6366f1','#f97316','#10b981','#3b82f6','#ec4899','#eab308','#8b5cf6','#06b6d4'];
 
 export default function GoalsPage() {
+  const { c, isDark } = useTheme();
   const [goals, setGoals]     = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate]   = useState(false);
@@ -85,12 +87,14 @@ export default function GoalsPage() {
   const totalSaved = goals.reduce((s, g) => s + Number(g.current_amount), 0);
   const doneCount  = goals.filter(g => Number(g.current_amount) >= Number(g.target_amount)).length;
 
+  const inputStyle: React.CSSProperties = { display: 'block', width: '100%', padding: '10px 14px', marginTop: 6, borderRadius: 10, border: `1.5px solid ${c.border}`, fontSize: 14, color: c.textSecondary, background: c.input, outline: 'none', boxSizing: 'border-box' };
+
   return (
     <div style={{ maxWidth: 960, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', margin: '0 0 2px' }}>Metas</h1>
-          <p style={{ color: '#94a3b8', fontSize: 14, margin: 0 }}>Seus objetivos financeiros</p>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: c.text, margin: '0 0 2px' }}>Metas</h1>
+          <p style={{ color: c.textFaint, fontSize: 14, margin: 0 }}>Seus objetivos financeiros</p>
         </div>
         <button onClick={() => setShowCreate(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: 'linear-gradient(135deg,#22c55e,#16a34a)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}>
           <Plus size={16}/> Nova Meta
@@ -98,12 +102,12 @@ export default function GoalsPage() {
       </div>
 
       {loading ? (
-        <p style={{ textAlign: 'center', color: '#94a3b8', padding: 48 }}>Carregando...</p>
+        <p style={{ textAlign: 'center', color: c.textFaint, padding: 48 }}>Carregando...</p>
       ) : goals.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '60px 0', background: '#fff', borderRadius: 16, border: '2px dashed #e2e8f0' }}>
+        <div style={{ textAlign: 'center', padding: '60px 0', background: c.surface, borderRadius: 16, border: `2px dashed ${c.border}` }}>
           <p style={{ fontSize: 40, marginBottom: 12 }}>🎯</p>
-          <p style={{ fontWeight: 600, color: '#475569', margin: '0 0 4px' }}>Nenhuma meta ainda</p>
-          <p style={{ color: '#94a3b8', fontSize: 14, margin: 0 }}>Crie sua primeira meta de economia</p>
+          <p style={{ fontWeight: 600, color: c.textSecondary, margin: '0 0 4px' }}>Nenhuma meta ainda</p>
+          <p style={{ color: c.textFaint, fontSize: 14, margin: 0 }}>Crie sua primeira meta de economia</p>
         </div>
       ) : (
         <>
@@ -113,7 +117,7 @@ export default function GoalsPage() {
               const done = pct >= 100;
               const color = goal.color || '#6366f1';
               return (
-                <div key={goal.id} style={{ background: '#fff', borderRadius: 16, border: done ? `2px solid ${color}40` : '1px solid #e2e8f0', padding: 22, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div key={goal.id} style={{ background: c.surface, borderRadius: 16, border: done ? `2px solid ${color}40` : `1px solid ${c.border}`, padding: 22, display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                     <div style={{ width: 48, height: 48, borderRadius: 14, background: color+'18', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>{goal.icon}</div>
                     <div style={{ display: 'flex', gap: 6 }}>
@@ -129,22 +133,22 @@ export default function GoalsPage() {
                     </div>
                   </div>
                   <div>
-                    <p style={{ fontWeight: 700, fontSize: 16, color: '#1e293b', margin: '0 0 2px' }}>{goal.name}</p>
-                    {goal.deadline && <p style={{ color: '#94a3b8', fontSize: 12, margin: 0 }}>Prazo: {new Date(goal.deadline+'T12:00').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })}</p>}
+                    <p style={{ fontWeight: 700, fontSize: 16, color: c.textSecondary, margin: '0 0 2px' }}>{goal.name}</p>
+                    {goal.deadline && <p style={{ color: c.textFaint, fontSize: 12, margin: 0 }}>Prazo: {new Date(goal.deadline+'T12:00').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' })}</p>}
                   </div>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                      <span style={{ fontSize: 13, color: '#64748b' }}>{formatCurrency(Number(goal.current_amount))}</span>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: '#1e293b' }}>{formatCurrency(Number(goal.target_amount))}</span>
+                      <span style={{ fontSize: 13, color: c.textMuted }}>{formatCurrency(Number(goal.current_amount))}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: c.textSecondary }}>{formatCurrency(Number(goal.target_amount))}</span>
                     </div>
-                    <div style={{ background: '#f1f5f9', borderRadius: 99, height: 8, overflow: 'hidden' }}>
+                    <div style={{ background: c.inputBg, borderRadius: 99, height: 8, overflow: 'hidden' }}>
                       <div style={{ height: '100%', borderRadius: 99, width: `${pct}%`, background: done ? `linear-gradient(90deg,${color},${color}cc)` : `linear-gradient(90deg,${color}88,${color})`, transition: 'width 0.6s' }}/>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
                       <span style={{ fontSize: 12, fontWeight: 700, color }}>{pct.toFixed(0)}%</span>
                       {done
                         ? <span style={{ fontSize: 12, color, fontWeight: 600 }}>Meta atingida! 🎉</span>
-                        : <span style={{ fontSize: 12, color: '#94a3b8' }}>Faltam {formatCurrency(Number(goal.target_amount) - Number(goal.current_amount))}</span>}
+                        : <span style={{ fontSize: 12, color: c.textFaint }}>Faltam {formatCurrency(Number(goal.target_amount) - Number(goal.current_amount))}</span>}
                     </div>
                   </div>
                 </div>
@@ -152,7 +156,7 @@ export default function GoalsPage() {
             })}
           </div>
 
-          <div style={{ background: 'linear-gradient(135deg,#0f172a,#1e293b)', borderRadius: 16, padding: '20px 24px', display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ background: isDark ? 'linear-gradient(135deg,#1e293b,#0f172a)' : 'linear-gradient(135deg,#0f172a,#1e293b)', borderRadius: 16, padding: '20px 24px', display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 4px' }}>Total guardado nas metas</p>
               <p style={{ color: '#fff', fontSize: 22, fontWeight: 700, margin: 0 }}>{formatCurrency(totalSaved)}</p>
@@ -183,8 +187,8 @@ export default function GoalsPage() {
             <div>
               <Label>Cor</Label>
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                {GOAL_COLORS.map(c => (
-                  <button key={c} type="button" onClick={() => setForm({ ...form, color: c })} style={{ width: 28, height: 28, borderRadius: '50%', background: c, border: form.color===c?'3px solid #0f172a':'3px solid transparent', cursor: 'pointer' }}/>
+                {GOAL_COLORS.map(gc => (
+                  <button key={gc} type="button" onClick={() => setForm({ ...form, color: gc })} style={{ width: 28, height: 28, borderRadius: '50%', background: gc, border: form.color===gc?`3px solid ${c.text}`:'3px solid transparent', cursor: 'pointer' }}/>
                 ))}
               </div>
             </div>
@@ -219,8 +223,8 @@ export default function GoalsPage() {
             <div>
               <Label>Cor</Label>
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                {GOAL_COLORS.map(c => (
-                  <button key={c} type="button" onClick={() => setEditForm({ ...editForm, color: c })} style={{ width: 28, height: 28, borderRadius: '50%', background: c, border: editForm.color===c?'3px solid #0f172a':'3px solid transparent', cursor: 'pointer' }}/>
+                {GOAL_COLORS.map(gc => (
+                  <button key={gc} type="button" onClick={() => setEditForm({ ...editForm, color: gc })} style={{ width: 28, height: 28, borderRadius: '50%', background: gc, border: editForm.color===gc?`3px solid ${c.text}`:'3px solid transparent', cursor: 'pointer' }}/>
                 ))}
               </div>
             </div>
@@ -236,12 +240,13 @@ export default function GoalsPage() {
 }
 
 function Modal({ title, onClose, children }: any) {
+  const { c } = useTheme();
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 16 }}>
-      <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid #f1f5f9' }}>
-          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: '#0f172a' }}>{title}</h2>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><X size={20}/></button>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: 16 }}>
+      <div style={{ background: c.surface, borderRadius: 20, width: '100%', maxWidth: 440, boxShadow: c.shadowMd }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: `1px solid ${c.borderLight}` }}>
+          <h2 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: c.text }}>{title}</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.textFaint }}><X size={20}/></button>
         </div>
         <div style={{ padding: 24 }}>{children}</div>
       </div>
@@ -250,16 +255,16 @@ function Modal({ title, onClose, children }: any) {
 }
 
 function Label({ children }: any) {
-  return <label style={{ fontSize: 12, fontWeight: 600, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase' }}>{children}</label>;
+  const { c } = useTheme();
+  return <label style={{ fontSize: 12, fontWeight: 600, color: c.textMuted, letterSpacing: '0.04em', textTransform: 'uppercase' }}>{children}</label>;
 }
 
 function Buttons({ onCancel, label }: any) {
+  const { c } = useTheme();
   return (
     <div style={{ display: 'flex', gap: 10 }}>
-      <button type="button" onClick={onCancel} style={{ flex: 1, padding: '11px', borderRadius: 10, border: '1.5px solid #e2e8f0', background: '#fff', color: '#475569', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>Cancelar</button>
+      <button type="button" onClick={onCancel} style={{ flex: 1, padding: '11px', borderRadius: 10, border: `1.5px solid ${c.border}`, background: c.surface, color: c.textSecondary, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>Cancelar</button>
       <button type="submit" style={{ flex: 1, padding: '11px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}>{label}</button>
     </div>
   );
 }
-
-const inputStyle: React.CSSProperties = { display: 'block', width: '100%', padding: '10px 14px', marginTop: 6, borderRadius: 10, border: '1.5px solid #e2e8f0', fontSize: 14, color: '#1e293b', background: '#fff', outline: 'none', boxSizing: 'border-box' };

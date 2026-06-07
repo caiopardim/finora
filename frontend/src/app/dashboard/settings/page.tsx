@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Check, User, Shield, MessageSquare, Camera, Loader } from 'lucide-react';
+import { useTheme } from '@/lib/theme-context';
 
 export default function SettingsPage() {
+  const { c } = useTheme();
   const [profile, setProfile] = useState({ name: '', phone: '' });
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -74,11 +76,18 @@ export default function SettingsPage() {
   const displayName = profile.name || user?.email?.split('@')[0] || 'Usuário';
   const initial = displayName[0]?.toUpperCase() || 'U';
 
+  const inputStyle: React.CSSProperties = {
+    display: 'block', width: '100%', padding: '10px 14px',
+    borderRadius: 10, border: `1.5px solid ${c.border}`,
+    fontSize: 14, color: c.textSecondary, background: c.input,
+    outline: 'none', boxSizing: 'border-box',
+  };
+
   return (
     <div style={{ maxWidth: 640, margin: '0 auto' }}>
       <div style={{ marginBottom: 28 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', margin: '0 0 2px' }}>Configurações</h1>
-        <p style={{ color: '#94a3b8', fontSize: 14, margin: 0 }}>Gerencie sua conta e preferências</p>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: c.text, margin: '0 0 2px' }}>Configurações</h1>
+        <p style={{ color: c.textFaint, fontSize: 14, margin: 0 }}>Gerencie sua conta e preferências</p>
       </div>
 
       {/* Avatar */}
@@ -90,14 +99,14 @@ export default function SettingsPage() {
               <img
                 src={avatarUrl}
                 alt="Foto de perfil"
-                style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: '3px solid #e2e8f0' }}
+                style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover', border: `3px solid ${c.border}` }}
               />
             ) : (
               <div style={{
                 width: 80, height: 80, borderRadius: '50%',
                 background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#fff', fontSize: 28, fontWeight: 700, border: '3px solid #e2e8f0',
+                color: '#fff', fontSize: 28, fontWeight: 700, border: `3px solid ${c.border}`,
               }}>{initial}</div>
             )}
             {/* Camera overlay */}
@@ -123,21 +132,21 @@ export default function SettingsPage() {
 
           {/* Info */}
           <div>
-            <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 15, color: '#1e293b' }}>{displayName}</p>
-            <p style={{ margin: '0 0 12px', fontSize: 13, color: '#94a3b8' }}>{user?.email}</p>
+            <p style={{ margin: '0 0 4px', fontWeight: 600, fontSize: 15, color: c.textSecondary }}>{displayName}</p>
+            <p style={{ margin: '0 0 12px', fontSize: 13, color: c.textFaint }}>{user?.email}</p>
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
               style={{
                 padding: '7px 14px', borderRadius: 8,
-                border: '1.5px solid #e2e8f0', background: '#fff',
-                color: '#475569', fontSize: 13, fontWeight: 500,
+                border: `1.5px solid ${c.border}`, background: c.surface,
+                color: c.textSecondary, fontSize: 13, fontWeight: 500,
                 cursor: uploading ? 'wait' : 'pointer',
               }}
             >
               {uploading ? 'Enviando...' : 'Alterar foto'}
             </button>
-            <p style={{ margin: '6px 0 0', fontSize: 12, color: '#94a3b8' }}>JPG, PNG ou GIF · máx. 2MB</p>
+            <p style={{ margin: '6px 0 0', fontSize: 12, color: c.textFaint }}>JPG, PNG ou GIF · máx. 2MB</p>
           </div>
 
           <input
@@ -170,8 +179,8 @@ export default function SettingsPage() {
           ))}
           <div>
             <Label>E-mail</Label>
-            <input value={user?.email || ''} disabled style={{ ...inputStyle, background: '#f8fafc', color: '#94a3b8', cursor: 'not-allowed' }}/>
-            <p style={{ margin: '4px 0 0', fontSize: 12, color: '#94a3b8' }}>O e-mail não pode ser alterado por aqui.</p>
+            <input value={user?.email || ''} disabled style={{ ...inputStyle, background: c.inputBg, color: c.textFaint, cursor: 'not-allowed' }}/>
+            <p style={{ margin: '4px 0 0', fontSize: 12, color: c.textFaint }}>O e-mail não pode ser alterado por aqui.</p>
           </div>
           <button type="submit" style={{
             alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 8,
@@ -187,10 +196,10 @@ export default function SettingsPage() {
 
       {/* Security */}
       <Section icon={<Shield size={17}/>} title="Segurança">
-        <p style={{ margin: '0 0 12px', fontSize: 14, color: '#64748b' }}>Redefina sua senha enviando um link para o e-mail cadastrado.</p>
+        <p style={{ margin: '0 0 12px', fontSize: 14, color: c.textMuted }}>Redefina sua senha enviando um link para o e-mail cadastrado.</p>
         <button onClick={handlePasswordReset} style={{
-          padding: '9px 18px', borderRadius: 9, border: '1.5px solid #e2e8f0',
-          background: '#fff', color: '#475569', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+          padding: '9px 18px', borderRadius: 9, border: `1.5px solid ${c.border}`,
+          background: c.surface, color: c.textSecondary, fontSize: 13, fontWeight: 500, cursor: 'pointer',
         }}>
           Enviar link de redefinição
         </button>
@@ -211,10 +220,10 @@ export default function SettingsPage() {
             </div>
           ))}
         </div>
-        <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 600, color: '#94a3b8', letterSpacing: '0.05em', textTransform: 'uppercase' }}>Exemplos de mensagens</p>
+        <p style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 600, color: c.textFaint, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Exemplos de mensagens</p>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
           {['"Gastei 45 no mercado"','"Recebi 3500 de salário"','"Quanto gastei este mês?"','"Resumo do dia"'].map(ex => (
-            <span key={ex} style={{ padding: '4px 10px', background: '#f1f5f9', borderRadius: 6, fontSize: 13, color: '#1e293b', fontFamily: 'monospace' }}>{ex}</span>
+            <span key={ex} style={{ padding: '4px 10px', background: c.inputBg, borderRadius: 6, fontSize: 13, color: c.textSecondary, fontFamily: 'monospace' }}>{ex}</span>
           ))}
         </div>
       </Section>
@@ -225,11 +234,12 @@ export default function SettingsPage() {
 }
 
 function Section({ icon, title, children }: any) {
+  const { c } = useTheme();
   return (
-    <div style={{ background: '#fff', borderRadius: 16, border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', overflow: 'hidden', marginBottom: 20 }}>
-      <div style={{ padding: '16px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ color: '#64748b' }}>{icon}</div>
-        <h2 style={{ margin: 0, fontWeight: 600, fontSize: 15, color: '#1e293b' }}>{title}</h2>
+    <div style={{ background: c.surface, borderRadius: 16, border: `1px solid ${c.border}`, boxShadow: c.shadow, overflow: 'hidden', marginBottom: 20 }}>
+      <div style={{ padding: '16px 24px', borderBottom: `1px solid ${c.borderLight}`, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ color: c.textMuted }}>{icon}</div>
+        <h2 style={{ margin: 0, fontWeight: 600, fontSize: 15, color: c.textSecondary }}>{title}</h2>
       </div>
       <div style={{ padding: '20px 24px' }}>{children}</div>
     </div>
@@ -237,12 +247,6 @@ function Section({ icon, title, children }: any) {
 }
 
 function Label({ children }: any) {
-  return <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#64748b', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 6 }}>{children}</label>;
+  const { c } = useTheme();
+  return <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: c.textMuted, letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 6 }}>{children}</label>;
 }
-
-const inputStyle: React.CSSProperties = {
-  display: 'block', width: '100%', padding: '10px 14px',
-  borderRadius: 10, border: '1.5px solid #e2e8f0',
-  fontSize: 14, color: '#1e293b', background: '#fff',
-  outline: 'none', boxSizing: 'border-box',
-};
