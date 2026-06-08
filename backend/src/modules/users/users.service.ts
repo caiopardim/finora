@@ -7,11 +7,19 @@ export class UsersService {
   constructor(@Inject(SUPABASE_CLIENT) private supabase: SupabaseClient) {}
 
   async findOrCreateByPhone(phone: string) {
-    // 1. Try to find existing profile by phone
+    // Normalize: try both with and without Brazil country code (55)
+    const phoneVariants = [phone];
+    if (phone.startsWith('55') && phone.length > 11) {
+      phoneVariants.push(phone.slice(2)); // strip 55 prefix
+    } else if (!phone.startsWith('55')) {
+      phoneVariants.push('55' + phone); // add 55 prefix
+    }
+
+    // 1. Try to find existing profile by phone (any variant)
     const { data: existing } = await this.supabase
       .from('profiles')
       .select('*')
-      .eq('phone', phone)
+      .in('phone', phoneVariants)
       .single();
 
     if (existing) return existing;
