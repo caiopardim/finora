@@ -139,44 +139,19 @@ export default function TransactionsPage() {
       {confirmDeleteId && confirmDeleteTx && (
         confirmDeleteTx.recurring_template_id ? (
           /* Modal para transações recorrentes */
-          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, padding: 16 }}>
-            <div style={{ background: c.surface, borderRadius: 20, width: '100%', maxWidth: 400, padding: 28, border: `1px solid ${c.border}` }}>
-              <p style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: c.text }}>Excluir transação?</p>
-              <p style={{ margin: '0 0 24px', fontSize: 14, color: c.textMuted, lineHeight: 1.5 }}>
-                Ela será removida este mês e voltará normalmente no próximo mês na data certa.
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <button onClick={async () => {
-                  const { data: { session } } = await supabase.auth.getSession();
-                  if (!session) return;
-                  await supabase.from('transactions').delete().eq('id', confirmDeleteId).eq('user_id', session.user.id);
-                  const month = new Date().toISOString().slice(0, 7);
-                  const { error: skipErr } = await supabase.from('recurring_skips').upsert(
-                    { user_id: session.user.id, template_id: confirmDeleteTx.recurring_template_id, month },
-                    { onConflict: 'template_id,month' }
-                  );
-                  if (skipErr) { alert('Erro ao salvar skip: ' + skipErr.message); return; }
-                  setConfirmDeleteId(null); setConfirmDeleteTx(null); load();
-                }} style={{ padding: '13px', borderRadius: 12, border: 'none', background: '#ef4444', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-                  Excluir este mês
-                </button>
-                <button onClick={async () => {
-                  const { data: { session } } = await supabase.auth.getSession();
-                  if (!session) return;
-                  await supabase.from('transactions').delete().eq('id', confirmDeleteId).eq('user_id', session.user.id);
-                  const month = new Date().toISOString().slice(0, 7);
-                  await supabase.from('recurring_skips').upsert({ user_id: session.user.id, template_id: confirmDeleteTx.recurring_template_id, month }, { onConflict: 'template_id,month' });
-                  await supabase.from('recurring_templates').update({ active: false }).eq('id', confirmDeleteTx.recurring_template_id).eq('user_id', session.user.id);
-                  setConfirmDeleteId(null); setConfirmDeleteTx(null); load();
-                }} style={{ padding: '13px', borderRadius: 12, border: `1.5px solid ${c.border}`, background: 'transparent', color: c.textMuted, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-                  Excluir e cancelar recorrência
-                </button>
-                <button onClick={() => { setConfirmDeleteId(null); setConfirmDeleteTx(null); }} style={{ padding: '11px', borderRadius: 12, border: 'none', background: 'transparent', color: c.textFaint, fontSize: 13, cursor: 'pointer' }}>
-                  Cancelar
-                </button>
-              </div>
-            </div>
-          </div>
+          <ConfirmModal
+            title="Excluir transação recorrente?"
+            message="A transação será removida e a recorrência cancelada. Ela não será mais gerada automaticamente."
+            confirmLabel="Excluir e cancelar"
+            onConfirm={async () => {
+              const { data: { session } } = await supabase.auth.getSession();
+              if (!session) return;
+              await supabase.from('transactions').delete().eq('id', confirmDeleteId).eq('user_id', session.user.id);
+              await supabase.from('recurring_templates').update({ active: false }).eq('id', confirmDeleteTx.recurring_template_id).eq('user_id', session.user.id);
+              setConfirmDeleteId(null); setConfirmDeleteTx(null); load();
+            }}
+            onCancel={() => { setConfirmDeleteId(null); setConfirmDeleteTx(null); }}
+          />
         ) : (
           <ConfirmModal
             title="Excluir transação?"
