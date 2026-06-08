@@ -255,16 +255,18 @@ export default function AdminPage() {
       </div>
 
       {/* Tabs */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 28, background: c.inputBg, borderRadius: 12, padding: 4, width: 'fit-content' }}>
-        {TABS.map(t => {
-          const Icon = t.icon;
-          const active = tab === t.id;
-          return (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px', borderRadius: 9, border: 'none', background: active ? c.surface : 'transparent', color: active ? c.text : c.textFaint, fontSize: 13, fontWeight: active ? 600 : 400, cursor: 'pointer', boxShadow: active ? c.shadow : 'none', transition: 'all 0.15s' }}>
-              <Icon size={15}/>{t.label}
-            </button>
-          );
-        })}
+      <div style={{ overflowX: 'auto', marginBottom: 28, WebkitOverflowScrolling: 'touch' as any }}>
+        <div style={{ display: 'flex', gap: 4, background: c.inputBg, borderRadius: 12, padding: 4, width: 'max-content', minWidth: '100%' }}>
+          {TABS.map(t => {
+            const Icon = t.icon;
+            const active = tab === t.id;
+            return (
+              <button key={t.id} onClick={() => setTab(t.id)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: 9, border: 'none', background: active ? c.surface : 'transparent', color: active ? c.text : c.textFaint, fontSize: 13, fontWeight: active ? 600 : 400, cursor: 'pointer', boxShadow: active ? c.shadow : 'none', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
+                <Icon size={15}/>{t.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {apiError ? (
@@ -523,14 +525,14 @@ export default function AdminPage() {
                 {payingUsers.length === 0 ? (
                   <p style={{ textAlign: 'center', padding: 40, color: c.textFaint }}>Nenhum cliente pagante ainda</p>
                 ) : (
-                  <div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 120px 140px 110px', padding: '10px 20px', background: c.inputBg, borderBottom: `1px solid ${c.border}` }}>
+                  <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px 120px 140px 110px', padding: '10px 20px', background: c.inputBg, borderBottom: `1px solid ${c.border}`, minWidth: 620 }}>
                       {['Cliente', 'Plano', 'Valor/mês', 'Expira em', 'Ações'].map(h => (
                         <span key={h} style={{ fontSize: 11, fontWeight: 700, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</span>
                       ))}
                     </div>
                     {payingUsers.map((u, i) => (
-                      <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '1fr 120px 120px 140px 110px', padding: '13px 20px', borderBottom: i < payingUsers.length - 1 ? `1px solid ${c.borderLight}` : 'none', alignItems: 'center' }}>
+                      <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '1fr 120px 120px 140px 110px', padding: '13px 20px', borderBottom: i < payingUsers.length - 1 ? `1px solid ${c.borderLight}` : 'none', alignItems: 'center', minWidth: 620 }}>
                         <div>
                           <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: c.text }}>{u.name || u.email}</p>
                           {u.name && <p style={{ margin: 0, fontSize: 11, color: c.textFaint }}>{u.email}</p>}
@@ -562,14 +564,14 @@ export default function AdminPage() {
                 {expiredUsers.length === 0 ? (
                   <p style={{ textAlign: 'center', padding: 40, color: c.textFaint }}>Nenhum pendente 🎉</p>
                 ) : (
-                  <div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 110px', padding: '10px 20px', background: c.inputBg, borderBottom: `1px solid ${c.border}` }}>
+                  <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 110px', padding: '10px 20px', background: c.inputBg, borderBottom: `1px solid ${c.border}`, minWidth: 420 }}>
                       {['Cliente', 'Trial encerrado em', 'Cobrar'].map(h => (
                         <span key={h} style={{ fontSize: 11, fontWeight: 700, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</span>
                       ))}
                     </div>
                     {expiredUsers.map((u, i) => (
-                      <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 110px', padding: '13px 20px', borderBottom: i < expiredUsers.length - 1 ? `1px solid ${c.borderLight}` : 'none', alignItems: 'center' }}>
+                      <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '1fr 140px 110px', padding: '13px 20px', borderBottom: i < expiredUsers.length - 1 ? `1px solid ${c.borderLight}` : 'none', alignItems: 'center', minWidth: 420 }}>
                         <div>
                           <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: c.text }}>{u.name || u.email}</p>
                           {u.name && <p style={{ margin: 0, fontSize: 11, color: c.textFaint }}>{u.email}</p>}
@@ -638,7 +640,8 @@ export default function AdminPage() {
 
               {/* Table */}
               <div style={{ background: c.surface, borderRadius: 16, border: `1px solid ${c.border}`, overflow: 'hidden' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px 90px 90px 130px 100px', padding: '12px 20px', borderBottom: `1px solid ${c.border}`, background: c.inputBg }}>
+                <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' as any }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px 90px 90px 130px 100px', padding: '12px 20px', borderBottom: `1px solid ${c.border}`, background: c.inputBg, minWidth: 700 }}>
                   {['Usuário', 'Último acesso', 'Transações', 'Faturas', 'Status', 'Ações'].map(h => (
                     <span key={h} style={{ fontSize: 11, fontWeight: 700, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</span>
                   ))}
@@ -650,7 +653,7 @@ export default function AdminPage() {
                     const d = detail[user.id];
                     return (
                       <div key={user.id} style={{ borderBottom: i < filtered.length - 1 ? `1px solid ${c.borderLight}` : 'none', opacity: user.blocked ? 0.6 : 1 }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px 90px 90px 130px 100px', padding: '14px 20px', alignItems: 'center', cursor: 'pointer' }} onClick={() => { if (expanded === user.id) setExpanded(null); else loadDetail(user.id); }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px 90px 90px 130px 100px', padding: '14px 20px', alignItems: 'center', cursor: 'pointer', minWidth: 700 }} onClick={() => { if (expanded === user.id) setExpanded(null); else loadDetail(user.id); }}>
 
                           {/* User */}
                           <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
@@ -802,6 +805,7 @@ export default function AdminPage() {
                       </div>
                     );
                   })}
+                </div>{/* end overflow-x */}
               </div>
             </div>
           )}
