@@ -27,7 +27,7 @@ export class UsersService {
       if (authError.message.includes('already registered')) {
         // User exists in auth — find by phone
         const { data: listData } = await this.supabase.auth.admin.listUsers();
-        const existingAuthUser = listData?.users?.find((u) => u.phone === phone);
+        const existingAuthUser = listData?.users?.find((u) => (u as any).phone === phone);
         if (!existingAuthUser) throw new Error(`Could not find auth user for phone: ${phone}`);
         userId = existingAuthUser.id;
       } else {
