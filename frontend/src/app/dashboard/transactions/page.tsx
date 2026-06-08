@@ -151,7 +151,11 @@ export default function TransactionsPage() {
                   if (!session) return;
                   await supabase.from('transactions').delete().eq('id', confirmDeleteId).eq('user_id', session.user.id);
                   const month = new Date().toISOString().slice(0, 7);
-                  await supabase.from('recurring_skips').upsert({ user_id: session.user.id, template_id: confirmDeleteTx.recurring_template_id, month });
+                  const { error: skipErr } = await supabase.from('recurring_skips').upsert(
+                    { user_id: session.user.id, template_id: confirmDeleteTx.recurring_template_id, month },
+                    { onConflict: 'template_id,month' }
+                  );
+                  if (skipErr) { alert('Erro ao salvar skip: ' + skipErr.message); return; }
                   setConfirmDeleteId(null); setConfirmDeleteTx(null); load();
                 }} style={{ padding: '13px', borderRadius: 12, border: 'none', background: '#ef4444', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
                   Excluir este mês
@@ -161,7 +165,7 @@ export default function TransactionsPage() {
                   if (!session) return;
                   await supabase.from('transactions').delete().eq('id', confirmDeleteId).eq('user_id', session.user.id);
                   const month = new Date().toISOString().slice(0, 7);
-                  await supabase.from('recurring_skips').upsert({ user_id: session.user.id, template_id: confirmDeleteTx.recurring_template_id, month });
+                  await supabase.from('recurring_skips').upsert({ user_id: session.user.id, template_id: confirmDeleteTx.recurring_template_id, month }, { onConflict: 'template_id,month' });
                   await supabase.from('recurring_templates').update({ active: false }).eq('id', confirmDeleteTx.recurring_template_id).eq('user_id', session.user.id);
                   setConfirmDeleteId(null); setConfirmDeleteTx(null); load();
                 }} style={{ padding: '13px', borderRadius: 12, border: `1.5px solid ${c.border}`, background: 'transparent', color: c.textMuted, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
