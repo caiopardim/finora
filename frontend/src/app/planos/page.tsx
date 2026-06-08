@@ -127,7 +127,7 @@ export default function PlanosPage() {
         {/* Annual — recommended */}
         <div style={{ background: 'linear-gradient(160deg,#052e16,#14532d)', borderRadius: 20, border: '2px solid #22c55e', padding: 32, display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 0 40px rgba(34,197,94,0.2)' }}>
           <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 12, fontWeight: 700, padding: '4px 16px', borderRadius: 99, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Star size={12}/> MAIS POPULAR — 2 meses grátis
+            <Star size={12}/> MAIS POPULAR — Economize R$ 149
           </div>
 
           <div style={{ marginBottom: 24 }}>

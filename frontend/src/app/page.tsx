@@ -356,7 +356,7 @@ export default function Home() {
               </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 14, color: billing === 'annual' ? '#0f172a' : '#94a3b8', fontWeight: billing === 'annual' ? 600 : 400, transition: 'color 0.2s' }}>Anual</span>
-                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: '#dcfce7', color: '#15803d', fontWeight: 700, opacity: billing === 'annual' ? 1 : 0, transition: 'opacity 0.3s' }}>2 meses grátis</span>
+                <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 99, background: '#dcfce7', color: '#15803d', fontWeight: 700, opacity: billing === 'annual' ? 1 : 0, transition: 'opacity 0.3s' }}>Economize R$ 149</span>
               </div>
             </div>
           </FadeIn>
@@ -459,7 +459,7 @@ function PlanCard({ type, billing }: { type: 'monthly' | 'annual'; billing: 'mon
     >
       {isAnnual && (
         <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 12, fontWeight: 700, padding: '4px 16px', borderRadius: 99, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 4px 12px rgba(34,197,94,0.4)', animation: 'bounce-in 0.5s ease' }}>
-          <Star size={12} fill="#fff"/>MAIS POPULAR — 2 meses grátis
+          <Star size={12} fill="#fff"/>MAIS POPULAR — Economize R$ 149
         </div>
       )}
       <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 600, color: isAnnual ? '#16a34a' : '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{isAnnual ? 'Anual' : 'Mensal'}</p>
