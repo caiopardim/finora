@@ -224,21 +224,17 @@ export default function BudgetPage() {
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 10, marginBottom: 20 }}>
-            <div style={{ background: c.inputBg, borderRadius: 12, padding: '14px 16px', textAlign: 'center' }}>
-              <p style={{ margin: '0 0 4px', fontSize: 11, color: c.textFaint, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Limite</p>
-              <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: c.text }}>{formatCurrency(globalLimit)}</p>
-            </div>
-            <div style={{ background: c.inputBg, borderRadius: 12, padding: '14px 16px', textAlign: 'center' }}>
-              <p style={{ margin: '0 0 4px', fontSize: 11, color: c.textFaint, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gasto</p>
-              <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: globalOver ? '#ef4444' : '#f97316' }}>{formatCurrency(expense)}</p>
-            </div>
-            <div style={{ background: c.inputBg, borderRadius: 12, padding: '14px 16px', textAlign: 'center' }}>
-              <p style={{ margin: '0 0 4px', fontSize: 11, color: c.textFaint, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{globalOver ? 'Excedido' : 'Restante'}</p>
-              <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: globalOver ? '#ef4444' : '#22c55e' }}>
-                {globalOver ? `+${formatCurrency(expense - globalLimit)}` : formatCurrency(remaining)}
-              </p>
-            </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 20 }}>
+            {[
+              { label: 'Limite',                  value: formatCurrency(globalLimit),                                             color: c.text },
+              { label: 'Gasto',                   value: formatCurrency(expense),                                                 color: globalOver ? '#ef4444' : '#f97316' },
+              { label: globalOver ? 'Excedido' : 'Restante', value: globalOver ? `+${formatCurrency(expense - globalLimit)}` : formatCurrency(remaining), color: globalOver ? '#ef4444' : '#22c55e' },
+            ].map(({ label, value, color }) => (
+              <div key={label} style={{ background: c.inputBg, borderRadius: 12, padding: '10px 8px', textAlign: 'center' }}>
+                <p style={{ margin: '0 0 4px', fontSize: 10, color: c.textFaint, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</p>
+                <p style={{ margin: 0, fontSize: 'clamp(12px, 3vw, 17px)' as any, fontWeight: 700, color, wordBreak: 'break-all' }}>{value}</p>
+              </div>
+            ))}
           </div>
 
           <div style={{ background: c.inputBg, borderRadius: 99, height: 10, overflow: 'hidden' }}>
