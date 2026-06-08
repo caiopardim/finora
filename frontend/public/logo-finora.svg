@@ -8,31 +8,25 @@
       <stop offset="0%" stop-color="#0f172a"/>
       <stop offset="100%" stop-color="#1e293b"/>
     </linearGradient>
-    <linearGradient id="arrowGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.7"/>
-      <stop offset="100%" stop-color="#ffffff" stop-opacity="1"/>
-    </linearGradient>
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
       <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#22c55e" flood-opacity="0.35"/>
     </filter>
   </defs>
 
-  <!-- Ícone: quadrado arredondado com gradiente verde -->
+  <!-- Ícone: quadrado arredondado verde -->
   <rect x="0" y="4" width="52" height="52" rx="14" fill="url(#iconGrad)" filter="url(#shadow)"/>
 
-  <!-- Gráfico de barras estilizado dentro do ícone -->
-  <!-- Barra 1 (menor) -->
-  <rect x="10" y="34" width="8" height="14" rx="3" fill="white" opacity="0.5"/>
-  <!-- Barra 2 (média) -->
-  <rect x="22" y="26" width="8" height="22" rx="3" fill="white" opacity="0.75"/>
-  <!-- Barra 3 (maior) -->
-  <rect x="34" y="16" width="8" height="32" rx="3" fill="white"/>
+  <!-- Letra F em branco -->
+  <text
+    x="10"
+    y="44"
+    font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+    font-size="36"
+    font-weight="800"
+    fill="white"
+  >F</text>
 
-  <!-- Seta de tendência de alta -->
-  <polyline points="10,32 22,24 34,14 44,10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.9"/>
-  <circle cx="44" cy="10" r="3" fill="white"/>
-
-  <!-- Texto "Finora" -->
+  <!-- Texto "inora" -->
   <text
     x="66"
     y="40"

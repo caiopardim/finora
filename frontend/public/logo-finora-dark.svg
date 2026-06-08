@@ -9,19 +9,20 @@
     </filter>
   </defs>
 
-  <!-- Ícone -->
+  <!-- Ícone: quadrado arredondado verde -->
   <rect x="0" y="4" width="52" height="52" rx="14" fill="url(#iconGradD)" filter="url(#shadowD)"/>
 
-  <!-- Barras -->
-  <rect x="10" y="34" width="8" height="14" rx="3" fill="white" opacity="0.5"/>
-  <rect x="22" y="26" width="8" height="22" rx="3" fill="white" opacity="0.75"/>
-  <rect x="34" y="16" width="8" height="32" rx="3" fill="white"/>
+  <!-- Letra F em branco -->
+  <text
+    x="10"
+    y="44"
+    font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
+    font-size="36"
+    font-weight="800"
+    fill="white"
+  >F</text>
 
-  <!-- Seta de tendência -->
-  <polyline points="10,32 22,24 34,14 44,10" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.9"/>
-  <circle cx="44" cy="10" r="3" fill="white"/>
-
-  <!-- Texto branco para fundo escuro -->
+  <!-- Texto "Finora" em branco -->
   <text
     x="66"
     y="40"
