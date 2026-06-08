@@ -30,11 +30,12 @@ export class UsersService {
     }
 
     // 1. Try to find existing profile by phone (any variant)
-    const { data: existing } = await this.supabase
+    const { data: existingList } = await this.supabase
       .from('profiles')
       .select('*')
       .in('phone', Array.from(phoneVariants))
-      .single();
+      .limit(1);
+    const existing = existingList?.[0] ?? null;
 
     if (existing) return existing;
 
