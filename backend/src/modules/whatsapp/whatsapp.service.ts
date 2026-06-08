@@ -41,6 +41,7 @@ export class WhatsappService {
       switch (intent.action) {
         case 'register_transaction': {
           const { transaction } = intent;
+          this.logger.log(`[4] Creating transaction for user ${user.id}`);
           const created = await this.transactions.create(user.id, {
             type: transaction.type,
             amount: transaction.amount,
@@ -50,6 +51,7 @@ export class WhatsappService {
             source: 'whatsapp',
             raw_message: message,
           });
+          this.logger.log(`[5] Transaction created: ${created?.id}`);
 
           const transactionId = created?.id as string;
           const verb = transaction.type === 'expense' ? 'Novo Gasto Registrado' : 'Nova Receita Registrada';
@@ -66,7 +68,9 @@ export class WhatsappService {
             `📅 *Data:* ${new Date(transaction.date + 'T12:00:00').toLocaleDateString('pt-BR')}\n` +
             `⚙️ *ID:* ${shortId}`;
 
+          this.logger.log(`[6] Sending buttons to ${normalizedPhone}`);
           await this.sendButtons(normalizedPhone, text, transactionId, transaction.description);
+          this.logger.log(`[7] Done`);
           break;
         }
 
