@@ -318,7 +318,7 @@ export default function ReportsPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke={c.borderLight}/>
                 <XAxis dataKey="m" tick={{ fontSize:12, fill:c.textFaint }} axisLine={false} tickLine={false}/>
                 <YAxis tick={{ fontSize:11, fill:c.textFaint }} axisLine={false} tickLine={false} tickFormatter={fmtK}/>
-                <Tooltip formatter={(v:number)=>fmt(v)} contentStyle={{ borderRadius:10, border:`1px solid ${c.border}`, fontSize:13, background:c.surface, color:c.text }}/>
+                <Tooltip formatter={(v:number)=>fmt(v)} contentStyle={{ borderRadius:10, border:`1px solid ${c.border}`, fontSize:13, background:c.surface, color:c.text }} itemStyle={{ color:c.text }} labelStyle={{ color:c.text }}/>
                 <Area type="monotone" dataKey="Receitas" stroke="#22c55e" strokeWidth={2} fill="url(#gR)"/>
                 <Area type="monotone" dataKey="Despesas" stroke="#ef4444" strokeWidth={2} fill="url(#gD)"/>
               </AreaChart>

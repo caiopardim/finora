@@ -300,7 +300,7 @@ export default function DashboardPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke={c.borderLight}/>
                 <XAxis dataKey="m" tick={{ fontSize:12, fill:c.textFaint }} axisLine={false} tickLine={false}/>
                 <YAxis tick={{ fontSize:11, fill:c.textFaint }} axisLine={false} tickLine={false} tickFormatter={fmtK}/>
-                <Tooltip formatter={(v:number)=>fmt(v)} contentStyle={{ borderRadius:10, border:`1px solid ${c.border}`, fontSize:13, background:c.surface, color:c.text }}/>
+                <Tooltip formatter={(v:number)=>fmt(v)} contentStyle={{ borderRadius:10, border:`1px solid ${c.border}`, fontSize:13, background:c.surface, color:c.text }} itemStyle={{ color:c.text }} labelStyle={{ color:c.text }}/>
                 <Bar dataKey="Receitas" fill="#22c55e" radius={[5,5,0,0]}/>
                 <Bar dataKey="Despesas" fill="#f87171" radius={[5,5,0,0]}/>
               </BarChart>
@@ -316,7 +316,7 @@ export default function DashboardPage() {
                   <Pie data={data.pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="spent" nameKey="name">
                     {data.pieData.map((e:any, i:number) => <Cell key={i} fill={e.color||'#6366f1'}/>)}
                   </Pie>
-                  <Tooltip formatter={(v:number)=>fmt(v)} contentStyle={{ borderRadius:10, border:`1px solid ${c.border}`, fontSize:13, background:c.surface, color:c.text }}/>
+                  <Tooltip formatter={(v:number)=>fmt(v)} contentStyle={{ borderRadius:10, border:`1px solid ${c.border}`, fontSize:13, background:c.surface, color:c.text }} itemStyle={{ color:c.text }} labelStyle={{ color:c.text }}/>
                 </PieChart>
               </ResponsiveContainer>
               <div style={{ display:'flex', flexWrap:'wrap', gap:'5px 12px' }}>
@@ -346,7 +346,7 @@ export default function DashboardPage() {
               <CartesianGrid strokeDasharray="3 3" stroke={c.borderLight}/>
               <XAxis dataKey="m" tick={{ fontSize:12, fill:c.textFaint }} axisLine={false} tickLine={false}/>
               <YAxis tick={{ fontSize:11, fill:c.textFaint }} axisLine={false} tickLine={false} tickFormatter={fmtK}/>
-              <Tooltip formatter={(v:number)=>fmt(v)} contentStyle={{ borderRadius:10, border:`1px solid ${c.border}`, fontSize:13, background:c.surface, color:c.text }}/>
+              <Tooltip formatter={(v:number)=>fmt(v)} contentStyle={{ borderRadius:10, border:`1px solid ${c.border}`, fontSize:13, background:c.surface, color:c.text }} itemStyle={{ color:c.text }} labelStyle={{ color:c.text }}/>
               <Area type="monotone" dataKey="Patrimônio" stroke="#6366f1" strokeWidth={2.5} fill="url(#gP)"/>
             </AreaChart>
           </ResponsiveContainer>
