@@ -88,7 +88,7 @@ export default function PaywallGuard({ children }: { children: React.ReactNode }
           <p style={{ fontSize: 15, color: '#94a3b8', margin: '0 0 28px', lineHeight: 1.6 }}>
             {info?.plan_status === 'cancelled'
               ? 'Sua assinatura foi cancelada. Assine novamente para continuar usando o Finora.'
-              : 'O período de teste gratuito de 14 dias terminou. Escolha um plano para continuar tendo acesso completo.'}
+              : 'O período de teste gratuito de 3 dias terminou. Escolha um plano para continuar tendo acesso completo.'}
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

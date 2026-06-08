@@ -72,7 +72,7 @@ export default function PlanosPage() {
       <div style={{ maxWidth: 700, margin: '0 auto', textAlign: 'center', padding: '48px 0 40px' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: 99, padding: '6px 16px', marginBottom: 20 }}>
           <Zap size={14} color="#22c55e"/>
-          <span style={{ fontSize: 13, color: '#22c55e', fontWeight: 600 }}>14 dias grátis · Sem cartão de crédito</span>
+          <span style={{ fontSize: 13, color: '#22c55e', fontWeight: 600 }}>3 dias grátis · Sem cartão de crédito</span>
         </div>
         <h1 style={{ fontSize: 42, fontWeight: 800, color: '#fff', margin: '0 0 16px', lineHeight: 1.15, letterSpacing: '-0.5px' }}>
           Controle total das suas<br/>finanças por menos de um café
@@ -161,7 +161,7 @@ export default function PlanosPage() {
       {/* Trial note */}
       <div style={{ maxWidth: 600, margin: '0 auto 60px', textAlign: 'center' }}>
         <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.7 }}>
-          🎉 <strong style={{ color: '#94a3b8' }}>14 dias grátis</strong> ao criar sua conta — sem precisar cadastrar cartão.<br/>
+          🎉 <strong style={{ color: '#94a3b8' }}>3 dias grátis</strong> ao criar sua conta — sem precisar cadastrar cartão.<br/>
           Após o trial, escolha o plano que preferir para continuar usando.
         </p>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginTop: 20, flexWrap: 'wrap' }}>

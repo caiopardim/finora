@@ -150,7 +150,7 @@ function AssinaturaContent() {
         {step === 'plan' && (
           <div>
             <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 800, margin: '0 0 4px', textAlign: 'center' }}>Escolha seu plano</h1>
-            <p style={{ color: '#64748b', fontSize: 13, textAlign: 'center', margin: '0 0 24px' }}>14 dias grátis para testar tudo</p>
+            <p style={{ color: '#64748b', fontSize: 13, textAlign: 'center', margin: '0 0 24px' }}>3 dias grátis para testar tudo</p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
               {(['annual', 'monthly'] as const).map(pt => (

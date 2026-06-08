@@ -213,7 +213,7 @@ export default function Home() {
                 <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#22c55e', animation: 'pulse-ring 1.5s ease-out infinite' }}/>
               </span>
               <Zap size={13} color="#22c55e"/>
-              <span style={{ color: '#22c55e', fontSize: 13, fontWeight: 600 }}>Trial grátis de 14 dias · Sem cartão de crédito</span>
+              <span style={{ color: '#22c55e', fontSize: 13, fontWeight: 600 }}>Trial grátis de 3 dias · Sem cartão de crédito</span>
             </div>
           </div>
 
@@ -344,7 +344,7 @@ export default function Home() {
           <FadeIn>
             <p style={{ textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#22c55e', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 12 }}>Planos</p>
             <h2 style={{ textAlign: 'center', fontSize: 36, fontWeight: 800, color: '#0f172a', margin: '0 0 8px' }}>Simples e transparente</h2>
-            <p style={{ textAlign: 'center', fontSize: 16, color: '#64748b', margin: '0 0 36px' }}>14 dias grátis, sem cartão. Depois escolha o plano.</p>
+            <p style={{ textAlign: 'center', fontSize: 16, color: '#64748b', margin: '0 0 36px' }}>3 dias grátis, sem cartão. Depois escolha o plano.</p>
           </FadeIn>
 
           {/* Toggle */}
@@ -372,7 +372,7 @@ export default function Home() {
 
           <FadeIn delay={300}>
             <div style={{ marginTop: 32, display: 'flex', justifyContent: 'center', gap: 32, flexWrap: 'wrap' }}>
-              {['14 dias grátis sem cartão', 'Cancele a qualquer momento', 'Pagamento 100% seguro'].map(t => (
+              {['3 dias grátis sem cartão', 'Cancele a qualquer momento', 'Pagamento 100% seguro'].map(t => (
                 <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <Check size={14} color="#22c55e"/>
                   <span style={{ fontSize: 13, color: '#64748b' }}>{t}</span>
@@ -389,7 +389,7 @@ export default function Home() {
         <FadeIn>
           <div style={{ maxWidth: 600, margin: '0 auto', position: 'relative' }}>
             <h2 style={{ color: '#fff', fontSize: 40, fontWeight: 800, margin: '0 0 16px', letterSpacing: '-0.5px' }}>Comece hoje, de graça</h2>
-            <p style={{ color: '#64748b', fontSize: 16, margin: '0 0 36px', lineHeight: 1.7 }}>14 dias para testar tudo, sem precisar de cartão. Depois escolha o plano que fizer mais sentido pra você.</p>
+            <p style={{ color: '#64748b', fontSize: 16, margin: '0 0 36px', lineHeight: 1.7 }}>3 dias para testar tudo, sem precisar de cartão. Depois escolha o plano que fizer mais sentido pra você.</p>
             <Link href="/assinar" className="btn-glow" style={{ padding: '16px 40px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 16, fontWeight: 700, textDecoration: 'none', boxShadow: '0 6px 24px rgba(34,197,94,0.4)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               Assinar agora <ArrowRight size={17}/>
             </Link>
