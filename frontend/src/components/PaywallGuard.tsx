@@ -44,7 +44,12 @@ export default function PaywallGuard({ children }: { children: React.ReactNode }
     setStatus(data.is_active ? 'ok' : 'blocked');
   }
 
-  if (status === 'loading') return <>{children}</>; // render content while checking (avoids flash)
+  if (status === 'loading') return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f172a' }}>
+      <div style={{ width: 36, height: 36, border: '3px solid rgba(34,197,94,0.2)', borderTop: '3px solid #22c55e', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}/>
+      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+    </div>
+  );
   if (status === 'ok') return <>{children}</>;
 
   // Blocked — show paywall overlay

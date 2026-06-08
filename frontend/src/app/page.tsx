@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
-import { Check, Star, ArrowRight, Zap, Menu, X } from 'lucide-react';
+import { Check, Star, ArrowRight, Zap } from 'lucide-react';
 
 /* ── Animação de entrada ao scroll ── */
 function useInView(threshold = 0.15) {
@@ -114,7 +114,6 @@ function FeatureCard({ f, delay }: { f: typeof FEATURES[0]; delay: number }) {
 export default function Home() {
   const [billing, setBilling] = useState<'monthly' | 'annual'>('annual');
   const [heroVisible, setHeroVisible] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setHeroVisible(true), 80);

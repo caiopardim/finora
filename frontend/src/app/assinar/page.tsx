@@ -56,35 +56,45 @@ function AssinaturaContent() {
 
   async function handleCard() {
     setLoading(true); setError('');
-    const { data: { session } } = await supabase.auth.getSession();
-    const res = await fetch('/api/payments/subscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-      body: JSON.stringify({ plan_type: plan, email }),
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (data.init_point) window.location.href = data.init_point;
-    else setError(data.error || 'Erro ao iniciar pagamento');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/payments/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}) },
+        body: JSON.stringify({ plan_type: plan, email }),
+      });
+      const data = await res.json();
+      if (data.init_point) window.location.href = data.init_point;
+      else setError(data.error || 'Erro ao iniciar pagamento');
+    } catch {
+      setError('Erro de conexão. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handlePix() {
     setLoading(true); setError('');
-    const { data: { session } } = await supabase.auth.getSession();
-    const res = await fetch('/api/payments/pix', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, name, plan_type: plan, user_id: session?.user?.id }),
-    });
-    const data = await res.json();
-    setLoading(false);
-    if (data.qr_code) {
-      setPixCode(data.qr_code);
-      setPixQr(data.qr_code_base64 ? `data:image/png;base64,${data.qr_code_base64}` : '');
-      setPaymentId(data.payment_id);
-      setStep('pix');
-    } else {
-      setError(data.error || 'Erro ao gerar PIX');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/payments/pix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name, plan_type: plan, user_id: session?.user?.id }),
+      });
+      const data = await res.json();
+      if (data.qr_code) {
+        setPixCode(data.qr_code);
+        setPixQr(data.qr_code_base64 ? `data:image/png;base64,${data.qr_code_base64}` : '');
+        setPaymentId(data.payment_id);
+        setStep('pix');
+      } else {
+        setError(data.error || 'Erro ao gerar PIX');
+      }
+    } catch {
+      setError('Erro de conexão. Tente novamente.');
+    } finally {
+      setLoading(false);
     }
   }
 
