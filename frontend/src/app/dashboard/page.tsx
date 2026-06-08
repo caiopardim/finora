@@ -204,18 +204,16 @@ export default function DashboardPage() {
 
         {/* Month forecast */}
         <div style={{ background:c.surface, borderRadius:16, border:`1px solid ${c.border}`, padding:'18px 20px', boxShadow:c.shadow }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-            <p style={{ margin:0, fontWeight:700, fontSize:14, color:c.textSecondary }}>🔮 Previsão do Mês</p>
-            <span style={{ fontSize:11, fontWeight:600, padding:'2px 9px', borderRadius:99, background:data.forecastPct>100?'#fee2e2':'#dcfce7', color:data.forecastPct>100?'#dc2626':'#16a34a' }}>
+          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:8, marginBottom:14, flexWrap:'wrap' }}>
+            <p style={{ margin:0, fontWeight:700, fontSize:14, color:c.textSecondary, whiteSpace:'nowrap' }}>🔮 Previsão do Mês</p>
+            <span style={{ fontSize:11, fontWeight:600, padding:'3px 9px', borderRadius:99, background:data.forecastPct>100?'#fee2e2':'#dcfce7', color:data.forecastPct>100?'#dc2626':'#16a34a', whiteSpace:'nowrap', flexShrink:0 }}>
               {data.forecastPct}% da receita
             </span>
           </div>
-          <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'space-between', marginBottom:10 }}>
-            <div>
-              <p style={{ margin:'0 0 2px', fontSize:11, color:c.textFaint }}>Projeção de gastos</p>
-              <p style={{ margin:0, fontSize:20, fontWeight:700, color:data.forecastPct>100?'#ef4444':c.text }}>{fmt(data.forecast)}</p>
-            </div>
-            <p style={{ margin:0, fontSize:13, color:c.textFaint }}>Receita: {fmt(data.income)}</p>
+          <div style={{ marginBottom:10 }}>
+            <p style={{ margin:'0 0 2px', fontSize:11, color:c.textFaint }}>Projeção de gastos</p>
+            <p style={{ margin:'0 0 4px', fontSize:22, fontWeight:700, color:data.forecastPct>100?'#ef4444':c.text }}>{fmt(data.forecast)}</p>
+            <p style={{ margin:0, fontSize:12, color:c.textFaint }}>Receita: {fmt(data.income)}</p>
           </div>
           <div style={{ background:c.inputBg, borderRadius:99, height:7, overflow:'hidden' }}>
             <div style={{ height:'100%', borderRadius:99, width:`${Math.min(data.forecastPct,100)}%`, background:data.forecastPct>100?'#ef4444':data.forecastPct>80?'#f97316':'#22c55e', transition:'width 0.5s' }}/>
