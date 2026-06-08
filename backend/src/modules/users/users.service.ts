@@ -7,12 +7,26 @@ export class UsersService {
   constructor(@Inject(SUPABASE_CLIENT) private supabase: SupabaseClient) {}
 
   async findOrCreateByPhone(phone: string) {
-    // Normalize: try both with and without Brazil country code (55)
-    const phoneVariants = [phone];
-    if (phone.startsWith('55') && phone.length > 11) {
-      phoneVariants.push(phone.slice(2)); // strip 55 prefix
-    } else if (!phone.startsWith('55')) {
-      phoneVariants.push('55' + phone); // add 55 prefix
+    // Normalize Brazilian phone numbers
+    // WhatsApp may send: 556283422983 (country+area+8digits, no 9th digit)
+    // Profile may store: 62983422983  (area+9+8digits)
+    const phoneVariants = new Set<string>([phone]);
+    let base = phone;
+    // Strip country code 55
+    if (base.startsWith('55')) base = base.slice(2);
+    phoneVariants.add(base);
+    phoneVariants.add('55' + base);
+    // Handle Brazilian 9th digit: area code (2 digits) + optional 9 + number (8 digits)
+    if (base.length === 10) {
+      // Missing 9th digit — insert 9 after area code
+      const with9 = base.slice(0, 2) + '9' + base.slice(2);
+      phoneVariants.add(with9);
+      phoneVariants.add('55' + with9);
+    } else if (base.length === 11 && base[2] === '9') {
+      // Has 9th digit — also try without
+      const without9 = base.slice(0, 2) + base.slice(3);
+      phoneVariants.add(without9);
+      phoneVariants.add('55' + without9);
     }
 
     // 1. Try to find existing profile by phone (any variant)
