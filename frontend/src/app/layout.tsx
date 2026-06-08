@@ -9,6 +9,11 @@ export const metadata: Metadata = {
   title: 'Finora — Mais controle, menos planilhas',
   description: 'Controle suas finanças pelo WhatsApp com inteligência artificial.',
   manifest: '/manifest.json',
+  icons: {
+    icon: '/icon.svg',
+    shortcut: '/icon.svg',
+    apple: '/icon.svg',
+  },
   appleWebApp: { capable: true, statusBarStyle: 'black-translucent', title: 'Finora' },
   other: { 'mobile-web-app-capable': 'yes' },
 };
