@@ -105,6 +105,16 @@ export class TransactionsService {
     return data;
   }
 
+  async findByShortId(userId: string, shortId: string) {
+    const { data } = await this.supabase
+      .from('transactions')
+      .select('id, description')
+      .eq('user_id', userId)
+      .ilike('id', `%${shortId}`)
+      .limit(1);
+    return data?.[0] ?? null;
+  }
+
   async remove(userId: string, id: string) {
     await this.findOne(userId, id);
     const { error } = await this.supabase
