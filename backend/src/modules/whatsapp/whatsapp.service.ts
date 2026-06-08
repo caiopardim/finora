@@ -12,6 +12,7 @@ export class WhatsappService {
   private readonly evolutionUrl: string;
   private readonly evolutionKey: string;
   private readonly instance: string;
+  private readonly dashboardUrl: string;
 
   constructor(
     private config: ConfigService,
@@ -23,6 +24,7 @@ export class WhatsappService {
     this.evolutionUrl = config.get('EVOLUTION_API_URL');
     this.evolutionKey = config.get('EVOLUTION_API_KEY');
     this.instance = config.get('EVOLUTION_INSTANCE', 'finora');
+    this.dashboardUrl = config.get('DASHBOARD_URL', 'https://meufinora.com.br');
   }
 
   async handleIncomingMessage(phone: string, message: string): Promise<void> {
@@ -30,13 +32,8 @@ export class WhatsappService {
     this.logger.log(`Message from ${normalizedPhone}: ${message}`);
 
     try {
-      // Find or create user by phone
       const user = await this.users.findOrCreateByPhone(normalizedPhone);
-
-      // Parse message intent with AI
       const intent = await this.ai.parseMessage(message);
-
-      let reply: string;
 
       switch (intent.action) {
         case 'register_transaction': {
@@ -51,43 +48,75 @@ export class WhatsappService {
             raw_message: message,
           });
 
+          const transactionId = created?.id as string;
           const verb = transaction.type === 'expense' ? 'Novo Gasto Registrado' : 'Nova Receita Registrada';
-          const shortId = (created?.id as string)?.slice(-6) ?? '------';
-          const formattedAmount = transaction.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-          reply =
+          const shortId = transactionId?.slice(-6) ?? '------';
+          const formattedAmount = transaction.amount.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+          });
+          const text =
             `✅ *${verb}!*\n\n` +
             `📝 *Descrição:* ${transaction.description}\n` +
             `🏷️ *Categoria:* ${transaction.category}\n` +
             `💸 *Valor:* R$ ${formattedAmount}\n\n` +
             `📅 *Data:* ${new Date(transaction.date + 'T12:00:00').toLocaleDateString('pt-BR')}\n` +
-            `⚙️ *ID:* ${shortId}\n\n` +
-            `> _Visualize ou edite em: meufinora.com.br_`;
+            `⚙️ *ID:* ${shortId}`;
+
+          await this.sendButtons(normalizedPhone, text, transactionId, transaction.description);
           break;
         }
 
         case 'query_report': {
           const reportData = await this.reports.getReportData(user.id);
-          reply = await this.ai.generateReportResponse(intent.query, reportData);
+          const reply = await this.ai.generateReportResponse(intent.query, reportData);
+          await this.sendMessage(normalizedPhone, reply);
           break;
         }
 
         default:
-          reply =
+          await this.sendMessage(
+            normalizedPhone,
             `🤔 Não entendi sua mensagem.\n\n` +
             `Você pode:\n` +
             `• Registrar gastos: _"Gastei R$ 50 no mercado"_\n` +
             `• Registrar receitas: _"Recebi R$ 3.500 de salário"_\n` +
             `• Consultar: _"Quanto gastei este mês?"_\n` +
-            `• Ver resumo: _"Resumo do dia"_`;
+            `• Ver resumo: _"Resumo do dia"_`,
+          );
       }
-
-      await this.sendMessage(normalizedPhone, reply);
     } catch (error) {
       this.logger.error(`Error handling message: ${error.message}`, error.stack);
       await this.sendMessage(
-        normalizedPhone,
+        phone.replace(/\D/g, ''),
         '❌ Ocorreu um erro ao processar sua mensagem. Tente novamente.',
       );
+    }
+  }
+
+  async handleButtonReply(phone: string, buttonId: string): Promise<void> {
+    const normalizedPhone = phone.replace(/\D/g, '');
+    this.logger.log(`Button reply from ${normalizedPhone}: ${buttonId}`);
+
+    try {
+      if (buttonId.startsWith('delete_')) {
+        const transactionId = buttonId.replace('delete_', '');
+        const user = await this.users.findOrCreateByPhone(normalizedPhone);
+
+        // Fetch transaction to get description before deleting
+        const transaction = await this.transactions.findOne(user.id, transactionId).catch(() => null);
+        const description = transaction?.description ?? 'Transação';
+
+        await this.transactions.remove(user.id, transactionId);
+
+        await this.sendMessage(
+          normalizedPhone,
+          `❌ *${description}*\n\nExcluído com Sucesso!`,
+        );
+      }
+    } catch (error) {
+      this.logger.error(`Error handling button reply: ${error.message}`, error.stack);
+      await this.sendMessage(normalizedPhone, '❌ Não foi possível processar a ação. Tente novamente.');
     }
   }
 
@@ -100,6 +129,37 @@ export class WhatsappService {
       );
     } catch (error) {
       this.logger.error(`Failed to send WhatsApp message: ${error.message}`);
+    }
+  }
+
+  async sendButtons(phone: string, text: string, transactionId: string, description: string): Promise<void> {
+    try {
+      await axios.post(
+        `${this.evolutionUrl}/message/sendButtons/${this.instance}`,
+        {
+          number: `${phone}@s.whatsapp.net`,
+          title: 'Finora',
+          description: text,
+          footer: 'meufinora.com.br',
+          buttons: [
+            {
+              type: 'url',
+              displayText: '✏️ Editar',
+              url: `${this.dashboardUrl}/dashboard/transactions`,
+            },
+            {
+              type: 'reply',
+              displayText: '🗑️ Excluir',
+              id: `delete_${transactionId}`,
+            },
+          ],
+        },
+        { headers: { apikey: this.evolutionKey } },
+      );
+    } catch (error) {
+      this.logger.error(`Failed to send buttons message: ${error.message}`);
+      // Fallback to plain text
+      await this.sendMessage(phone, text);
     }
   }
 }

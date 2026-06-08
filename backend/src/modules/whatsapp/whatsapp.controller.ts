@@ -23,18 +23,34 @@ export class WhatsappController {
 
     this.logger.debug('Webhook received', JSON.stringify(body));
 
-    // Evolution API payload structure
     const event = body?.event;
     if (event !== 'messages.upsert') return { status: 'ignored' };
 
     const data = body?.data;
-    const message = data?.message?.conversation || data?.message?.extendedTextMessage?.text;
-    const phone = data?.key?.remoteJid?.replace('@s.whatsapp.net', '');
     const isFromMe = data?.key?.fromMe;
+    if (isFromMe) return { status: 'ignored' };
 
-    if (!message || !phone || isFromMe) return { status: 'ignored' };
+    const phone = data?.key?.remoteJid?.replace('@s.whatsapp.net', '');
+    if (!phone) return { status: 'ignored' };
 
-    // Process async — respond to webhook immediately
+    // Handle button reply (delete action)
+    const buttonReply =
+      data?.message?.buttonsResponseMessage?.selectedButtonId ||
+      data?.message?.templateButtonReplyMessage?.selectedId ||
+      data?.message?.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson;
+
+    if (buttonReply) {
+      const buttonId = typeof buttonReply === 'string' ? buttonReply : JSON.stringify(buttonReply);
+      this.whatsapp.handleButtonReply(phone, buttonId).catch((err) =>
+        this.logger.error('Error handling button reply', err),
+      );
+      return { status: 'processing' };
+    }
+
+    // Handle text message
+    const message = data?.message?.conversation || data?.message?.extendedTextMessage?.text;
+    if (!message) return { status: 'ignored' };
+
     this.whatsapp.handleIncomingMessage(phone, message).catch((err) =>
       this.logger.error('Unhandled error in message processing', err),
     );
