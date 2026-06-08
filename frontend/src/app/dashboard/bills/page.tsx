@@ -197,7 +197,7 @@ export default function BillsPage() {
   return (
     <div style={{ maxWidth: 900, margin: '0 auto' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: c.text, margin: '0 0 2px' }}>Contas a Pagar</h1>
           <p style={{ color: c.textFaint, fontSize: 14, margin: 0 }}>{bills.filter(b => !b.paid).length} pendentes</p>

@@ -90,7 +90,7 @@ export default function WalletsPage() {
 
   return (
     <div style={{ maxWidth: 800, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: c.text, margin: '0 0 2px' }}>Contas</h1>
           <p style={{ color: c.textFaint, fontSize: 14, margin: 0 }}>Gerencie de onde vem e para onde vai seu dinheiro</p>
@@ -103,7 +103,7 @@ export default function WalletsPage() {
       {/* Total balance */}
       <div style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)', borderRadius: 18, padding: '22px 24px', marginBottom: 20, color: '#fff' }}>
         <p style={{ margin: '0 0 6px', fontSize: 13, opacity: 0.8, fontWeight: 500 }}>Patrimônio Total</p>
-        <p style={{ margin: 0, fontSize: 32, fontWeight: 800, letterSpacing: '-0.5px' }}>{formatCurrency(totalBalance)}</p>
+        <p style={{ margin: 0, fontSize: 'clamp(20px, 5vw, 32px)' as any, fontWeight: 800, letterSpacing: '-0.5px' }}>{formatCurrency(totalBalance)}</p>
         <p style={{ margin: '6px 0 0', fontSize: 12, opacity: 0.7 }}>{wallets.length} conta{wallets.length !== 1 ? 's' : ''} cadastrada{wallets.length !== 1 ? 's' : ''}</p>
       </div>
 

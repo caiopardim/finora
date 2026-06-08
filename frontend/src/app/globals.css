@@ -53,7 +53,11 @@
   .grid-stats   { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .grid-charts  { grid-template-columns: 1fr; }
   .grid-2col    { grid-template-columns: 1fr; }
-  .grid-3col    { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .grid-3col    { grid-template-columns: 1fr; gap: 10px; }
   .grid-4col    { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .grid-goals   { grid-template-columns: 1fr; gap: 12px; }
+}
+
+@media (max-width: 480px) {
+  .grid-stats   { grid-template-columns: 1fr; }
 }

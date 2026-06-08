@@ -81,7 +81,7 @@ export default function PlanoPage() {
   const sc = statusConfig[st] || statusConfig.none;
 
   return (
-    <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 16px' }}>
+    <div style={{ maxWidth: 680, margin: '0 auto', padding: '8px 0' }}>
       <h1 style={{ fontSize: 22, fontWeight: 700, color: c.text, margin: '0 0 4px' }}>Meu Plano</h1>
       <p style={{ fontSize: 14, color: c.textMuted, margin: '0 0 28px' }}>Gerencie sua assinatura do Finora</p>
 

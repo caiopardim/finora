@@ -249,12 +249,12 @@ export default function ReportsPage() {
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
           <h1 style={{ fontSize: 24, fontWeight: 700, color: c.text, margin: '0 0 2px' }}>Relatórios</h1>
           <p style={{ color: c.textFaint, fontSize: 14, margin: 0 }}>Análise detalhada das suas finanças</p>
         </div>
-        <div style={{ display:'flex', gap:8 }}>
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
           <button onClick={() => setShowImport(true)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 16px', borderRadius:10, border:'none', background:'linear-gradient(135deg,#6366f1,#4f46e5)', color:'#fff', fontSize:13, fontWeight:600, cursor:'pointer' }}>
             <Upload size={15}/> Importar CSV
           </button>

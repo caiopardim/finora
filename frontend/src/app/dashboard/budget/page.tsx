@@ -224,7 +224,7 @@ export default function BudgetPage() {
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, marginBottom: 20 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 10, marginBottom: 20 }}>
             <div style={{ background: c.inputBg, borderRadius: 12, padding: '14px 16px', textAlign: 'center' }}>
               <p style={{ margin: '0 0 4px', fontSize: 11, color: c.textFaint, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Limite</p>
               <p style={{ margin: 0, fontSize: 18, fontWeight: 700, color: c.text }}>{formatCurrency(globalLimit)}</p>
