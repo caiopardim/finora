@@ -1,61 +1,32 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" fill="none">
   <defs>
-    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#22c55e"/>
-      <stop offset="100%" stop-color="#16a34a"/>
-    </linearGradient>
-    <linearGradient id="coinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#fbbf24"/>
-      <stop offset="100%" stop-color="#d97706"/>
-    </linearGradient>
-    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0f172a"/>
-      <stop offset="100%" stop-color="#1e293b"/>
-    </linearGradient>
     <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#22c55e" flood-opacity="0.35"/>
-    </filter>
-    <filter id="coinShadow" x="-30%" y="-30%" width="160%" height="160%">
-      <feDropShadow dx="0" dy="1" stdDeviation="2" flood-color="#92400e" flood-opacity="0.4"/>
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#22c55e" flood-opacity="0.3"/>
     </filter>
   </defs>
 
-  <!-- Ícone: quadrado arredondado verde -->
-  <rect x="0" y="4" width="52" height="52" rx="14" fill="url(#iconGrad)" filter="url(#shadow)"/>
+  <!-- Círculo verde -->
+  <circle cx="30" cy="30" r="28" fill="#22c55e" filter="url(#shadow)"/>
 
-  <!-- Letra F em branco -->
+  <!-- Letra F centralizada -->
   <text
-    x="9"
-    y="43"
+    x="30"
+    y="40"
     font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
-    font-size="34"
+    font-size="32"
     font-weight="800"
     fill="white"
-  >F</text>
-
-  <!-- Moeda dourada (círculo) no canto inferior direito do ícone -->
-  <circle cx="40" cy="42" r="11" fill="url(#coinGrad)" filter="url(#coinShadow)"/>
-  <!-- Borda interna da moeda -->
-  <circle cx="40" cy="42" r="8.5" fill="none" stroke="#fef3c7" stroke-width="1" opacity="0.6"/>
-  <!-- Símbolo R$ na moeda -->
-  <text
-    x="40"
-    y="46"
-    font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
-    font-size="9"
-    font-weight="800"
-    fill="#7c2d12"
     text-anchor="middle"
-  >R$</text>
+  >F</text>
 
   <!-- Texto "Finora" -->
   <text
-    x="66"
-    y="40"
+    x="72"
+    y="39"
     font-family="'Inter', 'Helvetica Neue', Arial, sans-serif"
-    font-size="28"
+    font-size="26"
     font-weight="800"
     letter-spacing="-0.5"
-    fill="url(#textGrad)"
+    fill="#0f172a"
   >Finora</text>
 </svg>
