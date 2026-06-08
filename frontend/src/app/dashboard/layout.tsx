@@ -303,7 +303,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div style={{ display: 'flex', alignItems: 'center' }}>
             <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 32 }}/>
           </div>
-          </div>
         </div>
 
         <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
