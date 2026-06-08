@@ -16,15 +16,26 @@ export class UsersService {
 
     if (existing) return existing;
 
-    // 2. Create (or get existing) auth user for this phone
+    // 2. Try to create auth user; if already exists, fetch by phone
+    let userId: string;
     const { data: authData, error: authError } = await this.supabase.auth.admin.createUser({
       phone,
       phone_confirm: true,
     });
 
-    if (authError) throw new Error(`Failed to create user: ${authError.message}`);
-
-    const userId = authData.user.id;
+    if (authError) {
+      if (authError.message.includes('already registered')) {
+        // User exists in auth — find by phone
+        const { data: listData } = await this.supabase.auth.admin.listUsers();
+        const existingAuthUser = listData?.users?.find((u) => u.phone === phone);
+        if (!existingAuthUser) throw new Error(`Could not find auth user for phone: ${phone}`);
+        userId = existingAuthUser.id;
+      } else {
+        throw new Error(`Failed to create user: ${authError.message}`);
+      }
+    } else {
+      userId = authData.user.id;
+    }
 
     // 3. Upsert profile — handles race condition / duplicate key
     const { data: profile, error } = await this.supabase
