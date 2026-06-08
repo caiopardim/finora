@@ -68,8 +68,8 @@ export class WhatsappService {
             `📅 *Data:* ${new Date(transaction.date + 'T12:00:00').toLocaleDateString('pt-BR')}\n` +
             `⚙️ *ID:* ${shortId}`;
 
-          this.logger.log(`[6] Sending buttons to ${normalizedPhone}`);
-          await this.sendButtons(normalizedPhone, text, transactionId, transaction.description);
+          this.logger.log(`[6] Sending message to ${normalizedPhone}`);
+          await this.sendMessage(normalizedPhone, text);
           this.logger.log(`[7] Done`);
           break;
         }
