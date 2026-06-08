@@ -24,13 +24,14 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await anon.auth.getUser(token);
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+
   const { plan_type } = await req.json(); // 'monthly' | 'annual'
   const PLANS = await getPlans(admin);
   const plan = PLANS[plan_type as keyof typeof PLANS];
   if (!plan) return NextResponse.json({ error: 'Plano inválido' }, { status: 400 });
 
   // Check remaining trial days for this user
-  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
   const { data: profile } = await admin.from('profiles').select('trial_ends_at, plan_status').eq('id', user.id).single();
 
   const trialEnds = profile?.trial_ends_at ? new Date(profile.trial_ends_at) : null;
