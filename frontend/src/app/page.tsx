@@ -264,7 +264,7 @@ export default function Home() {
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 40, flexWrap: 'wrap',
           }}>
             {[
-              { value: 14, suffix: ' dias', label: 'de trial grátis' },
+              { value: 3, suffix: ' dias', label: 'de trial grátis' },
               { value: 12, suffix: '+', label: 'funcionalidades' },
               { value: 29, suffix: ' R$', label: 'por mês' },
             ].map(s => (
