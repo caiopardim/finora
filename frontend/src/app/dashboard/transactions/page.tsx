@@ -138,36 +138,36 @@ export default function TransactionsPage() {
 
       {confirmDeleteId && confirmDeleteTx && (
         confirmDeleteTx.recurring_template_id ? (
-          /* Modal especial para transações recorrentes */
+          /* Modal para transações recorrentes */
           <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, padding: 16 }}>
-            <div style={{ background: c.surface, borderRadius: 20, width: '100%', maxWidth: 420, padding: 28, border: `1px solid ${c.border}` }}>
-              <p style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: c.text }}>🔄 Transação recorrente</p>
-              <p style={{ margin: '0 0 24px', fontSize: 14, color: c.textMuted }}>Esta transação é gerada automaticamente. O que deseja fazer?</p>
+            <div style={{ background: c.surface, borderRadius: 20, width: '100%', maxWidth: 400, padding: 28, border: `1px solid ${c.border}` }}>
+              <p style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: c.text }}>Excluir transação?</p>
+              <p style={{ margin: '0 0 24px', fontSize: 14, color: c.textMuted, lineHeight: 1.5 }}>
+                Ela será removida este mês e voltará normalmente no próximo mês na data certa.
+              </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <button onClick={async () => {
                   const { data: { session } } = await supabase.auth.getSession();
                   if (!session) return;
-                  // Deleta só esse mês e marca como skip
                   await supabase.from('transactions').delete().eq('id', confirmDeleteId).eq('user_id', session.user.id);
                   const month = new Date().toISOString().slice(0, 7);
                   await supabase.from('recurring_skips').upsert({ user_id: session.user.id, template_id: confirmDeleteTx.recurring_template_id, month });
                   setConfirmDeleteId(null); setConfirmDeleteTx(null); load();
-                }} style={{ padding: '12px 16px', borderRadius: 12, border: `1.5px solid ${c.border}`, background: c.inputBg, color: c.text, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
-                  🗓️ Excluir só este mês
-                  <p style={{ margin: '2px 0 0', fontSize: 12, color: c.textMuted, fontWeight: 400 }}>A recorrência continua nos próximos meses</p>
+                }} style={{ padding: '13px', borderRadius: 12, border: 'none', background: '#ef4444', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                  Excluir este mês
                 </button>
                 <button onClick={async () => {
                   const { data: { session } } = await supabase.auth.getSession();
                   if (!session) return;
-                  // Deleta a transação e desativa o template
                   await supabase.from('transactions').delete().eq('id', confirmDeleteId).eq('user_id', session.user.id);
+                  const month = new Date().toISOString().slice(0, 7);
+                  await supabase.from('recurring_skips').upsert({ user_id: session.user.id, template_id: confirmDeleteTx.recurring_template_id, month });
                   await supabase.from('recurring_templates').update({ active: false }).eq('id', confirmDeleteTx.recurring_template_id).eq('user_id', session.user.id);
                   setConfirmDeleteId(null); setConfirmDeleteTx(null); load();
-                }} style={{ padding: '12px 16px', borderRadius: 12, border: '1.5px solid #ef4444', background: '#fef2f2', color: '#dc2626', fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'left' }}>
-                  🚫 Excluir e parar recorrência
-                  <p style={{ margin: '2px 0 0', fontSize: 12, color: '#ef4444', fontWeight: 400 }}>Não será mais gerada nos próximos meses</p>
+                }} style={{ padding: '13px', borderRadius: 12, border: `1.5px solid ${c.border}`, background: 'transparent', color: c.textMuted, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+                  Excluir e cancelar recorrência
                 </button>
-                <button onClick={() => { setConfirmDeleteId(null); setConfirmDeleteTx(null); }} style={{ padding: '11px', borderRadius: 12, border: `1.5px solid ${c.border}`, background: 'transparent', color: c.textMuted, fontSize: 14, cursor: 'pointer' }}>
+                <button onClick={() => { setConfirmDeleteId(null); setConfirmDeleteTx(null); }} style={{ padding: '11px', borderRadius: 12, border: 'none', background: 'transparent', color: c.textFaint, fontSize: 13, cursor: 'pointer' }}>
                   Cancelar
                 </button>
               </div>
