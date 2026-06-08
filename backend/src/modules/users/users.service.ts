@@ -7,6 +7,7 @@ export class UsersService {
   constructor(@Inject(SUPABASE_CLIENT) private supabase: SupabaseClient) {}
 
   async findOrCreateByPhone(phone: string) {
+    // 1. Try to find existing profile by phone
     const { data: existing } = await this.supabase
       .from('profiles')
       .select('*')
@@ -15,7 +16,7 @@ export class UsersService {
 
     if (existing) return existing;
 
-    // Create anonymous auth user for WhatsApp users
+    // 2. Create (or get existing) auth user for this phone
     const { data: authData, error: authError } = await this.supabase.auth.admin.createUser({
       phone,
       phone_confirm: true,
@@ -23,9 +24,12 @@ export class UsersService {
 
     if (authError) throw new Error(`Failed to create user: ${authError.message}`);
 
+    const userId = authData.user.id;
+
+    // 3. Upsert profile — handles race condition / duplicate key
     const { data: profile, error } = await this.supabase
       .from('profiles')
-      .insert({ id: authData.user.id, phone })
+      .upsert({ id: userId, phone }, { onConflict: 'id' })
       .select()
       .single();
 
