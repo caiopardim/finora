@@ -367,10 +367,10 @@ export default function Home() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 20, maxWidth: 760, margin: '0 auto' }}>
             <FadeIn delay={100} direction="left">
-              <PlanCard type="monthly" billing={billing}/>
+              <PlanCard type="monthly" billing={billing} priceMonthly={priceMonthly} priceAnnual={priceAnnual}/>
             </FadeIn>
             <FadeIn delay={200} direction="right">
-              <PlanCard type="annual" billing={billing}/>
+              <PlanCard type="annual" billing={billing} priceMonthly={priceMonthly} priceAnnual={priceAnnual}/>
             </FadeIn>
           </div>
 
@@ -441,9 +441,11 @@ function TestimonialCard({ t }: { t: typeof TESTIMONIALS[0] }) {
   );
 }
 
-function PlanCard({ type, billing }: { type: 'monthly' | 'annual'; billing: 'monthly' | 'annual' }) {
+function PlanCard({ type, billing, priceMonthly, priceAnnual }: { type: 'monthly' | 'annual'; billing: 'monthly' | 'annual'; priceMonthly: number; priceAnnual: number }) {
   const [hovered, setHovered] = useState(false);
   const isAnnual = type === 'annual';
+  const savings = priceMonthly * 12 - priceAnnual;
+  const monthlyEquiv = (priceAnnual / 12).toFixed(2).replace('.', ',');
   return (
     <div
       onMouseEnter={() => setHovered(true)}
@@ -463,7 +465,7 @@ function PlanCard({ type, billing }: { type: 'monthly' | 'annual'; billing: 'mon
     >
       {isAnnual && (
         <div style={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 12, fontWeight: 700, padding: '4px 16px', borderRadius: 99, whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 4px 12px rgba(34,197,94,0.4)', animation: 'bounce-in 0.5s ease' }}>
-          <Star size={12} fill="#fff"/>MAIS POPULAR — Economize R$ 149
+          <Star size={12} fill="#fff"/>MAIS POPULAR — Economize R$ {savings}
         </div>
       )}
       <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 600, color: isAnnual ? '#16a34a' : '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{isAnnual ? 'Anual' : 'Mensal'}</p>
@@ -471,7 +473,7 @@ function PlanCard({ type, billing }: { type: 'monthly' | 'annual'; billing: 'mon
         <span style={{ fontSize: 42, fontWeight: 800, color: '#0f172a', lineHeight: 1, transition: 'all 0.3s' }}>{isAnnual ? `R$ ${priceAnnual}` : `R$ ${priceMonthly}`}</span>
         <span style={{ fontSize: 14, color: '#94a3b8', marginBottom: 6 }}>{isAnnual ? '/ano' : '/mês'}</span>
       </div>
-      <p style={{ margin: '0 0 24px', fontSize: 13, color: isAnnual ? '#16a34a' : '#94a3b8', fontWeight: isAnnual ? 500 : 400 }}>{isAnnual ? '≈ R$ 16,58/mês · Economize R$ 149' : 'Cancele quando quiser'}</p>
+      <p style={{ margin: '0 0 24px', fontSize: 13, color: isAnnual ? '#16a34a' : '#94a3b8', fontWeight: isAnnual ? 500 : 400 }}>{isAnnual ? `≈ R$ ${monthlyEquiv}/mês · Economize R$ ${savings}` : 'Cancele quando quiser'}</p>
       <ul style={{ listStyle: 'none', margin: '0 0 28px', padding: 0, display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
         {PLAN_FEATURES.map((f, i) => (
           <li key={f} style={{ display: 'flex', alignItems: 'center', gap: 10, opacity: 0, animation: `bounce-in 0.4s ease ${i * 40}ms forwards` }}>
