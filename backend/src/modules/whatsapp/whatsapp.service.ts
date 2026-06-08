@@ -41,7 +41,7 @@ export class WhatsappService {
       switch (intent.action) {
         case 'register_transaction': {
           const { transaction } = intent;
-          await this.transactions.create(user.id, {
+          const created = await this.transactions.create(user.id, {
             type: transaction.type,
             amount: transaction.amount,
             description: transaction.description,
@@ -51,15 +51,17 @@ export class WhatsappService {
             raw_message: message,
           });
 
-          const emoji = transaction.type === 'expense' ? '💸' : '💰';
-          const verb = transaction.type === 'expense' ? 'Despesa' : 'Receita';
+          const verb = transaction.type === 'expense' ? 'Novo Gasto Registrado' : 'Nova Receita Registrada';
+          const shortId = (created?.id as string)?.slice(-6) ?? '------';
+          const formattedAmount = transaction.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
           reply =
-            `${emoji} *${verb} registrada!*\n\n` +
-            `📝 ${transaction.description}\n` +
-            `💵 R$ ${transaction.amount.toFixed(2).replace('.', ',')}\n` +
-            `🏷️ ${transaction.category}\n` +
-            `📅 ${new Date(transaction.date + 'T12:00:00').toLocaleDateString('pt-BR')}\n\n` +
-            `_Visualize no dashboard: finora.app/dashboard_`;
+            `✅ *${verb}!*\n\n` +
+            `📝 *Descrição:* ${transaction.description}\n` +
+            `🏷️ *Categoria:* ${transaction.category}\n` +
+            `💸 *Valor:* R$ ${formattedAmount}\n\n` +
+            `📅 *Data:* ${new Date(transaction.date + 'T12:00:00').toLocaleDateString('pt-BR')}\n` +
+            `⚙️ *ID:* ${shortId}\n\n` +
+            `> _Visualize ou edite em: meufinora.com.br_`;
           break;
         }
 
