@@ -71,6 +71,30 @@ export class UsersService {
     return profile;
   }
 
+  async findByPhone(phone: string) {
+    const phoneVariants = new Set<string>([phone]);
+    let base = phone;
+    if (base.startsWith('55')) base = base.slice(2);
+    phoneVariants.add(base);
+    phoneVariants.add('55' + base);
+    if (base.length === 10) {
+      const with9 = base.slice(0, 2) + '9' + base.slice(2);
+      phoneVariants.add(with9);
+      phoneVariants.add('55' + with9);
+    } else if (base.length === 11 && base[2] === '9') {
+      const without9 = base.slice(0, 2) + base.slice(3);
+      phoneVariants.add(without9);
+      phoneVariants.add('55' + without9);
+    }
+
+    const { data } = await this.supabase
+      .from('profiles')
+      .select('*')
+      .in('phone', Array.from(phoneVariants))
+      .limit(1);
+    return data?.[0] ?? null;
+  }
+
   async findById(id: string) {
     const { data } = await this.supabase.from('profiles').select('*').eq('id', id).single();
     return data;

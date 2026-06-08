@@ -33,7 +33,29 @@ export class WhatsappService {
 
     try {
       this.logger.log(`[1] Finding user for phone ${normalizedPhone}`);
-      const user = await this.users.findOrCreateByPhone(normalizedPhone);
+      const user = await this.users.findByPhone(normalizedPhone);
+
+      // Paywall gate: no account or unpaid account
+      if (!user) {
+        await this.sendMessage(
+          normalizedPhone,
+          `👋 Olá! Para usar o *Finora* pelo WhatsApp, crie sua conta em:\n\n` +
+          `🔗 *${this.dashboardUrl}*\n\n` +
+          `É rápido e fácil! 🐷`,
+        );
+        return;
+      }
+
+      if (!user.paid) {
+        await this.sendMessage(
+          normalizedPhone,
+          `⚠️ Sua conta Finora está *inativa*.\n\n` +
+          `Para continuar registrando seus gastos pelo WhatsApp, assine um plano:\n\n` +
+          `💳 *${this.dashboardUrl}/dashboard/plano*`,
+        );
+        return;
+      }
+
       this.logger.log(`[2] User found: ${user?.id} — parsing message with AI`);
       const intent = await this.ai.parseMessage(message);
       this.logger.log(`[3] AI intent: ${intent.action}`);
@@ -104,7 +126,11 @@ export class WhatsappService {
   async handleDeleteCommand(phone: string, shortId: string): Promise<void> {
     const normalizedPhone = phone.replace(/\D/g, '');
     try {
-      const user = await this.users.findOrCreateByPhone(normalizedPhone);
+      const user = await this.users.findByPhone(normalizedPhone);
+      if (!user || !user.paid) {
+        await this.sendMessage(normalizedPhone, `❌ Você não tem uma conta ativa no Finora. Acesse: *${this.dashboardUrl}*`);
+        return;
+      }
       const tx = await this.transactions.findByShortId(user.id, shortId);
 
       if (!tx) {
