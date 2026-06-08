@@ -264,7 +264,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         )}
         {/* Page content */}
-        <main style={{ flex: 1, padding: '20px 16px', paddingBottom: 90, overflowY: 'auto' }}>
+        <main style={{ flex: 1, padding: '20px 16px', paddingBottom: 90, overflowY: 'auto', overflowX: 'hidden', minWidth: 0 }}>
           {children}
         </main>
 
@@ -361,7 +361,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {broadcast.type === 'warning' ? '⚠️' : broadcast.type === 'error' ? '🚨' : 'ℹ️'} <span>{broadcast.message}</span>
           </div>
         )}
-        <main style={{ flex: 1, padding: '32px', overflowY: 'auto' }}><PaywallGuard>{children}</PaywallGuard></main>
+        <main style={{ flex: 1, padding: '32px', overflowY: 'auto', overflowX: 'hidden', minWidth: 0 }}><PaywallGuard>{children}</PaywallGuard></main>
       </div>
     </div>
   );
