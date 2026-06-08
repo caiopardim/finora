@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { Check, ArrowRight, Copy, CheckCircle, CreditCard, Loader2, Eye, EyeOff } from 'lucide-react';
+import { Check, ArrowRight, ArrowLeft, Copy, CheckCircle, CreditCard, Loader2, Eye, EyeOff } from 'lucide-react';
 import { getSettings } from '@/lib/settings';
 
 function AssinaturaContent() {
@@ -189,6 +189,9 @@ function AssinaturaContent() {
         {/* CADASTRO */}
         {step === 'register' && (
           <div>
+            <button onClick={() => setStep('plan')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#64748b', fontSize: 13, cursor: 'pointer', padding: '0 0 16px', fontWeight: 500 }}>
+              <ArrowLeft size={14}/> Voltar
+            </button>
             <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 800, margin: '0 0 4px', textAlign: 'center' }}>Crie sua conta</h1>
             <p style={{ color: '#64748b', fontSize: 13, textAlign: 'center', margin: '0 0 20px' }}>Rápido, só leva 30 segundos</p>
 
@@ -223,6 +226,9 @@ function AssinaturaContent() {
         {/* PAGAMENTO */}
         {step === 'payment' && (
           <div>
+            <button onClick={() => setStep('register')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#64748b', fontSize: 13, cursor: 'pointer', padding: '0 0 16px', fontWeight: 500 }}>
+              <ArrowLeft size={14}/> Voltar
+            </button>
             <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 800, margin: '0 0 4px', textAlign: 'center' }}>Cadastre sua forma de pagamento</h1>
             <p style={{ color: '#64748b', fontSize: 13, textAlign: 'center', margin: '0 0 12px' }}>Pagamento 100% seguro via Mercado Pago</p>
 
@@ -283,6 +289,9 @@ function AssinaturaContent() {
         {/* PIX QR CODE */}
         {step === 'pix' && (
           <div style={{ textAlign: 'center' }}>
+            <button onClick={() => setStep('payment')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#64748b', fontSize: 13, cursor: 'pointer', padding: '0 0 16px', fontWeight: 500 }}>
+              <ArrowLeft size={14}/> Voltar
+            </button>
             <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(34,197,94,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', fontSize: 26 }}>⚡</div>
             <h1 style={{ color: '#fff', fontSize: 20, fontWeight: 800, margin: '0 0 4px' }}>Escaneie o QR Code PIX</h1>
             <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 20px' }}>Abra o app do seu banco e escaneie</p>
