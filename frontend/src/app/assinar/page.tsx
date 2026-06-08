@@ -217,8 +217,16 @@ function AssinaturaContent() {
         {/* PAGAMENTO */}
         {step === 'payment' && (
           <div>
-            <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 800, margin: '0 0 4px', textAlign: 'center' }}>Como quer pagar?</h1>
-            <p style={{ color: '#64748b', fontSize: 13, textAlign: 'center', margin: '0 0 20px' }}>Pagamento 100% seguro via Mercado Pago</p>
+            <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 800, margin: '0 0 4px', textAlign: 'center' }}>Cadastre sua forma de pagamento</h1>
+            <p style={{ color: '#64748b', fontSize: 13, textAlign: 'center', margin: '0 0 12px' }}>Pagamento 100% seguro via Mercado Pago</p>
+
+            {/* Trial notice */}
+            <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 18 }}>🎉</span>
+              <p style={{ margin: 0, fontSize: 13, color: '#fbbf24', lineHeight: 1.5 }}>
+                <strong>Você não será cobrado agora.</strong> O cartão só será cobrado após o período de teste grátis de 3 dias.
+              </p>
+            </div>
 
             <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 12, padding: '14px 16px', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
               <div>
