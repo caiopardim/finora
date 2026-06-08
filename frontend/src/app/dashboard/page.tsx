@@ -180,7 +180,7 @@ export default function DashboardPage() {
       )}
 
       {/* Weekly + Forecast row */}
-      <div className="grid-charts" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20 }}>
+      <div className="grid-2col-eq">
         {/* Weekly summary */}
         <div style={{ background:c.surface, borderRadius:16, border:`1px solid ${c.border}`, padding:'18px 20px', boxShadow:c.shadow }}>
           <p style={{ margin:'0 0 14px', fontWeight:700, fontSize:14, color:c.textSecondary }}>📅 Resumo da Semana</p>
