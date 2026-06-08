@@ -60,16 +60,8 @@ export default function Sidebar() {
     }}>
       {/* Logo */}
       <div style={{ padding: '24px 20px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 10,
-            background: 'linear-gradient(135deg,#22c55e,#16a34a)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
-          }}>💰</div>
-          <div>
-            <p style={{ color: '#fff', fontWeight: 700, fontSize: 16, margin: 0 }}>Finora</p>
-            <p style={{ color: '#475569', fontSize: 11, margin: 0 }}>Mais controle, menos planilhas</p>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 32 }}/>
         </div>
       </div>
 

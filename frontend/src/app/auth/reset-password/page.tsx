@@ -39,9 +39,8 @@ export default function ResetPasswordPage() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg,#f0fdf4,#ecfdf5,#f8fafc)', fontFamily: 'Inter, system-ui, sans-serif', padding: '24px 16px' }}>
       <div style={{ width: '100%', maxWidth: 420, background: '#fff', borderRadius: 20, padding: 'clamp(28px, 5vw, 44px)', boxShadow: '0 8px 40px rgba(0,0,0,0.08)' }}>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32, justifyContent: 'center' }}>
-          <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg,#22c55e,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>💰</div>
-          <span style={{ fontWeight: 700, fontSize: 18, color: '#0f172a' }}>Finora</span>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 32 }}>
+          <img src="/logo-finora.svg" alt="Finora" style={{ height: 34 }}/>
         </div>
 
         {done ? (

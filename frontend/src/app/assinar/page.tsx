@@ -121,9 +121,8 @@ function AssinaturaContent() {
       `}</style>
 
       {/* Logo */}
-      <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', marginBottom: 28 }}>
-        <div style={{ width: 34, height: 34, borderRadius: 9, background: 'linear-gradient(135deg,#22c55e,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>💰</div>
-        <span style={{ color: '#fff', fontWeight: 700, fontSize: 17 }}>Finora</span>
+      <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', marginBottom: 28 }}>
+        <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 34 }}/>
       </Link>
 
       {/* Steps */}

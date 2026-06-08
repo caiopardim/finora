@@ -53,12 +53,8 @@ export default function LoginPage() {
       {/* Left panel — hidden on mobile */}
       <div className="login-left" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: 48, background: 'linear-gradient(160deg,#0f172a 0%,#1e293b 100%)', maxWidth: 480 }}>
         <div style={{ maxWidth: 360, width: '100%' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 48 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: 'linear-gradient(135deg,#22c55e,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>💰</div>
-            <div>
-              <p style={{ color: '#fff', fontWeight: 700, fontSize: 20, margin: 0 }}>Finora</p>
-              <p style={{ color: '#475569', fontSize: 12, margin: 0 }}>Mais controle, menos planilhas</p>
-            </div>
+          <div style={{ marginBottom: 48 }}>
+            <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 38 }}/>
           </div>
           <h2 style={{ color: '#fff', fontSize: 28, fontWeight: 700, margin: '0 0 12px', lineHeight: 1.2 }}>Controle suas finanças com IA</h2>
           <p style={{ color: '#64748b', fontSize: 15, margin: '0 0 40px', lineHeight: 1.6 }}>Registre gastos pelo WhatsApp e acompanhe tudo em um dashboard completo.</p>
@@ -85,10 +81,9 @@ export default function LoginPage() {
         <div style={{ width: '100%', maxWidth: 400 }}>
 
           {/* Logo — only on mobile */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 32, justifyContent: 'center' }} className="mobile-logo">
-            <style>{`.mobile-logo { display: none !important; } @media (max-width: 768px) { .mobile-logo { display: flex !important; } }`}</style>
-            <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg,#22c55e,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>💰</div>
-            <span style={{ fontWeight: 700, fontSize: 18, color: '#0f172a' }}>Finora</span>
+          <div style={{ display: 'none', justifyContent: 'center', marginBottom: 32 }} className="mobile-logo">
+            <style>{`@media (max-width: 768px) { .mobile-logo { display: flex !important; } }`}</style>
+            <img src="/logo-finora.svg" alt="Finora" style={{ height: 34 }}/>
           </div>
 
           {/* LOGIN */}

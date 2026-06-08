@@ -243,9 +243,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: c.bg, fontFamily: 'Inter, system-ui, sans-serif', transition: 'background 0.2s' }}>
         {/* Mobile topbar */}
         <header style={{ background: isDark ? '#020617' : '#0f172a', padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 40 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 9, background: 'linear-gradient(135deg,#22c55e,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>💰</div>
-            <span style={{ color: '#fff', fontWeight: 700, fontSize: 16 }}>Finora</span>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 28 }}/>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button onClick={toggleTheme} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: 8 }}>
@@ -301,12 +300,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Sidebar */}
       <aside style={{ width: 240, minHeight: '100vh', flexShrink: 0, background: c.sidebar, display: 'flex', flexDirection: 'column', position: 'sticky', top: 0, height: '100vh' }}>
         <div style={{ padding: '24px 20px 20px', borderBottom: `1px solid ${c.sidebarBorder}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#22c55e,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>💰</div>
-            <div>
-              <p style={{ color: '#fff', fontWeight: 700, fontSize: 16, margin: 0 }}>Finora</p>
-              <p style={{ color: '#475569', fontSize: 11, margin: 0 }}>Mais controle, menos planilhas</p>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 32 }}/>
+          </div>
           </div>
         </div>
 

@@ -166,9 +166,8 @@ export default function Home() {
         top: 0,
         zIndex: 50,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#22c55e,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}>💰</div>
-          <span style={{ fontWeight: 700, fontSize: 18, color: '#0f172a' }}>Finora</span>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <img src="/logo-finora.svg" alt="Finora" style={{ height: 36 }}/>
         </div>
         <nav style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <div className="header-nav-links" style={{ gap: 24, alignItems: 'center', marginRight: 10 }}>
@@ -401,8 +400,8 @@ export default function Home() {
       {/* Footer */}
       <footer style={{ padding: '32px 48px', borderTop: '1px solid #e2e8f0', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg,#22c55e,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>💰</div>
-          <span style={{ color: '#64748b', fontSize: 13, fontWeight: 500 }}>Finora — Mais controle, menos planilhas</span>
+          <img src="/logo-finora.svg" alt="Finora" style={{ height: 24 }}/>
+          <span style={{ color: '#64748b', fontSize: 13, fontWeight: 500 }}>Mais controle, menos planilhas</span>
         </div>
         <div style={{ display: 'flex', gap: 24 }}>
           {['Política de Privacidade', 'Termos de Uso', 'Suporte'].map(l => (
