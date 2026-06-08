@@ -53,7 +53,7 @@ export default function DashboardPage() {
       supabase.from('transactions').select('id,type,amount,description,date,source,categories(name,icon,color)').eq('user_id', uid).order('date', { ascending: false }).limit(8),
       supabase.from('transactions').select('category_id,amount,categories(id,name,icon,color,budget_limit)').eq('user_id', uid).eq('type', 'expense').gte('date', monthStart).lte('date', monthEnd),
       supabase.from('bills').select('*').eq('user_id', uid).eq('paid', false).lte('due_date', weekEnd7).order('due_date', { ascending: true }),
-      supabase.from('profiles').select('budget_mode,budget_pct,budget_fixed').eq('id', uid).maybeSingle(),
+      supabase.from('profiles').select('budget_mode,budget_pct,budget_fixed,name').eq('id', uid).maybeSingle(),
     ]);
 
     const income  = (txMonth.data||[]).filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
@@ -114,6 +114,7 @@ export default function DashboardPage() {
       pieData, wealthData, budgetData,
       bills: bills.data||[],
       globalLimit, globalPct, globalOver,
+      userName: prof?.name || session.user.email?.split('@')[0] || 'Cliente',
     });
     setTransactions(txRecent.data||[]);
     setLoading(false);
@@ -129,10 +130,12 @@ export default function DashboardPage() {
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 700, color: c.text, margin: '0 0 2px' }}>Visão Geral</h1>
-          <p style={{ color: c.textFaint, fontSize: 14, margin: 0 }}>
+          <p style={{ color: c.textFaint, fontSize: 14, margin: '0 0 2px' }}>
             {new Date().toLocaleString('pt-BR',{weekday:'long', day:'numeric', month:'long'})}
           </p>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: c.text, margin: 0 }}>
+            Bem-vindo, {data.userName?.split(' ')[0]} 👋
+          </h1>
         </div>
         <button onClick={() => setShowAdd(true)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 18px', background:'linear-gradient(135deg,#22c55e,#16a34a)', border:'none', borderRadius:11, color:'#fff', fontSize:14, fontWeight:600, cursor:'pointer', boxShadow:'0 4px 14px rgba(34,197,94,0.3)' }}>
           <Plus size={16}/> Nova Transação
