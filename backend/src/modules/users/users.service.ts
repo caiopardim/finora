@@ -33,7 +33,7 @@ export class UsersService {
     const { data: existing } = await this.supabase
       .from('profiles')
       .select('*')
-      .in('phone', phoneVariants)
+      .in('phone', Array.from(phoneVariants))
       .single();
 
     if (existing) return existing;
