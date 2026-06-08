@@ -146,20 +146,20 @@ export default function PlanoPage() {
                 {info.in_trial ? 'Assine agora para continuar após o trial' : 'Reativar assinatura'}
               </h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12 }}>
-                <button onClick={() => handleSubscribe('monthly')} disabled={!!subscribing} style={{ padding: 16, borderRadius: 12, border: `1px solid ${c.border}`, background: c.bg, cursor: subscribing ? 'wait' : 'pointer', textAlign: 'left' }}>
+                <button onClick={() => router.push('/assinar?plan=monthly')} style={{ padding: 16, borderRadius: 12, border: `1px solid ${c.border}`, background: c.bg, cursor: 'pointer', textAlign: 'left' }}>
                   <p style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: c.text }}>R$ 29<span style={{ fontSize: 13, fontWeight: 400, color: c.textMuted }}>/mês</span></p>
                   <p style={{ margin: 0, fontSize: 13, color: c.textMuted }}>Mensal · Cancele quando quiser</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, color: '#22c55e', fontSize: 13, fontWeight: 600 }}>
-                    {subscribing === 'monthly' ? 'Aguarde...' : <><ArrowRight size={14}/>Assinar mensal</>}
+                    <ArrowRight size={14}/>Assinar mensal
                   </div>
                 </button>
 
-                <button onClick={() => handleSubscribe('annual')} disabled={!!subscribing} style={{ padding: 16, borderRadius: 12, border: '2px solid #22c55e', background: '#052e1620', cursor: subscribing ? 'wait' : 'pointer', textAlign: 'left', position: 'relative' }}>
+                <button onClick={() => router.push('/assinar?plan=annual')} style={{ padding: 16, borderRadius: 12, border: '2px solid #22c55e', background: '#052e1620', cursor: 'pointer', textAlign: 'left', position: 'relative' }}>
                   <div style={{ position: 'absolute', top: -10, right: 12, background: '#15803d', color: '#86efac', fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 99 }}>RECOMENDADO</div>
                   <p style={{ margin: '0 0 4px', fontSize: 16, fontWeight: 700, color: c.text }}>R$ 199<span style={{ fontSize: 13, fontWeight: 400, color: c.textMuted }}>/ano</span></p>
                   <p style={{ margin: 0, fontSize: 13, color: '#4ade80' }}>≈ R$ 16,58/mês · Economize R$ 149</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 12, color: '#22c55e', fontSize: 13, fontWeight: 600 }}>
-                    {subscribing === 'annual' ? 'Aguarde...' : <><ArrowRight size={14}/>Assinar anual</>}
+                    <ArrowRight size={14}/>Assinar anual
                   </div>
                 </button>
               </div>
