@@ -32,8 +32,11 @@ export class WhatsappService {
     this.logger.log(`Message from ${normalizedPhone}: ${message}`);
 
     try {
+      this.logger.log(`[1] Finding user for phone ${normalizedPhone}`);
       const user = await this.users.findOrCreateByPhone(normalizedPhone);
+      this.logger.log(`[2] User found: ${user?.id} — parsing message with AI`);
       const intent = await this.ai.parseMessage(message);
+      this.logger.log(`[3] AI intent: ${intent.action}`);
 
       switch (intent.action) {
         case 'register_transaction': {
