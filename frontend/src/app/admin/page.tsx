@@ -8,7 +8,7 @@ import {
   Search, Trash2, Shield, User, ChevronDown, ChevronUp,
   RefreshCw, X, Check, AlertTriangle, Download, Ban,
   Send, Bell, Wrench, BarChart2, Users, TrendingUp,
-  Mail, Pencil, UserCheck, CreditCard, DollarSign, Clock, XCircle, CheckCircle,
+  Mail, Pencil, UserCheck, CreditCard, DollarSign, Clock, XCircle, CheckCircle, Tag,
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import dayjs from 'dayjs';
@@ -25,7 +25,7 @@ async function adminFetch(path: string, opts: RequestInit = {}) {
   });
 }
 
-type Tab = 'overview' | 'revenue' | 'users' | 'broadcast' | 'maintenance';
+type Tab = 'overview' | 'revenue' | 'users' | 'broadcast' | 'maintenance' | 'pricing';
 
 export default function AdminPage() {
   const { c, isDark } = useTheme();
@@ -59,6 +59,11 @@ export default function AdminPage() {
   const [maintenanceOn, setMaintenanceOn]   = useState(false);
   const [maintenanceMsg, setMaintenanceMsg] = useState('Sistema em manutenção. Voltamos em breve!');
   const [maintenanceSaving, setMaintenanceSaving] = useState(false);
+
+  // Pricing
+  const [priceMonthly, setPriceMonthly] = useState('29');
+  const [priceAnnual, setPriceAnnual]   = useState('199');
+  const [priceSaving, setPriceSaving]   = useState(false);
 
   // Email
   const [emailTarget, setEmailTarget]   = useState('');
@@ -94,6 +99,11 @@ export default function AdminPage() {
       setActiveBroadcast(broadcastRes.broadcast);
       if (broadcastRes.broadcast) { setBroadcastMsg(broadcastRes.broadcast.message); setBroadcastType(broadcastRes.broadcast.type); }
       if (maintenanceRes.maintenance) { setMaintenanceOn(true); setMaintenanceMsg(maintenanceRes.maintenance.message); }
+
+      // Load pricing
+      const settingsRes = await adminFetch('/api/admin/settings').then(r => r.json());
+      if (settingsRes.price_monthly) setPriceMonthly(settingsRes.price_monthly);
+      if (settingsRes.price_annual)  setPriceAnnual(settingsRes.price_annual);
     } catch (err: any) {
       setApiError('Falha ao conectar com a API: ' + (err?.message || String(err)));
     }
@@ -177,6 +187,16 @@ export default function AdminPage() {
     setBroadcastSaving(false);
   }
 
+  async function savePricing() {
+    setPriceSaving(true);
+    await Promise.all([
+      adminFetch('/api/admin/settings', { method: 'PATCH', body: JSON.stringify({ key: 'price_monthly', value: priceMonthly }) }),
+      adminFetch('/api/admin/settings', { method: 'PATCH', body: JSON.stringify({ key: 'price_annual',  value: priceAnnual  }) }),
+    ]);
+    showToast('✅ Preços atualizados! Refletem na landing page e checkout em instantes.');
+    setPriceSaving(false);
+  }
+
   async function saveMaintenance() {
     setMaintenanceSaving(true);
     await adminFetch('/api/admin/maintenance', { method: 'POST', body: JSON.stringify({ enabled: maintenanceOn, message: maintenanceMsg }) });
@@ -227,6 +247,7 @@ export default function AdminPage() {
     { id: 'users',       label: 'Usuários',     icon: Users },
     { id: 'broadcast',   label: 'Avisos',       icon: Bell },
     { id: 'maintenance', label: 'Manutenção',   icon: Wrench },
+    { id: 'pricing',     label: 'Preços',       icon: Tag },
   ];
 
   // Revenue computed from users list
@@ -882,6 +903,77 @@ export default function AdminPage() {
                   {maintenanceSaving ? <RefreshCw size={15} style={{ animation: 'spin 1s linear infinite' }}/> : <Wrench size={15}/>}
                   {maintenanceOn ? 'Ativar banner de manutenção' : 'Desativar manutenção'}
                 </button>
+              </div>
+            </div>
+          )}
+          {/* ── PRICING ── */}
+          {tab === 'pricing' && (
+            <div style={{ maxWidth: 560 }}>
+              <div style={{ background: c.surface, borderRadius: 16, border: `1px solid ${c.border}`, padding: 28 }}>
+                <h2 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 700, color: c.text }}>💰 Preços dos Planos</h2>
+                <p style={{ margin: '0 0 28px', fontSize: 13, color: c.textFaint }}>
+                  Altere os valores aqui e eles serão refletidos automaticamente na landing page, checkout e plano do cliente.
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+                  {/* Mensal */}
+                  <div style={{ background: c.inputBg, borderRadius: 14, padding: 20, border: `1px solid ${c.border}` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 10, background: '#6366f120', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Tag size={16} color="#6366f1"/>
+                      </div>
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: c.text }}>Plano Mensal</p>
+                        <p style={{ margin: 0, fontSize: 12, color: c.textFaint }}>Cobrado todo mês</p>
+                      </div>
+                    </div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>Valor (R$)</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 20, fontWeight: 700, color: c.textMuted }}>R$</span>
+                      <input
+                        type="number" min="1" step="1"
+                        value={priceMonthly}
+                        onChange={e => setPriceMonthly(e.target.value)}
+                        style={{ flex: 1, padding: '12px 16px', borderRadius: 10, border: `1.5px solid ${c.border}`, fontSize: 22, fontWeight: 800, color: c.text, background: c.surface, outline: 'none', textAlign: 'center' }}
+                      />
+                      <span style={{ fontSize: 14, color: c.textFaint }}>/mês</span>
+                    </div>
+                  </div>
+
+                  {/* Anual */}
+                  <div style={{ background: c.inputBg, borderRadius: 14, padding: 20, border: `2px solid #22c55e30` }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                      <div style={{ width: 36, height: 36, borderRadius: 10, background: '#22c55e20', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Tag size={16} color="#22c55e"/>
+                      </div>
+                      <div>
+                        <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: c.text }}>Plano Anual</p>
+                        <p style={{ margin: 0, fontSize: 12, color: c.textFaint }}>
+                          Cobrado uma vez por ano · ≈ R$ {(Number(priceAnnual) / 12).toFixed(2).replace('.', ',')}/mês
+                        </p>
+                      </div>
+                    </div>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>Valor (R$)</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 20, fontWeight: 700, color: c.textMuted }}>R$</span>
+                      <input
+                        type="number" min="1" step="1"
+                        value={priceAnnual}
+                        onChange={e => setPriceAnnual(e.target.value)}
+                        style={{ flex: 1, padding: '12px 16px', borderRadius: 10, border: `1.5px solid ${c.border}`, fontSize: 22, fontWeight: 800, color: c.text, background: c.surface, outline: 'none', textAlign: 'center' }}
+                      />
+                      <span style={{ fontSize: 14, color: c.textFaint }}>/ano</span>
+                    </div>
+                    <p style={{ margin: '10px 0 0', fontSize: 12, color: '#4ade80' }}>
+                      Economia: R$ {(Number(priceMonthly) * 12 - Number(priceAnnual))} em relação ao mensal
+                    </p>
+                  </div>
+
+                  <button onClick={savePricing} disabled={priceSaving} style={{ width: '100%', padding: '14px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: priceSaving ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 12px rgba(34,197,94,0.3)' }}>
+                    {priceSaving ? <RefreshCw size={15} style={{ animation: 'spin 1s linear infinite' }}/> : <Tag size={15}/>}
+                    {priceSaving ? 'Salvando...' : 'Salvar preços'}
+                  </button>
+                </div>
               </div>
             </div>
           )}

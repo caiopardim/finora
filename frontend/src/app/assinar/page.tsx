@@ -5,14 +5,20 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Check, ArrowRight, Copy, CheckCircle, CreditCard, Loader2, Eye, EyeOff } from 'lucide-react';
-
-const PLANS = {
-  monthly: { label: 'Mensal',  price: 29,  period: '/mês', desc: 'Cancele quando quiser' },
-  annual:  { label: 'Anual',   price: 199, period: '/ano', desc: '≈ R$ 16,58/mês · Economize R$ 149' },
-};
+import { getSettings } from '@/lib/settings';
 
 function AssinaturaContent() {
   const router = useRouter();
+  const [prices, setPrices] = useState({ monthly: 29, annual: 199 });
+
+  useEffect(() => {
+    getSettings().then(s => setPrices({ monthly: s.price_monthly, annual: s.price_annual }));
+  }, []);
+
+  const PLANS = {
+    monthly: { label: 'Mensal', price: prices.monthly, period: '/mês', desc: 'Cancele quando quiser' },
+    annual:  { label: 'Anual',  price: prices.annual,  period: '/ano', desc: `≈ R$ ${(prices.annual/12).toFixed(2).replace('.',',')}/mês · Economize R$ ${prices.monthly*12-prices.annual}` },
+  };
   const params = useSearchParams();
 
   const [plan, setPlan]     = useState<'monthly' | 'annual'>(params.get('plan') === 'monthly' ? 'monthly' : 'annual');

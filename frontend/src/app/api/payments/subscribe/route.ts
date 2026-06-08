@@ -6,20 +6,15 @@ export const runtime = 'nodejs';
 const MP_TOKEN   = process.env.MERCADO_PAGO_ACCESS_TOKEN!;
 const APP_URL    = process.env.NEXT_PUBLIC_APP_URL || 'https://meufinora.com.br';
 
-const PLANS = {
-  monthly: {
-    reason: 'Finora Pro — Mensal',
-    frequency: 1,
-    frequency_type: 'months',
-    transaction_amount: 29.00,
-  },
-  annual: {
-    reason: 'Finora Pro — Anual',
-    frequency: 12,
-    frequency_type: 'months',
-    transaction_amount: 199.00,
-  },
-};
+async function getPlans(admin: any) {
+  const { data } = await admin.from('settings').select('key, value');
+  const map: Record<string, string> = {};
+  (data || []).forEach((r: any) => { map[r.key] = r.value; });
+  return {
+    monthly: { reason: 'Finora Pro — Mensal', frequency: 1,  frequency_type: 'months', transaction_amount: Number(map.price_monthly || 29) },
+    annual:  { reason: 'Finora Pro — Anual',  frequency: 12, frequency_type: 'months', transaction_amount: Number(map.price_annual  || 199) },
+  };
+}
 
 export async function POST(req: NextRequest) {
   const token = req.headers.get('authorization')?.replace('Bearer ', '');
@@ -30,6 +25,7 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
   const { plan_type } = await req.json(); // 'monthly' | 'annual'
+  const PLANS = await getPlans(admin);
   const plan = PLANS[plan_type as keyof typeof PLANS];
   if (!plan) return NextResponse.json({ error: 'Plano inválido' }, { status: 400 });
 

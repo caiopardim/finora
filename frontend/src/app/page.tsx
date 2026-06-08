@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { Check, Star, ArrowRight, Zap } from 'lucide-react';
+import { getSettings } from '@/lib/settings';
 
 /* ── Animação de entrada ao scroll ── */
 function useInView(threshold = 0.15) {
@@ -114,9 +115,12 @@ function FeatureCard({ f, delay }: { f: typeof FEATURES[0]; delay: number }) {
 export default function Home() {
   const [billing, setBilling] = useState<'monthly' | 'annual'>('annual');
   const [heroVisible, setHeroVisible] = useState(false);
+  const [priceMonthly, setPriceMonthly] = useState(29);
+  const [priceAnnual, setPriceAnnual]   = useState(199);
 
   useEffect(() => {
     const t = setTimeout(() => setHeroVisible(true), 80);
+    getSettings().then(s => { setPriceMonthly(s.price_monthly); setPriceAnnual(s.price_annual); });
     return () => clearTimeout(t);
   }, []);
 
@@ -266,7 +270,7 @@ export default function Home() {
             {[
               { value: 3, suffix: ' dias', label: 'de trial grátis' },
               { value: 12, suffix: '+', label: 'funcionalidades' },
-              { value: 29, suffix: ' R$', label: 'por mês' },
+              { value: priceMonthly, suffix: ' R$', label: 'por mês' },
             ].map(s => (
               <div key={s.label} style={{ textAlign: 'center' }}>
                 <p style={{ margin: '0 0 2px', fontSize: 26, fontWeight: 800, color: '#22c55e' }}>
@@ -464,7 +468,7 @@ function PlanCard({ type, billing }: { type: 'monthly' | 'annual'; billing: 'mon
       )}
       <p style={{ margin: '0 0 4px', fontSize: 13, fontWeight: 600, color: isAnnual ? '#16a34a' : '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{isAnnual ? 'Anual' : 'Mensal'}</p>
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, marginBottom: 4 }}>
-        <span style={{ fontSize: 42, fontWeight: 800, color: '#0f172a', lineHeight: 1, transition: 'all 0.3s' }}>{isAnnual ? 'R$ 199' : 'R$ 29'}</span>
+        <span style={{ fontSize: 42, fontWeight: 800, color: '#0f172a', lineHeight: 1, transition: 'all 0.3s' }}>{isAnnual ? `R$ ${priceAnnual}` : `R$ ${priceMonthly}`}</span>
         <span style={{ fontSize: 14, color: '#94a3b8', marginBottom: 6 }}>{isAnnual ? '/ano' : '/mês'}</span>
       </div>
       <p style={{ margin: '0 0 24px', fontSize: 13, color: isAnnual ? '#16a34a' : '#94a3b8', fontWeight: isAnnual ? 500 : 400 }}>{isAnnual ? '≈ R$ 16,58/mês · Economize R$ 149' : 'Cancele quando quiser'}</p>
@@ -479,7 +483,7 @@ function PlanCard({ type, billing }: { type: 'monthly' | 'annual'; billing: 'mon
         ))}
       </ul>
       <Link href={isAnnual ? '/assinar?plan=annual' : '/assinar?plan=monthly'} className="btn-glow" style={{ width: '100%', padding: '14px', borderRadius: 12, border: isAnnual ? 'none' : '2px solid #22c55e', background: isAnnual ? 'linear-gradient(135deg,#22c55e,#16a34a)' : 'transparent', color: isAnnual ? '#fff' : '#22c55e', fontSize: 15, fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: isAnnual ? '0 4px 16px rgba(34,197,94,0.4)' : 'none', boxSizing: 'border-box' }}>
-        {isAnnual ? <><Star size={15} fill="#fff"/>Assinar por R$ 199/ano</> : <><ArrowRight size={16}/>Assinar mensal</>}
+        {isAnnual ? <><Star size={15} fill="#fff"/>Assinar por R$ {priceAnnual}/ano</> : <><ArrowRight size={16}/>Assinar por R$ {priceMonthly}/mês</>}
       </Link>
     </div>
   );

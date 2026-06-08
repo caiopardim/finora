@@ -4,11 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Check, Zap, Star, ArrowRight, LogIn } from 'lucide-react';
-
-const MONTHLY_PRICE = 29;
-const ANNUAL_PRICE  = 199;
-const ANNUAL_MONTHLY_EQUIV = (ANNUAL_PRICE / 12).toFixed(2).replace('.', ',');
-const ANNUAL_SAVINGS = ((MONTHLY_PRICE * 12) - ANNUAL_PRICE);
+import { getSettings } from '@/lib/settings';
 
 const FEATURES = [
   'Dashboard completo com gráficos',
@@ -30,9 +26,15 @@ export default function PlanosPage() {
   const [billing, setBilling] = useState<'monthly' | 'annual'>('annual');
   const [loading, setLoading] = useState<'monthly' | 'annual' | null>(null);
   const [loggedIn, setLoggedIn] = useState(false);
+  const [MONTHLY_PRICE, setMonthlyPrice] = useState(29);
+  const [ANNUAL_PRICE, setAnnualPrice]   = useState(199);
+
+  const ANNUAL_MONTHLY_EQUIV = (ANNUAL_PRICE / 12).toFixed(2).replace('.', ',');
+  const ANNUAL_SAVINGS = (MONTHLY_PRICE * 12) - ANNUAL_PRICE;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => setLoggedIn(!!session));
+    getSettings().then(s => { setMonthlyPrice(s.price_monthly); setAnnualPrice(s.price_annual); });
   }, []);
 
   async function handleSubscribe(plan: 'monthly' | 'annual') {
