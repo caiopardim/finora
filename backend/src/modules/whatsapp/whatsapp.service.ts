@@ -101,6 +101,25 @@ export class WhatsappService {
     }
   }
 
+  async handleDeleteCommand(phone: string, shortId: string): Promise<void> {
+    const normalizedPhone = phone.replace(/\D/g, '');
+    try {
+      const user = await this.users.findOrCreateByPhone(normalizedPhone);
+      const tx = await this.transactions.findByShortId(user.id, shortId);
+
+      if (!tx) {
+        await this.sendMessage(normalizedPhone, `❌ Transação *${shortId}* não encontrada.`);
+        return;
+      }
+
+      await this.transactions.remove(user.id, tx.id);
+      await this.sendMessage(normalizedPhone, `❌ *${tx.description}*\n\nExcluído com Sucesso!`);
+    } catch (error) {
+      this.logger.error(`Error handling delete command: ${error.message}`);
+      await this.sendMessage(normalizedPhone, '❌ Não foi possível excluir. Tente novamente.');
+    }
+  }
+
   async handleButtonReply(phone: string, buttonId: string): Promise<void> {
     const normalizedPhone = phone.replace(/\D/g, '');
     this.logger.log(`Button reply from ${normalizedPhone}: ${buttonId}`);
@@ -140,19 +159,20 @@ export class WhatsappService {
   }
 
   async sendButtons(phone: string, text: string, transactionId: string, description: string): Promise<void> {
+    const shortId = transactionId.slice(-6);
     try {
       await axios.post(
         `${this.evolutionUrl}/message/sendButtons/${this.instance}`,
         {
-          number: `${phone}@s.whatsapp.net`,
+          number: phone,
           title: 'Finora',
           description: text,
-          footer: 'meufinora.com.br',
+          footer: 'Use os botões abaixo para excluir ou editar',
           buttons: [
             {
-              type: 'reply',
+              type: 'cta_url',
               displayText: '✏️ Editar',
-              id: `edit_${transactionId}`,
+              url: `${this.dashboardUrl}/dashboard/transactions`,
             },
             {
               type: 'reply',
@@ -164,9 +184,9 @@ export class WhatsappService {
         { headers: { apikey: this.evolutionKey } },
       );
     } catch (error) {
-      this.logger.error(`Failed to send buttons message (400): ${error.response?.data ? JSON.stringify(error.response.data) : error.message}`);
-      // Fallback to plain text with link
-      await this.sendMessage(phone, text + `\n\n✏️ Editar: ${this.dashboardUrl}/dashboard/transactions\n🗑️ Para excluir, responda: *excluir ${transactionId.slice(-6)}*`);
+      this.logger.error(`Buttons failed: ${error.response?.data ? JSON.stringify(error.response.data) : error.message}`);
+      // Fallback to plain text
+      await this.sendMessage(phone, text + `\n\n✏️ Editar: ${this.dashboardUrl}/dashboard/transactions\n🗑️ Para excluir, responda: *excluir ${shortId}*`);
     }
   }
 }
