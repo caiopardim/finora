@@ -143,9 +143,9 @@ export class WhatsappService {
           footer: 'meufinora.com.br',
           buttons: [
             {
-              type: 'url',
+              type: 'reply',
               displayText: '✏️ Editar',
-              url: `${this.dashboardUrl}/dashboard/transactions`,
+              id: `edit_${transactionId}`,
             },
             {
               type: 'reply',
@@ -157,9 +157,9 @@ export class WhatsappService {
         { headers: { apikey: this.evolutionKey } },
       );
     } catch (error) {
-      this.logger.error(`Failed to send buttons message: ${error.message}`);
-      // Fallback to plain text
-      await this.sendMessage(phone, text);
+      this.logger.error(`Failed to send buttons message (400): ${error.response?.data ? JSON.stringify(error.response.data) : error.message}`);
+      // Fallback to plain text with link
+      await this.sendMessage(phone, text + `\n\n✏️ Editar: ${this.dashboardUrl}/dashboard/transactions\n🗑️ Para excluir, responda: *excluir ${transactionId.slice(-6)}*`);
     }
   }
 }
