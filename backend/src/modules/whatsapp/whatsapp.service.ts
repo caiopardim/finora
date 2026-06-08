@@ -162,29 +162,35 @@ export class WhatsappService {
     const shortId = transactionId.slice(-6);
     try {
       await axios.post(
-        `${this.evolutionUrl}/message/sendButtons/${this.instance}`,
+        `${this.evolutionUrl}/message/sendList/${this.instance}`,
         {
           number: phone,
           title: 'Finora',
           description: text,
+          buttonText: '⚙️ Opções',
           footer: 'Use os botões abaixo para excluir ou editar',
-          buttons: [
+          sections: [
             {
-              type: 'cta_url',
-              displayText: '✏️ Editar',
-              url: `${this.dashboardUrl}/dashboard/transactions`,
-            },
-            {
-              type: 'reply',
-              displayText: '🗑️ Excluir',
-              id: `delete_${transactionId}`,
+              title: 'Ações',
+              rows: [
+                {
+                  title: '✏️ Editar',
+                  description: 'Abrir no dashboard',
+                  rowId: `edit_${transactionId}`,
+                },
+                {
+                  title: '🗑️ Excluir',
+                  description: 'Excluir esta transação',
+                  rowId: `delete_${transactionId}`,
+                },
+              ],
             },
           ],
         },
         { headers: { apikey: this.evolutionKey } },
       );
     } catch (error) {
-      this.logger.error(`Buttons failed: ${error.response?.data ? JSON.stringify(error.response.data) : error.message}`);
+      this.logger.error(`List failed: ${error.response?.data ? JSON.stringify(error.response.data) : error.message}`);
       // Fallback to plain text
       await this.sendMessage(phone, text + `\n\n✏️ Editar: ${this.dashboardUrl}/dashboard/transactions\n🗑️ Para excluir, responda: *excluir ${shortId}*`);
     }

@@ -33,10 +33,11 @@ export class WhatsappController {
     const phone = data?.key?.remoteJid?.replace('@s.whatsapp.net', '');
     if (!phone) return { status: 'ignored' };
 
-    // Handle button reply (delete action)
+    // Handle button/list reply (delete action)
     const buttonReply =
       data?.message?.buttonsResponseMessage?.selectedButtonId ||
       data?.message?.templateButtonReplyMessage?.selectedId ||
+      data?.message?.listResponseMessage?.singleSelectReply?.selectedRowId ||
       data?.message?.interactiveResponseMessage?.nativeFlowResponseMessage?.paramsJson;
 
     if (buttonReply) {
@@ -50,6 +51,15 @@ export class WhatsappController {
     // Handle text message
     const message = data?.message?.conversation || data?.message?.extendedTextMessage?.text;
     if (!message) return { status: 'ignored' };
+
+    // Handle delete command: "excluir XXXXXX"
+    const deleteMatch = message.trim().match(/^excluir\s+([a-f0-9]{6})$/i);
+    if (deleteMatch) {
+      this.whatsapp.handleDeleteCommand(phone, deleteMatch[1]).catch((err) =>
+        this.logger.error('Error handling delete command', err),
+      );
+      return { status: 'processing' };
+    }
 
     this.whatsapp.handleIncomingMessage(phone, message).catch((err) =>
       this.logger.error('Unhandled error in message processing', err),
