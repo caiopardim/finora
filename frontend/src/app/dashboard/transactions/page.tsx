@@ -140,7 +140,14 @@ export default function TransactionsPage() {
           title="Excluir transação?"
           message="Esta transação será removida permanentemente do seu histórico."
           confirmLabel="Excluir"
-          onConfirm={async () => { await supabase.from('transactions').delete().eq('id', confirmDeleteId); setConfirmDeleteId(null); load(); }}
+          onConfirm={async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) return;
+            const { error } = await supabase.from('transactions').delete().eq('id', confirmDeleteId).eq('user_id', session.user.id);
+            if (error) { alert('Erro ao excluir: ' + error.message); return; }
+            setConfirmDeleteId(null);
+            load();
+          }}
           onCancel={() => setConfirmDeleteId(null)}
         />
       )}
