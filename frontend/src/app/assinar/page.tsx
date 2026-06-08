@@ -142,7 +142,7 @@ function AssinaturaContent() {
                 <div style={{ width: 26, height: 26, borderRadius: '50%', background: done ? '#22c55e' : active ? 'rgba(34,197,94,0.2)' : 'rgba(255,255,255,0.08)', border: `2px solid ${done || active ? '#22c55e' : 'rgba(255,255,255,0.15)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: done || active ? '#22c55e' : '#475569' }}>
                   {done ? <Check size={12}/> : i + 1}
                 </div>
-                <span style={{ fontSize: 12, color: active ? '#fff' : '#475569', fontWeight: active ? 600 : 400 }}>{label}</span>
+                <span style={{ fontSize: 12, color: active ? '#fff' : '#64748b', fontWeight: active ? 600 : 400 }}>{label}</span>
                 {i < 2 && <div style={{ width: 24, height: 1, background: done ? '#22c55e' : 'rgba(255,255,255,0.1)' }}/>}
               </div>
             );
@@ -156,7 +156,7 @@ function AssinaturaContent() {
         {step === 'plan' && (
           <div>
             <h1 style={{ color: '#fff', fontSize: 22, fontWeight: 800, margin: '0 0 4px', textAlign: 'center' }}>Escolha seu plano</h1>
-            <p style={{ color: '#64748b', fontSize: 13, textAlign: 'center', margin: '0 0 24px' }}>3 dias grátis para testar tudo</p>
+            <p style={{ color: '#94a3b8', fontSize: 13, textAlign: 'center', margin: '0 0 24px' }}>3 dias grátis para testar tudo</p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 20 }}>
               {(['annual', 'monthly'] as const).map(pt => (
@@ -165,11 +165,11 @@ function AssinaturaContent() {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                     <div style={{ flex: 1 }}>
                       <p style={{ margin: '0 0 2px', fontWeight: 700, color: '#fff', fontSize: 15 }}>{PLANS[pt].label}</p>
-                      <p style={{ margin: 0, fontSize: 12, color: pt === 'annual' ? '#4ade80' : '#64748b' }}>{PLANS[pt].desc}</p>
+                      <p style={{ margin: 0, fontSize: 12, color: pt === 'annual' ? '#4ade80' : '#94a3b8' }}>{PLANS[pt].desc}</p>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       <span style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>R$ {PLANS[pt].price}</span>
-                      <span style={{ fontSize: 12, color: '#64748b' }}>{PLANS[pt].period}</span>
+                      <span style={{ fontSize: 12, color: '#94a3b8' }}>{PLANS[pt].period}</span>
                     </div>
                   </div>
                   {plan === pt && <div style={{ position: 'absolute', top: 10, left: 10, width: 16, height: 16, borderRadius: '50%', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Check size={9} color="#fff"/></div>}
