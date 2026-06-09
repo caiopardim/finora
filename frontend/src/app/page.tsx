@@ -267,15 +267,13 @@ export default function Home() {
             {/* Avatares empilhados */}
             <div style={{ display: 'flex', position: 'relative' }}>
               {[
-                { letter: 'A', bg: 'linear-gradient(135deg,#22c55e,#16a34a)' },
-                { letter: 'C', bg: 'linear-gradient(135deg,#6366f1,#4f46e5)' },
-                { letter: 'F', bg: 'linear-gradient(135deg,#f97316,#ea580c)' },
-                { letter: 'R', bg: 'linear-gradient(135deg,#06b6d4,#0891b2)' },
-                { letter: 'M', bg: 'linear-gradient(135deg,#f43f5e,#e11d48)' },
-              ].map((a, i) => (
-                <div key={i} style={{ width: 40, height: 40, borderRadius: '50%', background: a.bg, border: '2.5px solid #020617', marginLeft: i === 0 ? 0 : -12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: '#fff', flexShrink: 0, boxShadow: '0 4px 12px rgba(0,0,0,0.4)', zIndex: 5 - i }}>
-                  {a.letter}
-                </div>
+                'https://i.pravatar.cc/150?img=47',
+                'https://i.pravatar.cc/150?img=32',
+                'https://i.pravatar.cc/150?img=12',
+                'https://i.pravatar.cc/150?img=54',
+                'https://i.pravatar.cc/150?img=68',
+              ].map((src, i) => (
+                <img key={i} src={src} alt="usuário" style={{ width: 40, height: 40, borderRadius: '50%', border: '2.5px solid #020617', marginLeft: i === 0 ? 0 : -12, objectFit: 'cover', flexShrink: 0, boxShadow: '0 4px 12px rgba(0,0,0,0.4)', zIndex: 5 - i, display: 'block' }}/>
               ))}
               {/* +N badge */}
               <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', border: '2.5px solid #020617', marginLeft: -12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#94a3b8', flexShrink: 0 }}>
