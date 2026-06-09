@@ -110,9 +110,9 @@ const PLAN_FEATURES = [
 ];
 
 const TESTIMONIALS = [
-  { name: 'Ana Paula', role: 'Designer Freelancer', text: 'Finalmente parei de usar planilha. Em 2 semanas já sabia exatamente onde eu estava gastando mais.' },
-  { name: 'Carlos M.', role: 'Empreendedor', text: 'O WhatsApp mudou tudo. Registro na hora que acontece, sem esquecer nada. Simples demais!' },
-  { name: 'Fernanda L.', role: 'CLT + Freela', text: 'As metas me ajudaram a juntar pra viagem em 6 meses. Nunca imaginei que seria tão fácil.' },
+  { name: 'Ana Paula', role: 'Designer Freelancer', text: 'Finalmente parei de usar planilha. Em 2 semanas já sabia exatamente onde eu estava gastando mais.', photo: 'https://i.pravatar.cc/150?img=47' },
+  { name: 'Carlos M.', role: 'Empreendedor', text: 'O WhatsApp mudou tudo. Registro na hora que acontece, sem esquecer nada. Simples demais!', photo: 'https://i.pravatar.cc/150?img=11' },
+  { name: 'Fernanda L.', role: 'CLT + Freela', text: 'As metas me ajudaram a juntar pra viagem em 6 meses. Nunca imaginei que seria tão fácil.', photo: 'https://i.pravatar.cc/150?img=32' },
 ];
 
 const FAQS = [
@@ -389,7 +389,7 @@ export default function Home() {
                   </div>
                   <p style={{ fontSize: 15, color: '#94a3b8', lineHeight: 1.75, margin: '0 0 24px' }}>"{t.text}"</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg,#22c55e,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 16 }}>{t.name[0]}</div>
+                    <img src={t.photo} alt={t.name} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(34,197,94,0.3)', display: 'block' }}/>
                     <div>
                       <p style={{ margin: 0, fontWeight: 600, fontSize: 14, color: '#f1f5f9' }}>{t.name}</p>
                       <p style={{ margin: 0, fontSize: 12, color: '#475569' }}>{t.role}</p>
