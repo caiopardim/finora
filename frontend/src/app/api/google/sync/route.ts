@@ -48,7 +48,7 @@ async function getAccessToken(userId: string): Promise<string> {
   return data.access_token;
 }
 
-/** Convert appointment to Google Calendar event using scheduled_at */
+/** Convert Finora appointment to Google Calendar event */
 function toGoogleEvent(appt: any) {
   const scheduledAt = new Date(appt.scheduled_at);
   const endAt = new Date(scheduledAt.getTime() + 60 * 60 * 1000); // +1h default
@@ -62,21 +62,59 @@ function toGoogleEvent(appt: any) {
   };
 }
 
+/** Import Google Calendar events into Finora appointments */
+async function importFromGoogle(userId: string, accessToken: string, syncedMap: Record<string, string>) {
+  // Fetch upcoming events from Google Calendar
+  const timeMin = new Date().toISOString();
+  const timeMax = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(); // next 90 days
+
+  const res = await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime&maxResults=100`,
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  );
+  const data = await res.json();
+  const events = data.items || [];
+
+  // Get existing Finora appointments to avoid duplicates
+  const { data: existingAppts } = await getAdmin()
+    .from('appointments')
+    .select('id, title, scheduled_at, google_event_id')
+    .eq('user_id', userId);
+
+  const existingGoogleIds = new Set((existingAppts || []).map((a: any) => a.google_event_id).filter(Boolean));
+  // Also check synced map values (Finora→Google events)
+  const finoraExportedIds = new Set(Object.values(syncedMap));
+
+  let imported = 0;
+  for (const event of events) {
+    // Skip events already exported from Finora to Google
+    if (finoraExportedIds.has(event.id)) continue;
+    // Skip already imported events
+    if (existingGoogleIds.has(event.id)) continue;
+    // Skip all-day events without time
+    if (!event.start?.dateTime) continue;
+
+    const scheduledAt = new Date(event.start.dateTime).toISOString();
+
+    await getAdmin().from('appointments').insert({
+      user_id:         userId,
+      title:           event.summary || 'Compromisso',
+      description:     event.description || null,
+      scheduled_at:    scheduledAt,
+      google_event_id: event.id,
+    });
+    imported++;
+  }
+
+  return imported;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await req.json();
     if (!userId) return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
 
     const accessToken = await getAccessToken(userId);
-
-    // Get upcoming appointments for user
-    const { data: appts } = await getAdmin()
-      .from('appointments')
-      .select('*')
-      .eq('user_id', userId)
-      .gte('scheduled_at', new Date().toISOString());
-
-    if (!appts?.length) return NextResponse.json({ synced: 0 });
 
     // Get existing synced map
     const { data: tokenRow } = await getAdmin()
@@ -87,19 +125,30 @@ export async function POST(req: NextRequest) {
 
     const syncedMap: Record<string, string> = tokenRow?.synced_events || {};
 
+    // 1. Import Google Calendar → Finora
+    const imported = await importFromGoogle(userId, accessToken, syncedMap);
+
+    // 2. Push Finora appointments → Google Calendar
+    const { data: appts } = await getAdmin()
+      .from('appointments')
+      .select('*')
+      .eq('user_id', userId)
+      .gte('scheduled_at', new Date().toISOString());
+
     let synced = 0;
-    for (const appt of appts) {
+    for (const appt of appts || []) {
+      // Skip events that came from Google (avoid loop)
+      if (appt.google_event_id) continue;
+
       const event = toGoogleEvent(appt);
 
       if (syncedMap[appt.id]) {
-        // Update existing event
         await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${syncedMap[appt.id]}`, {
           method: 'PUT',
           headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
           body: JSON.stringify(event),
         });
       } else {
-        // Create new event
         const res  = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
           method: 'POST',
           headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
@@ -116,7 +165,7 @@ export async function POST(req: NextRequest) {
     // Save updated map
     await getAdmin().from('user_google_tokens').update({ synced_events: syncedMap }).eq('user_id', userId);
 
-    return NextResponse.json({ synced });
+    return NextResponse.json({ synced, imported });
   } catch (e: any) {
     console.error('Google sync error:', e);
     return NextResponse.json({ error: e.message }, { status: 500 });
