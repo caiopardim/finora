@@ -54,6 +54,7 @@ export async function POST(req: NextRequest) {
     else expires.setMonth(expires.getMonth() + 1);
 
     await admin.from('profiles').update({
+      paid: true,
       plan_status: 'active',
       plan_type: planType,
       plan_expires_at: expires.toISOString(),
@@ -81,9 +82,11 @@ export async function POST(req: NextRequest) {
 
     let plan_status = 'inactive';
     let plan_expires_at: string | null = null;
+    let paid = false;
 
     if (status === 'authorized') {
       plan_status = 'active';
+      paid = true;
       // Calculate expiry based on plan
       const now = new Date();
       if (planType === 'annual') {
@@ -99,6 +102,7 @@ export async function POST(req: NextRequest) {
     }
 
     await admin.from('profiles').update({
+      paid,
       plan_status,
       plan_expires_at,
       mp_subscription_id: id,
