@@ -474,7 +474,7 @@ export default function Home() {
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px)', backgroundSize: '60px 60px', pointerEvents: 'none' }}/>
         <FadeIn>
           <div style={{ maxWidth: 560, margin: '0 auto', position: 'relative' }}>
-            <div style={{ fontSize: 56, marginBottom: 20 }}>🐷</div>
+            <div style={{ marginBottom: 20 }}><img src="/favicon.svg" alt="Finora" style={{ width: 72, height: 72 }}/></div>
             <h2 style={{ color: '#fff', fontSize: 48, fontWeight: 800, margin: '0 0 16px', letterSpacing: '-1.5px' }}>Comece hoje,<br/>de graça</h2>
             <p style={{ color: '#475569', fontSize: 17, margin: '0 0 40px', lineHeight: 1.75 }}>7 dias de garantia, sem cartão. Depois escolha o plano que preferir.</p>
             <Link href="/assinar" className="btn-primary" style={{ padding: '17px 44px', borderRadius: 14, background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 17, fontWeight: 700, textDecoration: 'none', boxShadow: '0 0 40px rgba(34,197,94,0.4)', display: 'inline-flex', alignItems: 'center', gap: 10 }}>
