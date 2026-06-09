@@ -372,7 +372,7 @@ export default function Home() {
               </button>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 14, color: billing === 'annual' ? '#f1f5f9' : '#475569', fontWeight: 600, transition: 'color 0.2s' }}>Anual</span>
-                {billing === 'annual' && <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 99, background: 'rgba(34,197,94,0.15)', color: '#22c55e', fontWeight: 700, border: '1px solid rgba(34,197,94,0.3)' }}>Economize R$ {priceMonthly * 12 - priceAnnual}</span>}
+                {billing === 'annual' && <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 99, background: 'rgba(34,197,94,0.15)', color: '#22c55e', fontWeight: 700, border: '1px solid rgba(34,197,94,0.3)' }}>Economize R$ {(priceMonthly * 12 - priceAnnual).toFixed(2).replace('.', ',')}</span>}
               </div>
             </div>
           </FadeIn>
@@ -457,8 +457,10 @@ export default function Home() {
 function PlanCard({ type, billing, priceMonthly, priceAnnual }: { type: 'monthly' | 'annual'; billing: 'monthly' | 'annual'; priceMonthly: number; priceAnnual: number }) {
   const [hovered, setHovered] = useState(false);
   const isAnnual = type === 'annual';
-  const savings = priceMonthly * 12 - priceAnnual;
+  const savings = (priceMonthly * 12 - priceAnnual).toFixed(2).replace('.', ',');
   const monthlyEquiv = (priceAnnual / 12).toFixed(2).replace('.', ',');
+  const fmtMonthly = Number(priceMonthly).toFixed(2).replace('.', ',');
+  const fmtAnnual  = Number(priceAnnual).toFixed(2).replace('.', ',');
 
   return (
     <div
@@ -487,11 +489,11 @@ function PlanCard({ type, billing, priceMonthly, priceAnnual }: { type: 'monthly
       <div style={{ marginTop: isAnnual ? 16 : 0 }}>
         <p style={{ margin: '0 0 4px', fontSize: 11, fontWeight: 700, color: isAnnual ? '#22c55e' : '#475569', textTransform: 'uppercase', letterSpacing: '0.1em' }}>{isAnnual ? 'Anual' : 'Mensal'}</p>
         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, marginBottom: 4 }}>
-          <span style={{ fontSize: 42, fontWeight: 800, color: '#fff', lineHeight: 1 }}>{isAnnual ? `R$ ${priceAnnual}` : `R$ ${priceMonthly}`}</span>
+          <span style={{ fontSize: 42, fontWeight: 800, color: '#fff', lineHeight: 1 }}>{isAnnual ? `R$ ${fmtAnnual}` : `R$ ${fmtMonthly}`}</span>
           <span style={{ fontSize: 14, color: '#475569', marginBottom: 6 }}>{isAnnual ? '/ano' : '/mês'}</span>
         </div>
         <p style={{ margin: '0 0 28px', fontSize: 13, color: isAnnual ? '#22c55e' : '#475569', fontWeight: isAnnual ? 500 : 400 }}>
-          {isAnnual ? `≈ R$ ${monthlyEquiv}/mês · Economize R$ ${savings}` : 'Cancele quando quiser'}
+          {isAnnual ? `≈ R$ ${monthlyEquiv}/mês · Economize R$ ${savings}` : 'Cancele quando quiser'  }
         </p>
       </div>
 
@@ -519,7 +521,7 @@ function PlanCard({ type, billing, priceMonthly, priceAnnual }: { type: 'monthly
           boxSizing: 'border-box',
         }}
       >
-        {isAnnual ? <><Star size={14} fill="#fff"/>Assinar por R$ {priceAnnual}/ano</> : <>Assinar por R$ {priceMonthly}/mês</>}
+        {isAnnual ? <><Star size={14} fill="#fff"/>Assinar por R$ {fmtAnnual}/ano</> : <>Assinar por R$ {fmtMonthly}/mês</>}
       </Link>
     </div>
   );
