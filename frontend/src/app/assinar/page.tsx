@@ -263,14 +263,16 @@ function AssinaturaContent() {
                 {loading && method === 'card' ? <Loader2 size={17} color="#22c55e" style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }}/> : <ArrowRight size={16} color="#475569"/>}
               </button>
 
-              <button onClick={() => { setMethod('pix'); handlePix(); }} disabled={loading} style={{ padding: '16px 14px', borderRadius: 14, border: `2px solid ${method === 'pix' ? '#22c55e' : 'rgba(255,255,255,0.1)'}`, background: method === 'pix' ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.04)', cursor: loading ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 14, transition: 'all 0.2s', textAlign: 'left', width: '100%' }}>
-                <div style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(34,197,94,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 22 }}>⚡</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ margin: '0 0 2px', fontWeight: 700, color: '#fff', fontSize: 14 }}>PIX</p>
-                  <p style={{ margin: 0, fontSize: 12, color: '#64748b' }}>Aprovação imediata · Escaneie o QR code</p>
-                </div>
-                {loading && method === 'pix' ? <Loader2 size={17} color="#22c55e" style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }}/> : <ArrowRight size={16} color="#475569"/>}
-              </button>
+              {plan === 'annual' && (
+                <button onClick={() => { setMethod('pix'); handlePix(); }} disabled={loading} style={{ padding: '16px 14px', borderRadius: 14, border: `2px solid ${method === 'pix' ? '#22c55e' : 'rgba(255,255,255,0.1)'}`, background: method === 'pix' ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.04)', cursor: loading ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 14, transition: 'all 0.2s', textAlign: 'left', width: '100%' }}>
+                  <div style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(34,197,94,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 22 }}>⚡</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: '0 0 2px', fontWeight: 700, color: '#fff', fontSize: 14 }}>PIX</p>
+                    <p style={{ margin: 0, fontSize: 12, color: '#64748b' }}>Aprovação imediata · Escaneie o QR code</p>
+                  </div>
+                  {loading && method === 'pix' ? <Loader2 size={17} color="#22c55e" style={{ animation: 'spin 1s linear infinite', flexShrink: 0 }}/> : <ArrowRight size={16} color="#475569"/>}
+                </button>
+              )}
             </div>
 
             {error && <p style={{ color: '#f87171', fontSize: 13, margin: '12px 0 0', textAlign: 'center' }}>{error}</p>}
