@@ -105,14 +105,19 @@ async function importFromGoogle(userId: string, accessToken: string, syncedMap: 
       continue;
     }
 
-    await getAdmin().from('appointments').insert({
+    console.log('[google-sync] inserting event:', event.id, event.summary, scheduledAt);
+    const { error: insertError } = await getAdmin().from('appointments').insert({
       user_id:         userId,
       title:           event.summary || 'Compromisso',
       description:     event.description || null,
       scheduled_at:    scheduledAt,
       google_event_id: event.id,
     });
-    imported++;
+    if (insertError) {
+      console.error('[google-sync] INSERT error:', JSON.stringify(insertError));
+    } else {
+      imported++;
+    }
   }
 
   return imported;
