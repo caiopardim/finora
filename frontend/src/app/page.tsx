@@ -180,7 +180,7 @@ export default function Home() {
             ))}
           </div>
           <Link href="/auth/login" style={{ padding: '8px 18px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#94a3b8', fontSize: 14, fontWeight: 500, textDecoration: 'none', whiteSpace: 'nowrap' }}>Entrar</Link>
-          <Link href="/assinar" className="btn-primary" style={{ padding: '8px 20px', borderRadius: 10, background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none', boxShadow: '0 0 20px rgba(34,197,94,0.3)', whiteSpace: 'nowrap' }}>Começar grátis</Link>
+          <Link href="/assinar" className="btn-primary" style={{ padding: '8px 20px', borderRadius: 10, background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none', boxShadow: '0 0 20px rgba(34,197,94,0.3)', whiteSpace: 'nowrap' }}>3 dias de acesso grátis</Link>
         </nav>
       </header>
 
@@ -204,7 +204,7 @@ export default function Home() {
                     <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#22c55e', display: 'block' }}/>
                     <span style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: '#22c55e', animation: 'pulse-ring 1.8s ease-out infinite' }}/>
                   </span>
-                  <span style={{ color: '#22c55e', fontSize: 12, fontWeight: 600, letterSpacing: '0.02em' }}>IA disponível 24h · 3 dias grátis</span>
+                  <span style={{ color: '#22c55e', fontSize: 12, fontWeight: 600, letterSpacing: '0.02em' }}>3 dias de acesso grátis</span>
                 </div>
               </div>
 
@@ -223,7 +223,7 @@ export default function Home() {
 
               <div style={{ opacity: heroVisible ? 1 : 0, transition: 'all 0.7s ease 0.2s', display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 56 }}>
                 <Link href="/assinar" className="btn-primary" style={{ padding: '15px 32px', borderRadius: 12, background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 16, fontWeight: 700, textDecoration: 'none', boxShadow: '0 0 32px rgba(34,197,94,0.35)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                  Começar grátis <ArrowRight size={17}/>
+                  3 dias de acesso grátis <ArrowRight size={17}/>
                 </Link>
                 <a href="#como-funciona" style={{ padding: '15px 28px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#94a3b8', fontSize: 15, fontWeight: 500, textDecoration: 'none', backdropFilter: 'blur(10px)' }}>
                   Ver demo
@@ -360,7 +360,7 @@ export default function Home() {
           <FadeIn>
             <p style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#22c55e', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 16 }}>Planos</p>
             <h2 style={{ textAlign: 'center', fontSize: 44, fontWeight: 800, color: '#fff', margin: '0 0 12px', letterSpacing: '-1px' }}>Simples e transparente</h2>
-            <p style={{ textAlign: 'center', fontSize: 17, color: '#475569', margin: '0 0 40px' }}>3 dias grátis, sem cartão. Depois escolha o plano.</p>
+            <p style={{ textAlign: 'center', fontSize: 17, color: '#475569', margin: '0 0 40px' }}>3 dias de acesso grátis, sem cartão.</p>
           </FadeIn>
 
           {/* Toggle */}
@@ -428,9 +428,9 @@ export default function Home() {
           <div style={{ maxWidth: 560, margin: '0 auto', position: 'relative' }}>
             <div style={{ fontSize: 56, marginBottom: 20 }}>🐷</div>
             <h2 style={{ color: '#fff', fontSize: 48, fontWeight: 800, margin: '0 0 16px', letterSpacing: '-1.5px' }}>Comece hoje,<br/>de graça</h2>
-            <p style={{ color: '#475569', fontSize: 17, margin: '0 0 40px', lineHeight: 1.75 }}>3 dias para testar tudo sem cartão. Depois escolha o plano que fizer mais sentido pra você.</p>
+            <p style={{ color: '#475569', fontSize: 17, margin: '0 0 40px', lineHeight: 1.75 }}>3 dias de acesso grátis, sem cartão. Depois escolha o plano que preferir.</p>
             <Link href="/assinar" className="btn-primary" style={{ padding: '17px 44px', borderRadius: 14, background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 17, fontWeight: 700, textDecoration: 'none', boxShadow: '0 0 40px rgba(34,197,94,0.4)', display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-              Criar conta grátis <ArrowRight size={18}/>
+              Começar — 3 dias de acesso grátis <ArrowRight size={18}/>
             </Link>
             <p style={{ color: '#334155', fontSize: 13, marginTop: 18 }}>Sem cartão · Cancele quando quiser · 7 dias de garantia</p>
           </div>
