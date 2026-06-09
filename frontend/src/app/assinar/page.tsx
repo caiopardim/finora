@@ -17,7 +17,7 @@ function AssinaturaContent() {
 
   const PLANS = {
     monthly: { label: 'Mensal', price: prices.monthly, period: '/mês', desc: 'Cancele quando quiser' },
-    annual:  { label: 'Anual',  price: prices.annual,  period: '/ano', desc: `≈ R$ ${(prices.annual/12).toFixed(2).replace('.',',')}/mês · Economize R$ ${prices.monthly*12-prices.annual}` },
+    annual:  { label: 'Anual',  price: prices.annual,  period: '/ano', desc: `≈ R$ ${(prices.annual/12).toFixed(2).replace('.',',')}/mês · Economize R$ ${(prices.monthly*12-prices.annual).toFixed(2).replace('.',',')}` },
   };
   const params = useSearchParams();
 
@@ -168,7 +168,7 @@ function AssinaturaContent() {
                       <p style={{ margin: 0, fontSize: 12, color: pt === 'annual' ? '#4ade80' : '#94a3b8' }}>{PLANS[pt].desc}</p>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <span style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>R$ {PLANS[pt].price}</span>
+                      <span style={{ fontSize: 22, fontWeight: 800, color: '#fff' }}>R$ {Number(PLANS[pt].price).toFixed(2).replace('.',',')}</span>
                       <span style={{ fontSize: 12, color: '#94a3b8' }}>{PLANS[pt].period}</span>
                     </div>
                   </div>
@@ -196,7 +196,7 @@ function AssinaturaContent() {
             <p style={{ color: '#64748b', fontSize: 13, textAlign: 'center', margin: '0 0 20px' }}>Rápido, só leva 30 segundos</p>
 
             <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 10, padding: '10px 14px', marginBottom: 16, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-              <span style={{ color: '#4ade80', fontSize: 13, fontWeight: 600 }}>Plano {p.label} · R$ {p.price}{p.period}</span>
+              <span style={{ color: '#4ade80', fontSize: 13, fontWeight: 600 }}>Plano {p.label} · R$ {Number(p.price).toFixed(2).replace('.',',')}{p.period}</span>
               <button onClick={() => setStep('plan')} style={{ fontSize: 11, color: '#64748b', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', flexShrink: 0 }}>trocar</button>
             </div>
 
@@ -246,7 +246,7 @@ function AssinaturaContent() {
                 <p style={{ margin: 0, fontSize: 12, color: '#4ade80' }}>{p.desc}</p>
               </div>
               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                <span style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>R$ {p.price}</span>
+                <span style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>R$ {Number(p.price).toFixed(2).replace('.',',')}</span>
                 <span style={{ fontSize: 11, color: '#64748b' }}>{p.period}</span>
               </div>
             </div>
@@ -314,7 +314,7 @@ function AssinaturaContent() {
             </div>
 
             <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 10, padding: '10px 14px', marginBottom: 16 }}>
-              <p style={{ margin: 0, fontSize: 13, color: '#4ade80' }}>Valor: <strong>R$ {p.price}{p.period}</strong> · Plano {p.label}</p>
+              <p style={{ margin: 0, fontSize: 13, color: '#4ade80' }}>Valor: <strong>R$ {Number(p.price).toFixed(2).replace('.',',')}{p.period}</strong> · Plano {p.label}</p>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, color: '#64748b', fontSize: 13 }}>
