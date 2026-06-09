@@ -301,18 +301,15 @@ export default function Home() {
           <div style={{ width: 1, height: 48, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} className="trust-divider"/>
 
           {/* Right: selos */}
-          <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'nowrap' }}>
             {[
-              { icon: '🔒', title: 'Dados seguros', sub: 'Criptografia SSL' },
-              { icon: '🛡️', title: '7 dias de garantia', sub: 'Reembolso total' },
-              { icon: '🇧🇷', title: 'Feito no Brasil', sub: 'Para brasileiros' },
-            ].map(item => (
-              <div key={item.title} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{item.icon}</div>
-                <div>
-                  <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#f1f5f9' }}>{item.title}</p>
-                  <p style={{ margin: 0, fontSize: 11, color: '#475569' }}>{item.sub}</p>
-                </div>
+              { icon: '🔒', label: 'Dados seguros' },
+              { icon: '🛡️', label: '7 dias de garantia' },
+              { icon: '🇧🇷', label: 'Feito no Brasil' },
+            ].map((item, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: 16 }}>{item.icon}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8' }}>{item.label}</span>
               </div>
             ))}
           </div>
