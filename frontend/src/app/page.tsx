@@ -304,7 +304,7 @@ export default function Home() {
           <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap', alignItems: 'center' }}>
             {[
               { icon: '🔒', title: 'Dados seguros', sub: 'Criptografia SSL' },
-              { icon: '💳', title: 'Sem cartão', sub: 'Para começar' },
+              { icon: '🛡️', title: '7 dias de garantia', sub: 'Reembolso total' },
               { icon: '🇧🇷', title: 'Feito no Brasil', sub: 'Para brasileiros' },
             ].map(item => (
               <div key={item.title} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
