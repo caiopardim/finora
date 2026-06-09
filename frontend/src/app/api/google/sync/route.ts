@@ -11,12 +11,11 @@ function getAdmin() {
 }
 
 async function refreshToken(userId: string, rt: string) {
-  const refreshToken = rt;
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      refresh_token: refreshToken,
+      refresh_token: rt,
       client_id:     process.env.GOOGLE_CLIENT_ID!,
       client_secret: process.env.GOOGLE_CLIENT_SECRET!,
       grant_type:    'refresh_token',
@@ -49,38 +48,18 @@ async function getAccessToken(userId: string): Promise<string> {
   return data.access_token;
 }
 
-/** Convert appointment to Google Calendar event */
+/** Convert appointment to Google Calendar event using scheduled_at */
 function toGoogleEvent(appt: any) {
-  const dateStr = appt.date; // YYYY-MM-DD
-  let start: any, end: any;
-
-  if (appt.time) {
-    const startDt = `${dateStr}T${appt.time}:00`;
-    const endDt   = `${dateStr}T${appt.time.slice(0,2)}:${String(Number(appt.time.slice(3,5)) + 30).padStart(2,'0')}:00`;
-    start = { dateTime: startDt, timeZone: 'America/Sao_Paulo' };
-    end   = { dateTime: endDt,   timeZone: 'America/Sao_Paulo' };
-  } else {
-    start = { date: dateStr };
-    end   = { date: dateStr };
-  }
+  const scheduledAt = new Date(appt.scheduled_at);
+  const endAt = new Date(scheduledAt.getTime() + 60 * 60 * 1000); // +1h default
 
   return {
-    summary:     `${appt.icon} ${appt.title}`,
+    summary:     appt.title,
     description: appt.description || '',
-    start,
-    end,
-    colorId: colorToGoogleId(appt.color),
+    start: { dateTime: scheduledAt.toISOString(), timeZone: 'America/Sao_Paulo' },
+    end:   { dateTime: endAt.toISOString(),       timeZone: 'America/Sao_Paulo' },
     extendedProperties: { private: { finoraId: appt.id } },
   };
-}
-
-function colorToGoogleId(hex: string): string {
-  const map: Record<string, string> = {
-    '#6366f1': '9', '#22c55e': '2', '#f97316': '6',
-    '#3b82f6': '1', '#ec4899': '4', '#eab308': '5',
-    '#ef4444': '11', '#06b6d4': '7',
-  };
-  return map[hex] || '1';
 }
 
 export async function POST(req: NextRequest) {
@@ -90,27 +69,27 @@ export async function POST(req: NextRequest) {
 
     const accessToken = await getAccessToken(userId);
 
-    // Get all appointments for user
+    // Get upcoming appointments for user
     const { data: appts } = await getAdmin()
       .from('appointments')
       .select('*')
       .eq('user_id', userId)
-      .gte('date', new Date().toISOString().split('T')[0]);
+      .gte('scheduled_at', new Date().toISOString());
 
     if (!appts?.length) return NextResponse.json({ synced: 0 });
+
+    // Get existing synced map
+    const { data: tokenRow } = await getAdmin()
+      .from('user_google_tokens')
+      .select('synced_events')
+      .eq('user_id', userId)
+      .single();
+
+    const syncedMap: Record<string, string> = tokenRow?.synced_events || {};
 
     let synced = 0;
     for (const appt of appts) {
       const event = toGoogleEvent(appt);
-
-      // Check if already synced (by finoraId in extendedProperties)
-      const existing = await getAdmin()
-        .from('user_google_tokens')
-        .select('synced_events')
-        .eq('user_id', userId)
-        .single();
-
-      const syncedMap: Record<string, string> = existing.data?.synced_events || {};
 
       if (syncedMap[appt.id]) {
         // Update existing event
@@ -129,14 +108,17 @@ export async function POST(req: NextRequest) {
         const data = await res.json();
         if (data.id) {
           syncedMap[appt.id] = data.id;
-          await getAdmin().from('user_google_tokens').update({ synced_events: syncedMap }).eq('user_id', userId);
         }
       }
       synced++;
     }
 
+    // Save updated map
+    await getAdmin().from('user_google_tokens').update({ synced_events: syncedMap }).eq('user_id', userId);
+
     return NextResponse.json({ synced });
   } catch (e: any) {
+    console.error('Google sync error:', e);
     return NextResponse.json({ error: e.message }, { status: 500 });
   }
 }
