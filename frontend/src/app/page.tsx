@@ -179,8 +179,8 @@ export default function Home() {
               </a>
             ))}
           </div>
-          <Link href="/auth/login" style={{ padding: '8px 18px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#94a3b8', fontSize: 14, fontWeight: 500, textDecoration: 'none', whiteSpace: 'nowrap' }}>Entrar</Link>
-          <Link href="/assinar" className="btn-primary" style={{ padding: '8px 20px', borderRadius: 10, background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none', boxShadow: '0 0 20px rgba(34,197,94,0.3)', whiteSpace: 'nowrap' }}>7 dias de garantia</Link>
+          <Link href="/auth/login" style={{ padding: '8px 18px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#94a3b8', fontSize: 14, fontWeight: 500, textDecoration: 'none', whiteSpace: 'nowrap' }}>Já sou cliente</Link>
+          <Link href="/assinar" className="btn-primary" style={{ padding: '8px 20px', borderRadius: 10, background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none', boxShadow: '0 0 20px rgba(34,197,94,0.3)', whiteSpace: 'nowrap' }}>Assinar</Link>
         </nav>
       </header>
 
