@@ -8,18 +8,17 @@ import { Eye, EyeOff, ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
 type Mode = 'login' | 'forgot' | 'forgot-sent';
 
 export default function LoginPage() {
-  const [email, setEmail]   = useState('');
+  const [email, setEmail]       = useState('');
   const [password, setPassword] = useState('');
-  const [showPw, setShowPw] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError]   = useState('');
-  const [mode, setMode]     = useState<Mode>('login');
+  const [showPw, setShowPw]     = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [error, setError]       = useState('');
+  const [mode, setMode]         = useState<Mode>('login');
   const router = useRouter();
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) { setError('E-mail ou senha incorretos'); setLoading(false); return; }
     if (data?.user) {
@@ -31,136 +30,173 @@ export default function LoginPage() {
 
   async function handleForgot(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/reset-password`,
     });
     setLoading(false);
-    if (error) { setError('Erro ao enviar e-mail. Verifique o endereço e tente novamente.'); return; }
+    if (error) { setError('Erro ao enviar e-mail. Verifique o endereço.'); return; }
     setMode('forgot-sent');
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', fontFamily: 'Inter, system-ui, sans-serif', background: 'linear-gradient(135deg,#f0fdf4 0%,#ecfdf5 50%,#f8fafc 100%)' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', fontFamily: 'Inter, system-ui, sans-serif', background: '#020617' }}>
       <style>{`
+        @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+        @keyframes pulse-ring { 0%{transform:scale(1);opacity:0.6} 100%{transform:scale(1.5);opacity:0} }
+        @keyframes shimmer { 0%{background-position:-200% center} 100%{background-position:200% center} }
+        .login-input { transition: border-color 0.2s, box-shadow 0.2s; }
+        .login-input:focus { border-color: #22c55e !important; box-shadow: 0 0 0 3px rgba(34,197,94,0.15) !important; outline: none !important; }
+        .btn-submit:hover { box-shadow: 0 0 32px rgba(34,197,94,0.55) !important; transform: translateY(-1px); }
+        .btn-submit { transition: all 0.2s !important; }
         @media (max-width: 768px) {
           .login-left { display: none !important; }
-          .login-right { padding: 32px 24px !important; }
+          .login-right { padding: 40px 24px !important; }
         }
       `}</style>
 
-      {/* Left panel — hidden on mobile */}
-      <div className="login-left" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', padding: 48, background: 'linear-gradient(160deg,#0f172a 0%,#1e293b 100%)', maxWidth: 480 }}>
-        <div style={{ maxWidth: 360, width: '100%' }}>
+      {/* ── Left panel ── */}
+      <div className="login-left" style={{ width: 460, flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '48px 52px', background: 'rgba(255,255,255,0.02)', borderRight: '1px solid rgba(255,255,255,0.06)', position: 'relative', overflow: 'hidden' }}>
+        {/* Glow orb */}
+        <div style={{ position: 'absolute', bottom: '-10%', left: '-20%', width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(circle,rgba(34,197,94,0.08) 0%,transparent 70%)', pointerEvents: 'none' }}/>
+        <div style={{ position: 'absolute', top: '10%', right: '-10%', width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle,rgba(99,102,241,0.06) 0%,transparent 70%)', pointerEvents: 'none' }}/>
+        {/* Grid */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }}/>
+
+        <div style={{ position: 'relative' }}>
+          <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 34, marginBottom: 52 }}/>
+
           <div style={{ marginBottom: 48 }}>
-            <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 38 }}/>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#22c55e', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 14 }}>Finora IA</p>
+            <h2 style={{ color: '#fff', fontSize: 32, fontWeight: 800, margin: '0 0 14px', lineHeight: 1.15, letterSpacing: '-0.5px' }}>
+              Suas finanças,{' '}
+              <span style={{ backgroundImage: 'linear-gradient(90deg,#22c55e,#4ade80,#22c55e)', backgroundSize: '200% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', animation: 'shimmer 4s linear infinite' }}>
+                no WhatsApp.
+              </span>
+            </h2>
+            <p style={{ color: '#475569', fontSize: 15, margin: 0, lineHeight: 1.7 }}>Registre gastos por mensagem e acompanhe tudo no dashboard mais completo do mercado.</p>
           </div>
-          <h2 style={{ color: '#fff', fontSize: 28, fontWeight: 700, margin: '0 0 12px', lineHeight: 1.2 }}>Controle suas finanças com IA</h2>
-          <p style={{ color: '#64748b', fontSize: 15, margin: '0 0 40px', lineHeight: 1.6 }}>Registre gastos pelo WhatsApp e acompanhe tudo em um dashboard completo.</p>
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {[
               { icon: '💬', title: 'Via WhatsApp', desc: '"Gastei R$ 50 no mercado" — e pronto.' },
-              { icon: '🤖', title: 'IA Inteligente', desc: 'Categorização automática e relatórios em segundos.' },
-              { icon: '📊', title: 'Dashboard', desc: 'Gráficos, metas, contas a pagar e muito mais.' },
+              { icon: '🤖', title: 'IA Inteligente', desc: 'Categorização automática em segundos.' },
+              { icon: '📊', title: 'Dashboard completo', desc: 'Gráficos, metas, contas e muito mais.' },
             ].map(item => (
               <div key={item.title} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(34,197,94,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{item.icon}</div>
-                <div>
-                  <p style={{ color: '#e2e8f0', fontWeight: 600, fontSize: 14, margin: '0 0 2px' }}>{item.title}</p>
-                  <p style={{ color: '#475569', fontSize: 13, margin: 0 }}>{item.desc}</p>
+                <div style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, flexShrink: 0 }}>{item.icon}</div>
+                <div style={{ paddingTop: 2 }}>
+                  <p style={{ color: '#f1f5f9', fontWeight: 600, fontSize: 14, margin: '0 0 3px' }}>{item.title}</p>
+                  <p style={{ color: '#475569', fontSize: 13, margin: 0, lineHeight: 1.5 }}>{item.desc}</p>
                 </div>
               </div>
             ))}
           </div>
+
+          {/* Porcinha animada */}
+          <div style={{ marginTop: 48, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#22c55e,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, boxShadow: '0 0 20px rgba(34,197,94,0.35)', animation: 'float 4s ease-in-out infinite', flexShrink: 0 }}>🐷</div>
+            <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '10px 14px' }}>
+              <p style={{ margin: 0, fontSize: 13, color: '#64748b' }}>
+                <span style={{ color: '#22c55e', fontWeight: 600 }}>Finora IA</span> — online agora
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Right panel */}
-      <div className="login-right" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 48 }}>
-        <div style={{ width: '100%', maxWidth: 400 }}>
+      {/* ── Right panel ── */}
+      <div className="login-right" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 48, position: 'relative' }}>
+        {/* Subtle glow center */}
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle,rgba(34,197,94,0.04) 0%,transparent 65%)', pointerEvents: 'none' }}/>
 
-          {/* Logo — only on mobile */}
-          <div style={{ display: 'none', justifyContent: 'center', marginBottom: 32 }} className="mobile-logo">
+        <div style={{ width: '100%', maxWidth: 380, position: 'relative' }}>
+
+          {/* Mobile logo */}
+          <div className="mobile-logo" style={{ display: 'none', justifyContent: 'center', marginBottom: 36 }}>
             <style>{`@media (max-width: 768px) { .mobile-logo { display: flex !important; } }`}</style>
-            <img src="/logo-finora.svg" alt="Finora" style={{ height: 34 }}/>
+            <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 30 }}/>
           </div>
 
-          {/* LOGIN */}
+          {/* ── LOGIN ── */}
           {mode === 'login' && (
             <>
-              <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>Bem-vindo de volta!</h1>
-              <p style={{ color: '#94a3b8', fontSize: 14, margin: '0 0 28px' }}>Entre para acessar seu dashboard</p>
+              <div style={{ marginBottom: 36 }}>
+                <h1 style={{ fontSize: 26, fontWeight: 800, color: '#fff', margin: '0 0 8px', letterSpacing: '-0.5px' }}>Bem-vindo de volta!</h1>
+                <p style={{ color: '#475569', fontSize: 14, margin: 0 }}>Entre para acessar seu dashboard</p>
+              </div>
 
-              <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                 <div>
                   <label style={labelStyle}>E-mail</label>
-                  <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="voce@email.com" style={inputStyle}/>
+                  <input className="login-input" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="voce@email.com" style={inputStyle}/>
                 </div>
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                     <label style={{ ...labelStyle, marginBottom: 0 }}>Senha</label>
-                    <button type="button" onClick={() => { setError(''); setMode('forgot'); }} style={{ background: 'none', border: 'none', color: '#22c55e', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: 0 }}>
+                    <button type="button" onClick={() => { setError(''); setMode('forgot'); }} style={{ background: 'none', border: 'none', color: '#22c55e', fontSize: 12, fontWeight: 600, cursor: 'pointer', padding: 0 }}>
                       Esqueci minha senha
                     </button>
                   </div>
                   <div style={{ position: 'relative' }}>
-                    <input type={showPw ? 'text' : 'password'} required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" style={{ ...inputStyle, paddingRight: 44 }}/>
-                    <button type="button" onClick={() => setShowPw(!showPw)} style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
-                      {showPw ? <EyeOff size={17}/> : <Eye size={17}/>}
+                    <input className="login-input" type={showPw ? 'text' : 'password'} required value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" style={{ ...inputStyle, paddingRight: 44 }}/>
+                    <button type="button" onClick={() => setShowPw(!showPw)} style={{ position: 'absolute', right: 13, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center' }}>
+                      {showPw ? <EyeOff size={16}/> : <Eye size={16}/>}
                     </button>
                   </div>
                 </div>
 
-                {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 14px', color: '#dc2626', fontSize: 13 }}>{error}</div>}
+                {error && (
+                  <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 10, padding: '11px 14px', color: '#f87171', fontSize: 13 }}>
+                    {error}
+                  </div>
+                )}
 
-                <button type="submit" disabled={loading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '14px', borderRadius: 11, border: 'none', background: loading ? '#94a3b8' : 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 15, fontWeight: 600, cursor: loading ? 'wait' : 'pointer', boxShadow: loading ? 'none' : '0 4px 14px rgba(34,197,94,0.35)', transition: 'all 0.2s' }}>
-                  {loading ? 'Aguarde...' : 'Entrar'} {!loading && <ArrowRight size={16}/>}
+                <button type="submit" disabled={loading} className="btn-submit" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '15px', borderRadius: 12, border: 'none', background: loading ? '#1e293b' : 'linear-gradient(135deg,#22c55e,#16a34a)', color: loading ? '#475569' : '#fff', fontSize: 15, fontWeight: 700, cursor: loading ? 'wait' : 'pointer', boxShadow: loading ? 'none' : '0 0 24px rgba(34,197,94,0.35)' }}>
+                  {loading ? 'Aguarde...' : <> Entrar <ArrowRight size={16}/> </>}
                 </button>
               </form>
 
-              <p style={{ textAlign: 'center', fontSize: 14, color: '#94a3b8', marginTop: 24 }}>
+              <p style={{ textAlign: 'center', fontSize: 14, color: '#475569', marginTop: 28 }}>
                 Não tem uma conta?{' '}
                 <a href="/assinar" style={{ color: '#22c55e', fontWeight: 600, textDecoration: 'none' }}>Cadastre-se</a>
               </p>
             </>
           )}
 
-          {/* ESQUECI SENHA */}
+          {/* ── ESQUECI SENHA ── */}
           {mode === 'forgot' && (
             <>
-              <button onClick={() => { setMode('login'); setError(''); }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#64748b', fontSize: 14, cursor: 'pointer', padding: 0, marginBottom: 28 }}>
+              <button onClick={() => { setMode('login'); setError(''); }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#475569', fontSize: 14, cursor: 'pointer', padding: 0, marginBottom: 32 }}>
                 <ArrowLeft size={15}/> Voltar ao login
               </button>
-              <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: '0 0 6px' }}>Recuperar senha</h1>
-              <p style={{ color: '#94a3b8', fontSize: 14, margin: '0 0 28px', lineHeight: 1.6 }}>Informe seu e-mail e enviaremos um link para você criar uma nova senha.</p>
+              <h1 style={{ fontSize: 26, fontWeight: 800, color: '#fff', margin: '0 0 8px', letterSpacing: '-0.5px' }}>Recuperar senha</h1>
+              <p style={{ color: '#475569', fontSize: 14, margin: '0 0 32px', lineHeight: 1.65 }}>Informe seu e-mail e enviaremos um link para criar uma nova senha.</p>
 
-              <form onSubmit={handleForgot} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <form onSubmit={handleForgot} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                 <div>
                   <label style={labelStyle}>E-mail</label>
-                  <input type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="voce@email.com" style={inputStyle}/>
+                  <input className="login-input" type="email" required value={email} onChange={e => setEmail(e.target.value)} placeholder="voce@email.com" style={inputStyle}/>
                 </div>
-
-                {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 14px', color: '#dc2626', fontSize: 13 }}>{error}</div>}
-
-                <button type="submit" disabled={loading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '14px', borderRadius: 11, border: 'none', background: loading ? '#94a3b8' : 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 15, fontWeight: 600, cursor: loading ? 'wait' : 'pointer', boxShadow: loading ? 'none' : '0 4px 14px rgba(34,197,94,0.35)', transition: 'all 0.2s' }}>
-                  {loading ? 'Enviando...' : 'Enviar link de recuperação'} {!loading && <ArrowRight size={16}/>}
+                {error && <div style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', borderRadius: 10, padding: '11px 14px', color: '#f87171', fontSize: 13 }}>{error}</div>}
+                <button type="submit" disabled={loading} className="btn-submit" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '15px', borderRadius: 12, border: 'none', background: loading ? '#1e293b' : 'linear-gradient(135deg,#22c55e,#16a34a)', color: loading ? '#475569' : '#fff', fontSize: 15, fontWeight: 700, cursor: loading ? 'wait' : 'pointer', boxShadow: 'none' }}>
+                  {loading ? 'Enviando...' : <> Enviar link <ArrowRight size={16}/> </>}
                 </button>
               </form>
             </>
           )}
 
-          {/* E-MAIL ENVIADO */}
+          {/* ── E-MAIL ENVIADO ── */}
           {mode === 'forgot-sent' && (
             <div style={{ textAlign: 'center' }}>
-              <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#f0fdf4', border: '2px solid #22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                <CheckCircle size={32} color="#22c55e"/>
+              <div style={{ width: 68, height: 68, borderRadius: '50%', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', boxShadow: '0 0 24px rgba(34,197,94,0.2)' }}>
+                <CheckCircle size={34} color="#22c55e"/>
               </div>
-              <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', margin: '0 0 10px' }}>E-mail enviado!</h1>
-              <p style={{ color: '#64748b', fontSize: 14, lineHeight: 1.7, margin: '0 0 28px' }}>
-                Enviamos um link de recuperação para<br/>
-                <strong style={{ color: '#0f172a' }}>{email}</strong><br/>
-                Verifique sua caixa de entrada (e o spam).
+              <h1 style={{ fontSize: 24, fontWeight: 800, color: '#fff', margin: '0 0 10px' }}>E-mail enviado!</h1>
+              <p style={{ color: '#475569', fontSize: 14, lineHeight: 1.75, margin: '0 0 32px' }}>
+                Enviamos um link para<br/>
+                <strong style={{ color: '#f1f5f9' }}>{email}</strong><br/>
+                Verifique sua caixa de entrada e o spam.
               </p>
               <button onClick={() => { setMode('login'); setError(''); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, margin: '0 auto', background: 'none', border: 'none', color: '#22c55e', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
                 <ArrowLeft size={15}/> Voltar ao login
@@ -174,14 +210,13 @@ export default function LoginPage() {
 }
 
 const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: 12, fontWeight: 600, color: '#64748b',
-  letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 7,
+  display: 'block', fontSize: 11, fontWeight: 700, color: '#475569',
+  letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8,
 };
 
 const inputStyle: React.CSSProperties = {
   display: 'block', width: '100%', padding: '13px 14px',
-  borderRadius: 10, border: '1.5px solid #e2e8f0',
-  fontSize: 15, color: '#1e293b', background: '#fff',
+  borderRadius: 10, border: '1px solid rgba(255,255,255,0.08)',
+  fontSize: 15, color: '#f1f5f9', background: 'rgba(255,255,255,0.04)',
   outline: 'none', boxSizing: 'border-box',
-  transition: 'border-color 0.15s',
 };
