@@ -39,9 +39,13 @@ export class WhatsappService {
       if (!user) {
         await this.sendMessage(
           normalizedPhone,
-          `👋 Olá! Para usar o *Finora* pelo WhatsApp, crie sua conta em:\n\n` +
-          `🔗 *${this.dashboardUrl}*\n\n` +
-          `É rápido e fácil! 🐷`,
+          `🐷 *Olá! Eu sou a Finora!*\n\n` +
+          `Ajudo você a controlar suas finanças direto pelo WhatsApp — sem planilhas, sem complicação.\n\n` +
+          `✅ Registre gastos e receitas por mensagem\n` +
+          `✅ Acompanhe tudo no dashboard\n` +
+          `✅ Relatórios inteligentes com IA\n\n` +
+          `Para começar, crie sua conta gratuitamente:\n` +
+          `👉 *${this.dashboardUrl}*`,
         );
         return;
       }
@@ -49,9 +53,10 @@ export class WhatsappService {
       if (!user.paid) {
         await this.sendMessage(
           normalizedPhone,
-          `⚠️ Sua conta Finora está *inativa*.\n\n` +
-          `Para continuar registrando seus gastos pelo WhatsApp, assine um plano:\n\n` +
-          `💳 *${this.dashboardUrl}/dashboard/plano*`,
+          `🔒 *Sua assinatura Finora está inativa.*\n\n` +
+          `Para voltar a registrar seus gastos pelo WhatsApp, reative seu plano:\n` +
+          `👉 *${this.dashboardUrl}/dashboard/plano*\n\n` +
+          `Qualquer dúvida, é só responder aqui! 😊`,
         );
         return;
       }
