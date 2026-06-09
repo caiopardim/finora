@@ -62,7 +62,7 @@ function WhatsAppMockup() {
   return (
     <div style={{ background: 'rgba(255,255,255,0.04)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 28, overflow: 'hidden', width: '100%', maxWidth: 300, boxShadow: '0 40px 100px rgba(0,0,0,0.5), 0 0 0 1px rgba(34,197,94,0.15)' }}>
       <div style={{ background: '#075e54', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#22c55e,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>🐷</div>
+        <img src="/favicon.svg" alt="Finora" style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0, objectFit: 'cover' }}/>
         <div><p style={{ margin: 0, color: '#fff', fontWeight: 700, fontSize: 14 }}>Finora IA</p><p style={{ margin: 0, color: '#9de0d8', fontSize: 11 }}>● online agora</p></div>
       </div>
       <div style={{ background: '#111b21', padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 8, minHeight: 260 }}>
