@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import OpenAI from 'openai';
+import OpenAI, { toFile } from 'openai';
 import * as dayjs from 'dayjs';
 
 export interface ParsedTransaction {
@@ -94,6 +94,26 @@ Exemplos:
     } catch {
       this.logger.error('Failed to parse AI response', response.choices[0].message.content);
       return { action: 'unknown' };
+    }
+  }
+
+  async transcribeAudio(base64: string): Promise<string | null> {
+    if (!this.openai) return null;
+    try {
+      // Detect format: WhatsApp sends ogg/opus for PTT, mp4 for audio
+      const buffer = Buffer.from(base64, 'base64');
+      const file = await toFile(buffer, 'audio.ogg', { type: 'audio/ogg' });
+
+      const result = await this.openai.audio.transcriptions.create({
+        file,
+        model: 'whisper-1',
+        language: 'pt',
+      });
+
+      return result.text?.trim() || null;
+    } catch (err) {
+      this.logger.error('Whisper transcription failed', err);
+      return null;
     }
   }
 

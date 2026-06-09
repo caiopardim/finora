@@ -1,6 +1,7 @@
 import { Controller, Post, Body, Headers, UnauthorizedException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { WhatsappService } from './whatsapp.service';
+import { AiService } from './ai.service';
 
 @Controller('webhook')
 export class WhatsappController {
@@ -9,6 +10,7 @@ export class WhatsappController {
   constructor(
     private readonly whatsapp: WhatsappService,
     private readonly config: ConfigService,
+    private readonly ai: AiService,
   ) {}
 
   @Post('whatsapp')
@@ -50,6 +52,16 @@ export class WhatsappController {
 
     // Handle text message
     const message = data?.message?.conversation || data?.message?.extendedTextMessage?.text;
+
+    // Handle audio/voice message
+    const audioMessage = data?.message?.audioMessage || data?.message?.pttMessage;
+    if (!message && audioMessage) {
+      this.processAudioMessage(phone, data).catch((err) =>
+        this.logger.error('Error handling audio message', err),
+      );
+      return { status: 'processing' };
+    }
+
     if (!message) return { status: 'ignored' };
 
     // Handle delete command: "excluir XXXXXX"
@@ -66,5 +78,52 @@ export class WhatsappController {
     );
 
     return { status: 'processing' };
+  }
+
+  private async processAudioMessage(phone: string, data: any): Promise<void> {
+    try {
+      // Download audio from Evolution API
+      const instanceName = this.config.get('EVOLUTION_INSTANCE', 'finora');
+      const evolutionUrl = this.config.get('EVOLUTION_API_URL');
+      const evolutionKey = this.config.get('EVOLUTION_API_KEY');
+      const messageId = data?.key?.id;
+
+      const mediaRes = await fetch(
+        `${evolutionUrl}/chat/getBase64FromMediaMessage/${instanceName}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: evolutionKey },
+          body: JSON.stringify({ message: { key: data?.key, message: data?.message } }),
+        },
+      );
+
+      if (!mediaRes.ok) {
+        this.logger.error(`Failed to download audio: ${mediaRes.status}`);
+        await this.whatsapp.sendMessage(phone, '❌ Não consegui processar seu áudio. Tente enviar em texto!');
+        return;
+      }
+
+      const mediaData = await mediaRes.json() as any;
+      const base64 = mediaData?.base64 || mediaData?.data;
+      if (!base64) {
+        await this.whatsapp.sendMessage(phone, '❌ Não consegui ler o áudio. Tente enviar em texto!');
+        return;
+      }
+
+      // Transcribe with Whisper
+      const transcription = await this.ai.transcribeAudio(base64);
+      if (!transcription) {
+        await this.whatsapp.sendMessage(phone, '❌ Não entendi o áudio. Pode repetir em texto?');
+        return;
+      }
+
+      this.logger.log(`Audio transcribed for ${phone}: "${transcription}"`);
+
+      // Process transcribed text normally
+      await this.whatsapp.handleIncomingMessage(phone, transcription);
+    } catch (err) {
+      this.logger.error('Error processing audio message', err);
+      await this.whatsapp.sendMessage(phone, '❌ Erro ao processar áudio. Tente enviar em texto!');
+    }
   }
 }
