@@ -54,6 +54,7 @@ export default function AdminPage() {
   const [broadcastType, setBroadcastType] = useState('info');
   const [activeBroadcast, setActiveBroadcast] = useState<any>(null);
   const [broadcastSaving, setBroadcastSaving] = useState(false);
+  const [broadcastWa, setBroadcastWa]         = useState(false);
 
   // Maintenance
   const [maintenanceOn, setMaintenanceOn]   = useState(false);
@@ -181,9 +182,9 @@ export default function AdminPage() {
 
   async function saveBroadcast() {
     setBroadcastSaving(true);
-    await adminFetch('/api/admin/broadcast', { method: 'POST', body: JSON.stringify({ message: broadcastMsg, type: broadcastType }) });
+    await adminFetch('/api/admin/broadcast', { method: 'POST', body: JSON.stringify({ message: broadcastMsg, type: broadcastType, send_whatsapp: broadcastWa }) });
     setActiveBroadcast(broadcastMsg ? { message: broadcastMsg, type: broadcastType } : null);
-    showToast(broadcastMsg ? '✅ Aviso publicado para todos os usuários' : '✅ Aviso removido');
+    showToast(broadcastMsg ? (broadcastWa ? '✅ Aviso publicado + WhatsApp enviado!' : '✅ Aviso publicado para todos os usuários') : '✅ Aviso removido');
     setBroadcastSaving(false);
   }
 
@@ -860,11 +861,18 @@ export default function AdminPage() {
                     <label style={{ fontSize: 12, fontWeight: 600, color: c.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>Mensagem</label>
                     <textarea value={broadcastMsg} onChange={e => setBroadcastMsg(e.target.value)} placeholder="Ex: Realizaremos manutenção às 22h hoje..." rows={3} style={{ ...inputStyle, width: '100%', resize: 'vertical', fontFamily: 'inherit', lineHeight: 1.5 }}/>
                   </div>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', userSelect: 'none' }}>
+                    <div onClick={() => setBroadcastWa(v => !v)} style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${broadcastWa ? '#22c55e' : c.border}`, background: broadcastWa ? '#22c55e' : c.surface, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer', transition: 'all 0.15s' }}>
+                      {broadcastWa && <svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4L4 7.5L10 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    </div>
+                    <span style={{ fontSize: 13, color: c.text, fontWeight: 500 }}>📱 Enviar também pelo WhatsApp para todos os clientes ativos</span>
+                  </label>
+
                   <div style={{ display: 'flex', gap: 10 }}>
                     <button onClick={() => { setBroadcastMsg(''); saveBroadcast(); }} style={{ padding: '11px 20px', borderRadius: 10, border: `1.5px solid ${c.border}`, background: c.surface, color: c.textMuted, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>Limpar aviso</button>
-                    <button onClick={saveBroadcast} disabled={broadcastSaving} style={{ flex: 1, padding: '11px 20px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#6366f1,#4f46e5)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    <button onClick={saveBroadcast} disabled={broadcastSaving || !broadcastMsg} style={{ flex: 1, padding: '11px 20px', borderRadius: 10, border: 'none', background: broadcastSaving || !broadcastMsg ? '#94a3b8' : 'linear-gradient(135deg,#6366f1,#4f46e5)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: broadcastSaving || !broadcastMsg ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                       {broadcastSaving ? <RefreshCw size={15} style={{ animation: 'spin 1s linear infinite' }}/> : <Send size={15}/>}
-                      Publicar para todos
+                      {broadcastWa ? 'Publicar + Enviar WhatsApp' : 'Publicar para todos'}
                     </button>
                   </div>
                 </div>
