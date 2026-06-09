@@ -965,7 +965,7 @@ export default function AdminPage() {
                       <span style={{ fontSize: 14, color: c.textFaint }}>/ano</span>
                     </div>
                     <p style={{ margin: '10px 0 0', fontSize: 12, color: '#4ade80' }}>
-                      Economia: R$ {(Number(priceMonthly) * 12 - Number(priceAnnual))} em relação ao mensal
+                      Economia: R$ {(Number(priceMonthly) * 12 - Number(priceAnnual)).toFixed(2).replace('.', ',')} em relação ao mensal
                     </p>
                   </div>
 
