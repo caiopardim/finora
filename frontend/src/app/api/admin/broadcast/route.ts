@@ -29,12 +29,18 @@ async function checkAdmin(req: NextRequest) {
 
 async function sendWhatsApp(phone: string, text: string) {
   try {
-    await fetch(`${EVOLUTION_URL}/message/sendText/${EVOLUTION_INSTANCE}`, {
+    const res = await fetch(`${EVOLUTION_URL}/message/sendText/${EVOLUTION_INSTANCE}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', apikey: EVOLUTION_KEY },
       body: JSON.stringify({ number: `${phone}@s.whatsapp.net`, text }),
     });
-  } catch { /* silently fail per user */ }
+    if (!res.ok) {
+      const body = await res.text();
+      console.error(`[broadcast] Failed to send to ${phone}: ${res.status} ${body}`);
+    }
+  } catch (err) {
+    console.error(`[broadcast] Error sending to ${phone}:`, err);
+  }
 }
 
 // GET — fetch active broadcast
