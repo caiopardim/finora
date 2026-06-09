@@ -255,39 +255,75 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── Trust bar ── */}
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '20px 48px', background: 'rgba(255,255,255,0.02)' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 48, flexWrap: 'wrap' }}>
-          {/* Avatares + contador de usuários */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ display: 'flex' }}>
-              {['#22c55e','#6366f1','#f97316','#06b6d4','#f43f5e'].map((c, i) => (
-                <div key={i} style={{ width: 28, height: 28, borderRadius: '50%', background: c, border: '2px solid #020617', marginLeft: i === 0 ? 0 : -8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
-                  {['A','C','F','R','M'][i]}
+      {/* ── Social Proof Banner ── */}
+      <div style={{ position: 'relative', overflow: 'hidden', borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '36px 48px', background: 'rgba(34,197,94,0.03)' }}>
+        {/* Glow */}
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 600, height: 200, background: 'radial-gradient(ellipse,rgba(34,197,94,0.07) 0%,transparent 70%)', pointerEvents: 'none' }}/>
+
+        <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 32, flexWrap: 'wrap', position: 'relative' }}>
+
+          {/* Left: avatares + texto */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+            {/* Avatares empilhados */}
+            <div style={{ display: 'flex', position: 'relative' }}>
+              {[
+                { letter: 'A', bg: 'linear-gradient(135deg,#22c55e,#16a34a)' },
+                { letter: 'C', bg: 'linear-gradient(135deg,#6366f1,#4f46e5)' },
+                { letter: 'F', bg: 'linear-gradient(135deg,#f97316,#ea580c)' },
+                { letter: 'R', bg: 'linear-gradient(135deg,#06b6d4,#0891b2)' },
+                { letter: 'M', bg: 'linear-gradient(135deg,#f43f5e,#e11d48)' },
+              ].map((a, i) => (
+                <div key={i} style={{ width: 40, height: 40, borderRadius: '50%', background: a.bg, border: '2.5px solid #020617', marginLeft: i === 0 ? 0 : -12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, color: '#fff', flexShrink: 0, boxShadow: '0 4px 12px rgba(0,0,0,0.4)', zIndex: 5 - i }}>
+                  {a.letter}
                 </div>
               ))}
+              {/* +N badge */}
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', border: '2.5px solid #020617', marginLeft: -12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: '#94a3b8', flexShrink: 0 }}>
+                +1k
+              </div>
             </div>
+
             <div>
-              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#f1f5f9' }}>+1.300 pessoas</p>
-              <p style={{ margin: 0, fontSize: 11, color: '#475569' }}>já organizam suas finanças</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                <span style={{ fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px' }}>+1.300</span>
+                <span style={{ fontSize: 14, fontWeight: 500, color: '#475569' }}>pessoas já usam a Finora</span>
+              </div>
+              <div style={{ display: 'flex', gap: 4 }}>
+                {[1,2,3,4,5].map(s => (
+                  <svg key={s} width="14" height="14" viewBox="0 0 24 24" fill="#f59e0b"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                ))}
+                <span style={{ fontSize: 12, color: '#64748b', marginLeft: 4 }}>4.9/5 de avaliação</span>
+              </div>
             </div>
           </div>
 
-          <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,0.08)' }}/>
+          {/* Divider */}
+          <div style={{ width: 1, height: 48, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} className="trust-divider"/>
 
-          {[
-            { icon: '⭐', text: '4.9/5 avaliação' },
-            { icon: '🔒', text: 'Dados 100% seguros' },
-            { icon: '💳', text: 'Sem cartão de crédito' },
-            { icon: '🇧🇷', text: 'Feito para o Brasil' },
-          ].map(item => (
-            <div key={item.text} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 15 }}>{item.icon}</span>
-              <span style={{ fontSize: 13, fontWeight: 500, color: '#475569' }}>{item.text}</span>
-            </div>
-          ))}
+          {/* Right: selos */}
+          <div style={{ display: 'flex', gap: 28, flexWrap: 'wrap', alignItems: 'center' }}>
+            {[
+              { icon: '🔒', title: 'Dados seguros', sub: 'Criptografia SSL' },
+              { icon: '💳', title: 'Sem cartão', sub: 'No período grátis' },
+              { icon: '🇧🇷', title: 'Feito no Brasil', sub: 'Para brasileiros' },
+            ].map(item => (
+              <div key={item.title} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{item.icon}</div>
+                <div>
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: '#f1f5f9' }}>{item.title}</p>
+                  <p style={{ margin: 0, fontSize: 11, color: '#475569' }}>{item.sub}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .trust-divider { display: none !important; }
+        }
+      `}</style>
 
       {/* ── Como funciona ── */}
       <section id="como-funciona" className="section-pad" style={{ padding: '120px 48px', position: 'relative', overflow: 'hidden' }}>
