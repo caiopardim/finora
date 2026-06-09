@@ -235,11 +235,11 @@ export default function Home() {
                 {[
                   { value: 3, suffix: ' dias', label: 'de trial grátis' },
                   { value: 12, suffix: '+', label: 'funcionalidades' },
-                  { value: priceMonthly, suffix: 'R$', label: 'por mês' },
+                  { value: priceMonthly, suffix: '', prefix: 'R$ ', label: 'por mês' },
                 ].map(s => (
                   <div key={s.label}>
                     <p style={{ margin: '0 0 4px', fontSize: 32, fontWeight: 800, color: '#22c55e', letterSpacing: '-1px' }}>
-                      <Counter target={s.value} suffix={s.suffix}/>
+                      {(s as any).prefix}{<Counter target={s.value} suffix={s.suffix}/>}
                     </p>
                     <p style={{ margin: 0, fontSize: 13, color: '#475569' }}>{s.label}</p>
                   </div>
