@@ -497,8 +497,12 @@ export default function Home() {
           <span style={{ color: '#334155', fontSize: 13 }}>© 2025 Finora</span>
         </div>
         <div style={{ display: 'flex', gap: 24 }}>
-          {['Privacidade', 'Termos', 'Suporte'].map(l => (
-            <a key={l} href="#" style={{ color: '#334155', fontSize: 13, textDecoration: 'none' }}>{l}</a>
+          {[
+            { label: 'Privacidade', href: '/privacidade' },
+            { label: 'Termos', href: '/termos' },
+            { label: 'Suporte', href: 'https://wa.me/5562982237323' },
+          ].map(l => (
+            <a key={l.label} href={l.href} target={l.href.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer" style={{ color: '#334155', fontSize: 13, textDecoration: 'none' }}>{l.label}</a>
           ))}
         </div>
       </footer>
