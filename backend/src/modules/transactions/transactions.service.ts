@@ -115,6 +115,28 @@ export class TransactionsService {
     return data?.[0] ?? null;
   }
 
+  async findRecentByDescription(userId: string, description: string, amount?: number) {
+    let query = this.supabase
+      .from('transactions')
+      .select('id, description, amount, date, type')
+      .eq('user_id', userId)
+      .ilike('description', `%${description}%`)
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    const { data } = await query;
+    if (!data || data.length === 0) return null;
+
+    // If amount given, try to find exact match first
+    if (amount) {
+      const exact = data.find(t => Math.abs(Number(t.amount) - amount) < 0.01);
+      if (exact) return exact;
+    }
+
+    return data[0];
+  }
+
   async remove(userId: string, id: string) {
     await this.findOne(userId, id);
     const { error } = await this.supabase

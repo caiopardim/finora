@@ -12,10 +12,11 @@ export interface ParsedTransaction {
 }
 
 export interface MessageIntent {
-  action: 'register_transaction' | 'query_report' | 'create_appointment' | 'list_appointments' | 'list_bills' | 'set_goal' | 'unknown';
+  action: 'register_transaction' | 'query_report' | 'create_appointment' | 'list_appointments' | 'delete_transaction' | 'list_bills' | 'set_goal' | 'unknown';
   transaction?: ParsedTransaction;
   query?: string;
   appointment?: { title: string; description?: string; scheduledAt: string };
+  delete?: { description?: string; amount?: number; date?: string };
 }
 
 @Injectable()
@@ -93,6 +94,19 @@ Para listar agendamentos:
   "action": "list_appointments"
 }
 
+Para cancelar/excluir uma transação:
+{
+  "action": "delete_transaction",
+  "delete": {
+    "description": string (descrição ou nome do gasto/receita que o usuário quer excluir),
+    "amount": number (valor, se mencionado),
+    "date": "YYYY-MM-DD" (data, se mencionada)
+  }
+}
+
+Considere delete_transaction quando o usuário usar palavras como: cancelar, excluir, apagar, deletar, remover, desfazer, não quero, errei, lancei errado, foi errado.
+Exemplos: "cancela o mercado", "apaga o gasto de 50 reais", "excluir a transação do almoço", "errei o lançamento do salário".
+
 Para outros casos:
 {
   "action": "unknown"
@@ -110,7 +124,9 @@ Exemplos:
 - "Gastei 45 no mercado" → expense, Alimentação, 45.00
 - "Recebi 3500 de salário" → income, Salário, 3500.00
 - "Quanto gastei este mês?" → query_report
-- "Paguei 120 de internet" → expense, Internet/Telefone, 120.00`,
+- "Paguei 120 de internet" → expense, Internet/Telefone, 120.00
+- "Cancela o mercado" → delete_transaction, description: "mercado"
+- "Apaga o gasto de 50 reais" → delete_transaction, amount: 50`,
         },
         {
           role: 'user',

@@ -117,6 +117,23 @@ export class WhatsappService {
           break;
         }
 
+        case 'delete_transaction': {
+          const { delete: del } = intent;
+          if (!del?.description) {
+            await this.sendMessage(normalizedPhone, `❓ Qual transação você quer excluir? Me diga o nome ou valor, ex:\n_"Cancela o mercado"_ ou _"Apaga o gasto de R$ 50"_`);
+            break;
+          }
+          const tx = await this.transactions.findRecentByDescription(user.id, del.description, del.amount);
+          if (!tx) {
+            await this.sendMessage(normalizedPhone, `❌ Não encontrei nenhuma transação com *"${del.description}"*.\n\nVerifique no dashboard ou tente com outro termo.`);
+            break;
+          }
+          await this.transactions.remove(user.id, tx.id);
+          const formattedAmount = Number(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          await this.sendMessage(normalizedPhone, `✅ *Transação excluída!*\n\n📝 *${tx.description}*\n💸 R$ ${formattedAmount}\n📅 ${new Date(tx.date + 'T12:00:00').toLocaleDateString('pt-BR')}`);
+          break;
+        }
+
         case 'create_appointment': {
           const { appointment } = intent;
           const created = await this.appointments.create(user.id, {
