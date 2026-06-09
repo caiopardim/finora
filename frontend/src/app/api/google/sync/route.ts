@@ -87,8 +87,8 @@ async function importFromGoogle(userId: string, accessToken: string, syncedMap: 
   const finoraExportedIds = new Set(Object.values(syncedMap));
 
   let imported = 0;
-  console.log('[google-sync] finoraExportedIds:', JSON.stringify([...finoraExportedIds]));
-  console.log('[google-sync] existingGoogleIds:', JSON.stringify([...existingGoogleIds]));
+  console.log('[google-sync] finoraExportedIds:', JSON.stringify(Array.from(finoraExportedIds)));
+  console.log('[google-sync] existingGoogleIds:', JSON.stringify(Array.from(existingGoogleIds)));
   for (const event of events) {
     // Skip events already exported from Finora to Google
     if (finoraExportedIds.has(event.id)) { console.log('[google-sync] skip (finora exported):', event.id); continue; }
