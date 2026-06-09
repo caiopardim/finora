@@ -73,6 +73,7 @@ async function importFromGoogle(userId: string, accessToken: string, syncedMap: 
     { headers: { Authorization: `Bearer ${accessToken}` } }
   );
   const data = await res.json();
+  console.log('[google-sync] Google events response:', JSON.stringify({ status: res.status, itemCount: data.items?.length, error: data.error }));
   const events = data.items || [];
 
   // Get existing Finora appointments to avoid duplicates
