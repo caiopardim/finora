@@ -236,7 +236,7 @@ function AssinaturaContent() {
             <div style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.25)', borderRadius: 12, padding: '12px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{ fontSize: 18 }}>🎉</span>
               <p style={{ margin: 0, fontSize: 13, color: '#fbbf24', lineHeight: 1.5 }}>
-                <strong>Você não será cobrado agora.</strong> O cartão só será cobrado após o período de teste grátis de 3 dias.
+                <strong>Garantia de 7 dias.</strong> Se não ficar satisfeito, devolvemos 100% do valor pago, sem burocracia.
               </p>
             </div>
 
