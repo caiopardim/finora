@@ -30,9 +30,13 @@ export class AiService {
     }
   }
 
-  async parseMessage(message: string, userContext?: string): Promise<MessageIntent> {
+  async parseMessage(message: string, userCategories?: string[]): Promise<MessageIntent> {
     if (!this.openai) return { action: 'unknown' };
     const today = dayjs().format('YYYY-MM-DD');
+
+    const categoryList = userCategories && userCategories.length > 0
+      ? userCategories.join(', ')
+      : 'Alimentação, Transporte, Moradia, Saúde, Lazer, Educação, Vestuário, Internet/Telefone, Serviços, Salário, Freelance, Investimentos, Outros';
 
     const response = await this.openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -50,11 +54,13 @@ Para registro de transação:
   "transaction": {
     "type": "income" | "expense",
     "amount": number,
-    "category": string (uma das: Alimentação, Transporte, Moradia, Saúde, Lazer, Educação, Vestuário, Internet/Telefone, Serviços, Salário, Freelance, Investimentos, Outros),
+    "category": string (use EXATAMENTE uma das categorias do usuário: ${categoryList}),
     "description": string (descrição curta e clara),
     "date": "YYYY-MM-DD"
   }
 }
+
+IMPORTANTE: Sempre use o nome exato de uma das categorias da lista acima. Escolha a mais adequada. Nunca invente categorias fora dessa lista.
 
 Para consulta de relatório ou pergunta sobre finanças:
 {

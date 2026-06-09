@@ -6,6 +6,7 @@ import { TransactionsService } from '../transactions/transactions.service';
 import { UsersService } from '../users/users.service';
 import { ReportsService } from '../reports/reports.service';
 import { AppointmentsService } from '../appointments/appointments.service';
+import { CategoriesService } from '../categories/categories.service';
 import * as dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 dayjs.locale('pt-br');
@@ -24,6 +25,7 @@ export class WhatsappService {
     private transactions: TransactionsService,
     private users: UsersService,
     private reports: ReportsService,
+    private categories: CategoriesService,
     @Inject(forwardRef(() => AppointmentsService)) private appointments: AppointmentsService,
   ) {
     this.evolutionUrl = config.get('EVOLUTION_API_URL');
@@ -67,7 +69,9 @@ export class WhatsappService {
       }
 
       this.logger.log(`[2] User found: ${user?.id} — parsing message with AI`);
-      const intent = await this.ai.parseMessage(message);
+      const userCategories = await this.categories.findAll(user.id).catch(() => []);
+      const categoryNames = userCategories.map((c: any) => c.name);
+      const intent = await this.ai.parseMessage(message, categoryNames);
       this.logger.log(`[3] AI intent: ${intent.action}`);
 
       switch (intent.action) {

@@ -5,10 +5,11 @@ import { AiService } from './ai.service';
 import { TransactionsModule } from '../transactions/transactions.module';
 import { UsersModule } from '../users/users.module';
 import { ReportsModule } from '../reports/reports.module';
+import { CategoriesModule } from '../categories/categories.module';
 import { AppointmentsModule } from '../appointments/appointments.module';
 
 @Module({
-  imports: [TransactionsModule, UsersModule, ReportsModule, forwardRef(() => AppointmentsModule)],
+  imports: [TransactionsModule, UsersModule, ReportsModule, CategoriesModule, forwardRef(() => AppointmentsModule)],
   controllers: [WhatsappController],
   providers: [WhatsappService, AiService],
   exports: [WhatsappService, AiService],
