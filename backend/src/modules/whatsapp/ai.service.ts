@@ -12,9 +12,10 @@ export interface ParsedTransaction {
 }
 
 export interface MessageIntent {
-  action: 'register_transaction' | 'query_report' | 'list_bills' | 'set_goal' | 'unknown';
+  action: 'register_transaction' | 'query_report' | 'create_appointment' | 'list_appointments' | 'list_bills' | 'set_goal' | 'unknown';
   transaction?: ParsedTransaction;
   query?: string;
+  appointment?: { title: string; description?: string; scheduledAt: string };
 }
 
 @Injectable()
@@ -71,10 +72,33 @@ Considere query_report quando o usuário perguntar sobre:
 - Receitas do mês
 - Qualquer pergunta sobre situação financeira
 
+Para criar agendamento/compromisso:
+{
+  "action": "create_appointment",
+  "appointment": {
+    "title": string (nome do compromisso, ex: "Dentista", "Reunião com cliente"),
+    "description": string (detalhes opcionais),
+    "scheduledAt": "YYYY-MM-DDTHH:mm:00" (data e hora completa)
+  }
+}
+
+Para listar agendamentos:
+{
+  "action": "list_appointments"
+}
+
 Para outros casos:
 {
   "action": "unknown"
 }
+
+Considere create_appointment quando o usuário mencionar: agenda, agendar, compromisso, reunião, consulta, dentista, médico, lembrar, lembrete, marcar, evento.
+Considere list_appointments quando perguntar sobre: "meus compromissos", "agenda", "o que tenho marcado".
+
+Para datas relativas use hoje=${today}. Exemplos de datas:
+- "quinta às 8 da manhã" → calcule o próximo dia da semana correspondente
+- "amanhã às 14h" → tomorrow T14:00:00
+- "semana que vem segunda" → próxima segunda-feira
 
 Exemplos:
 - "Gastei 45 no mercado" → expense, Alimentação, 45.00
