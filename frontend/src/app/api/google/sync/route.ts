@@ -73,7 +73,7 @@ async function importFromGoogle(userId: string, accessToken: string, syncedMap: 
     { headers: { Authorization: `Bearer ${accessToken}` } }
   );
   const data = await res.json();
-  console.log('[google-sync] Google events response:', JSON.stringify({ status: res.status, itemCount: data.items?.length, error: data.error }));
+  console.log('[google-sync] Google events response:', JSON.stringify({ status: res.status, itemCount: data.items?.length, error: data.error, firstEvent: data.items?.[0] ? { id: data.items[0].id, summary: data.items[0].summary, start: data.items[0].start } : null }));
   const events = data.items || [];
 
   // Get existing Finora appointments to avoid duplicates
@@ -87,11 +87,13 @@ async function importFromGoogle(userId: string, accessToken: string, syncedMap: 
   const finoraExportedIds = new Set(Object.values(syncedMap));
 
   let imported = 0;
+  console.log('[google-sync] finoraExportedIds:', JSON.stringify([...finoraExportedIds]));
+  console.log('[google-sync] existingGoogleIds:', JSON.stringify([...existingGoogleIds]));
   for (const event of events) {
     // Skip events already exported from Finora to Google
-    if (finoraExportedIds.has(event.id)) continue;
+    if (finoraExportedIds.has(event.id)) { console.log('[google-sync] skip (finora exported):', event.id); continue; }
     // Skip already imported events
-    if (existingGoogleIds.has(event.id)) continue;
+    if (existingGoogleIds.has(event.id)) { console.log('[google-sync] skip (already imported):', event.id); continue; }
     // Handle both timed and all-day events
     let scheduledAt: string;
     if (event.start?.dateTime) {
