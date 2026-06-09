@@ -413,7 +413,7 @@ export default function Home() {
           <FadeIn>
             <p style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#22c55e', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 16 }}>Planos</p>
             <h2 style={{ textAlign: 'center', fontSize: 44, fontWeight: 800, color: '#fff', margin: '0 0 12px', letterSpacing: '-1px' }}>Simples e transparente</h2>
-            <p style={{ textAlign: 'center', fontSize: 17, color: '#475569', margin: '0 0 40px' }}>7 dias de garantia, sem cartão.</p>
+            <p style={{ textAlign: 'center', fontSize: 17, color: '#475569', margin: '0 0 40px' }}>Garantia de 7 dias ou seu dinheiro de volta.</p>
           </FadeIn>
 
           {/* Toggle */}
@@ -481,11 +481,11 @@ export default function Home() {
           <div style={{ maxWidth: 560, margin: '0 auto', position: 'relative' }}>
             <div style={{ marginBottom: 20, display: 'flex', justifyContent: 'center' }}><img src="/favicon.svg" alt="Finora" style={{ width: 72, height: 72 }}/></div>
             <h2 style={{ color: '#fff', fontSize: 48, fontWeight: 800, margin: '0 0 16px', letterSpacing: '-1.5px' }}>Comece hoje,<br/>de graça</h2>
-            <p style={{ color: '#475569', fontSize: 17, margin: '0 0 40px', lineHeight: 1.75 }}>7 dias de garantia, sem cartão. Depois escolha o plano que preferir.</p>
+            <p style={{ color: '#475569', fontSize: 17, margin: '0 0 40px', lineHeight: 1.75 }}>Garantia de 7 dias ou seu dinheiro de volta. Depois escolha o plano que preferir.</p>
             <Link href="/assinar" className="btn-primary" style={{ padding: '17px 44px', borderRadius: 14, background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 17, fontWeight: 700, textDecoration: 'none', boxShadow: '0 0 40px rgba(34,197,94,0.4)', display: 'inline-flex', alignItems: 'center', gap: 10 }}>
               Assinar agora <ArrowRight size={18}/>
             </Link>
-            <p style={{ color: '#334155', fontSize: 13, marginTop: 18 }}>Sem cartão · Cancele quando quiser · 7 dias de garantia</p>
+            <p style={{ color: '#334155', fontSize: 13, marginTop: 18 }}>Cancele quando quiser · 7 dias de garantia · Pagamento seguro</p>
           </div>
         </FadeIn>
       </section>
