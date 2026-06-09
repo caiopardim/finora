@@ -151,8 +151,8 @@ export default function Home() {
         .feature-card:hover { border-color: rgba(34,197,94,0.3) !important; background: rgba(34,197,94,0.05) !important; transform: translateY(-4px) !important; }
         .feature-card { transition: all 0.25s ease; }
         @media (max-width: 900px) {
-          .hero-grid { flex-direction: column !important; }
-          .mockup-col { display: none !important; }
+          .hero-grid { flex-direction: column !important; align-items: center !important; }
+          .mockup-col { display: flex !important; justify-content: center !important; width: 100% !important; animation: none !important; }
           .hero-title { font-size: 40px !important; letter-spacing: -1px !important; }
           .section-pad { padding: 72px 24px !important; }
           .features-grid { grid-template-columns: repeat(2,1fr) !important; }
