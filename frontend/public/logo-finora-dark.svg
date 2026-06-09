@@ -1,38 +1,39 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 90" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 52" fill="none">
   <defs>
-    <linearGradient id="goldD" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F5D06A"/>
-      <stop offset="45%" stop-color="#D4A83A"/>
-      <stop offset="100%" stop-color="#F0C84A"/>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F9E07A"/>
+      <stop offset="50%" stop-color="#C8902E"/>
+      <stop offset="100%" stop-color="#EFC84A"/>
     </linearGradient>
-    <linearGradient id="greenBgD" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1e4030"/>
-      <stop offset="100%" stop-color="#0f2518"/>
+    <linearGradient id="dark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a3d28"/>
+      <stop offset="100%" stop-color="#0c1f14"/>
     </linearGradient>
   </defs>
 
-  <!-- Star above pig -->
-  <path d="M45 5 L46.6 10 L52 10 L47.7 13.1 L49.3 18 L45 14.9 L40.7 18 L42.3 13.1 L38 10 L43.4 10 Z" fill="url(#goldD)"/>
+  <!-- Sparkle star -->
+  <path d="M26 1 L27.4 5.4 L32 5.4 L28.3 8.1 L29.7 12.5 L26 9.8 L22.3 12.5 L23.7 8.1 L20 5.4 L24.6 5.4 Z" fill="url(#gold)"/>
 
   <!-- Left ear -->
-  <path d="M24 36 Q17 20 27 18 Q35 17 36 30 Z" fill="url(#greenBgD)" stroke="url(#goldD)" stroke-width="2.8" stroke-linejoin="round"/>
-  <!-- Right ear -->
-  <path d="M66 36 Q73 20 63 18 Q55 17 54 30 Z" fill="url(#greenBgD)" stroke="url(#goldD)" stroke-width="2.8" stroke-linejoin="round"/>
+  <path d="M11 34 L14.5 20 Q17 13 22 16 Q25 18 24 27 Z" fill="url(#dark)" stroke="url(#gold)" stroke-width="2" stroke-linejoin="round"/>
 
-  <!-- Head -->
-  <circle cx="45" cy="56" r="34" fill="url(#greenBgD)" stroke="url(#goldD)" stroke-width="3.2"/>
+  <!-- Right ear -->
+  <path d="M41 34 L37.5 20 Q35 13 30 16 Q27 18 28 27 Z" fill="url(#dark)" stroke="url(#gold)" stroke-width="2" stroke-linejoin="round"/>
+
+  <!-- Head circle -->
+  <circle cx="26" cy="37" r="15" fill="url(#dark)" stroke="url(#gold)" stroke-width="2.2"/>
 
   <!-- Nose ring -->
-  <circle cx="45" cy="61" r="13" fill="none" stroke="url(#goldD)" stroke-width="2.5"/>
+  <circle cx="26" cy="40.5" r="6" fill="none" stroke="url(#gold)" stroke-width="1.6"/>
 
   <!-- Nostrils -->
-  <rect x="39.5" y="57.5" width="4" height="7" rx="2" fill="url(#goldD)"/>
-  <rect x="45.5" y="57.5" width="4" height="7" rx="2" fill="url(#goldD)"/>
+  <rect x="22.5" y="38.2" width="2.2" height="4.5" rx="1.1" fill="url(#gold)"/>
+  <rect x="27.3" y="38.2" width="2.2" height="4.5" rx="1.1" fill="url(#gold)"/>
 
-  <!-- FINORA -->
-  <text x="96" y="50" font-family="Georgia, 'Times New Roman', serif" font-size="36" font-weight="700" letter-spacing="7" fill="#ffffff">FINORA</text>
+  <!-- FINORA wordmark -->
+  <text x="52" y="30" font-family="Georgia, 'Times New Roman', serif" font-size="22" font-weight="700" letter-spacing="5" fill="#ffffff">FINORA</text>
 
   <!-- Tagline -->
-  <text x="97" y="70" font-family="Georgia, 'Times New Roman', serif" font-size="10" letter-spacing="2.5" fill="rgba(255,255,255,0.55)">SUA VIDA FINANCEIRA, </text>
-  <text x="270" y="70" font-family="Georgia, 'Times New Roman', serif" font-size="10" letter-spacing="2.5" fill="url(#goldD)">INTELIGENTE.</text>
+  <text x="53" y="44" font-family="Georgia, serif" font-size="7.5" letter-spacing="1.8" fill="rgba(255,255,255,0.38)">SUA VIDA FINANCEIRA, </text>
+  <text x="186" y="44" font-family="Georgia, serif" font-size="7.5" letter-spacing="1.8" fill="url(#gold)">INTELIGENTE.</text>
 </svg>

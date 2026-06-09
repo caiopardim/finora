@@ -128,7 +128,7 @@ function AssinaturaContent() {
 
       {/* Logo */}
       <Link href="/" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none', marginBottom: 28 }}>
-        <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 34 }}/>
+        <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 46 }}/>
       </Link>
 
       {/* Steps */}

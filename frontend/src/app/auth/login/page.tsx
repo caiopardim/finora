@@ -64,7 +64,7 @@ export default function LoginPage() {
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.015) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.015) 1px,transparent 1px)', backgroundSize: '40px 40px', pointerEvents: 'none' }}/>
 
         <div style={{ position: 'relative' }}>
-          <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 34, marginBottom: 52 }}/>
+          <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 46, marginBottom: 52 }}/>
 
           <div style={{ marginBottom: 48 }}>
             <p style={{ fontSize: 11, fontWeight: 700, color: '#22c55e', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 14 }}>Finora IA</p>
@@ -115,7 +115,7 @@ export default function LoginPage() {
           {/* Mobile logo */}
           <div className="mobile-logo" style={{ display: 'none', justifyContent: 'center', marginBottom: 36 }}>
             <style>{`@media (max-width: 768px) { .mobile-logo { display: flex !important; } }`}</style>
-            <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 30 }}/>
+            <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 44 }}/>
           </div>
 
           {/* ── LOGIN ── */}

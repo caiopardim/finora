@@ -170,7 +170,7 @@ export default function Home() {
 
       {/* ── Navbar ── */}
       <header className="header-inner" style={{ padding: '16px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50, background: 'rgba(2,6,23,0.8)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 32 }}/>
+        <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 44 }}/>
         <nav style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <div className="header-links" style={{ display: 'flex', gap: 28, alignItems: 'center', marginRight: 16 }}>
             {['#como-funciona', '#funcionalidades', '#planos'].map((href, i) => (
@@ -488,7 +488,7 @@ export default function Home() {
       {/* ── Footer ── */}
       <footer style={{ padding: '28px 48px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 22 }}/>
+          <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 44 }}/>
           <span style={{ color: '#334155', fontSize: 13 }}>© 2025 Finora</span>
         </div>
         <div style={{ display: 'flex', gap: 24 }}>

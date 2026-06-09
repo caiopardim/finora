@@ -1,31 +1,32 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 110" fill="none">
   <defs>
-    <linearGradient id="goldF" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F5D06A"/>
-      <stop offset="50%" stop-color="#D4A83A"/>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F9E07A"/>
+      <stop offset="50%" stop-color="#C8902E"/>
       <stop offset="100%" stop-color="#F0C84A"/>
     </linearGradient>
-    <linearGradient id="greenF" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1e4030"/>
-      <stop offset="100%" stop-color="#0f2518"/>
+    <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1c3d28"/>
+      <stop offset="100%" stop-color="#0d2016"/>
     </linearGradient>
   </defs>
 
   <!-- Star -->
-  <path d="M50 4 L52.5 11.5 L60.5 11.5 L54 16 L56.5 23.5 L50 19 L43.5 23.5 L46 16 L39.5 11.5 L47.5 11.5 Z" fill="url(#goldF)"/>
+  <path d="M50 3 L53 12 L62 12 L55 18 L58 27 L50 21 L42 27 L45 18 L38 12 L47 12 Z" fill="url(#g1)"/>
 
   <!-- Left ear -->
-  <path d="M22 48 Q12 26 26 23 Q38 21 38 40 Z" fill="url(#greenF)" stroke="url(#goldF)" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M14 58 L20 34 Q27 18 38 24 Q45 29 42 46 Z" fill="url(#g2)" stroke="url(#g1)" stroke-width="3.5" stroke-linejoin="round"/>
+
   <!-- Right ear -->
-  <path d="M78 48 Q88 26 74 23 Q62 21 62 40 Z" fill="url(#greenF)" stroke="url(#goldF)" stroke-width="3.5" stroke-linejoin="round"/>
+  <path d="M86 58 L80 34 Q73 18 62 24 Q55 29 58 46 Z" fill="url(#g2)" stroke="url(#g1)" stroke-width="3.5" stroke-linejoin="round"/>
 
   <!-- Head -->
-  <circle cx="50" cy="66" r="38" fill="url(#greenF)" stroke="url(#goldF)" stroke-width="4"/>
+  <circle cx="50" cy="72" r="36" fill="url(#g2)" stroke="url(#g1)" stroke-width="4"/>
 
-  <!-- Nose ring -->
-  <circle cx="50" cy="72" r="15" fill="none" stroke="url(#goldF)" stroke-width="3"/>
+  <!-- Nose circle -->
+  <circle cx="50" cy="79" r="14" fill="none" stroke="url(#g1)" stroke-width="3"/>
 
   <!-- Nostrils -->
-  <rect x="43" y="68" width="5" height="9" rx="2.5" fill="url(#goldF)"/>
-  <rect x="52" y="68" width="5" height="9" rx="2.5" fill="url(#goldF)"/>
+  <rect x="42" y="75" width="5" height="9" rx="2.5" fill="url(#g1)"/>
+  <rect x="53" y="75" width="5" height="9" rx="2.5" fill="url(#g1)"/>
 </svg>
