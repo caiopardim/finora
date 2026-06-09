@@ -91,10 +91,16 @@ async function importFromGoogle(userId: string, accessToken: string, syncedMap: 
     if (finoraExportedIds.has(event.id)) continue;
     // Skip already imported events
     if (existingGoogleIds.has(event.id)) continue;
-    // Skip all-day events without time
-    if (!event.start?.dateTime) continue;
-
-    const scheduledAt = new Date(event.start.dateTime).toISOString();
+    // Handle both timed and all-day events
+    let scheduledAt: string;
+    if (event.start?.dateTime) {
+      scheduledAt = new Date(event.start.dateTime).toISOString();
+    } else if (event.start?.date) {
+      // All-day event: set to 9am Brazil time
+      scheduledAt = new Date(`${event.start.date}T09:00:00-03:00`).toISOString();
+    } else {
+      continue;
+    }
 
     await getAdmin().from('appointments').insert({
       user_id:         userId,
