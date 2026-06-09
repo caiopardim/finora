@@ -344,7 +344,7 @@ export default function Home() {
               <FadeIn key={i} delay={i * 100} direction="up">
                 <div style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 20, padding: '32px 24px', animation: `float ${6 + i}s ease-in-out ${i * 0.5}s infinite`, position: 'relative', overflow: 'hidden' }}>
                   <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(90deg,transparent,rgba(34,197,94,0.3),transparent)' }}/>
-                  <p style={{ fontSize: 36, fontWeight: 900, color: 'rgba(34,197,94,0.15)', margin: '0 0 16px', letterSpacing: '-1px', fontFamily: 'monospace' }}>{s.step}</p>
+                  <p style={{ fontSize: 36, fontWeight: 900, color: 'rgba(34,197,94,0.7)', margin: '0 0 16px', letterSpacing: '-1px', fontFamily: 'monospace' }}>{s.step}</p>
                   <div style={{ fontSize: 36, marginBottom: 16 }}>{s.icon}</div>
                   <p style={{ fontWeight: 700, fontSize: 15, color: '#f1f5f9', margin: '0 0 8px' }}>{s.title}</p>
                   <p style={{ fontSize: 13, color: '#475569', margin: 0, lineHeight: 1.65 }}>{s.desc}</p>
