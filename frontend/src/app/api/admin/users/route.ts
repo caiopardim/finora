@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
   const caller = await checkAdmin(req);
   if (!caller) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { email, password, name, role, send_invite } = await req.json();
+  const { email, password, name, phone, role, send_invite } = await req.json();
   if (!email) return NextResponse.json({ error: 'E-mail obrigatório' }, { status: 400 });
 
   const admin = getAdmin();
@@ -156,10 +156,18 @@ export async function POST(req: NextRequest) {
   const userId = data.user?.id;
   if (!userId) return NextResponse.json({ error: 'Usuário criado mas ID não retornado' }, { status: 500 });
 
+  // Normalize phone
+  let normalizedPhone: string | null = null;
+  if (phone) {
+    const raw = phone.replace(/\D/g, '');
+    normalizedPhone = raw.startsWith('55') ? raw : '55' + raw;
+  }
+
   // Create profile
   await admin.from('profiles').upsert({
     id: userId,
     name: name || null,
+    phone: normalizedPhone,
     role: role || 'user',
     onboarded: true,
   });

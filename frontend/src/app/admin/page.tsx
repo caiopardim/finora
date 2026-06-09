@@ -43,7 +43,7 @@ export default function AdminPage() {
   const [editingUser, setEditingUser] = useState<any | null>(null);
   const [editName, setEditName] = useState('');
   const [showCreate, setShowCreate] = useState(false);
-  const [createForm, setCreateForm] = useState({ email: '', password: '', name: '', role: 'user', send_invite: false });
+  const [createForm, setCreateForm] = useState({ email: '', password: '', name: '', phone: '', role: 'user', send_invite: false });
   const [creating, setCreating] = useState(false);
   const [toast, setToast]       = useState('');
   const [toastType, setToastType] = useState<'ok' | 'err'>('ok');
@@ -156,7 +156,7 @@ export default function AdminPage() {
     if (!res.ok) { showToast('Erro: ' + body.error, 'err'); setCreating(false); return; }
     showToast(`✅ Usuário ${createForm.email} criado!`);
     setShowCreate(false);
-    setCreateForm({ email: '', password: '', name: '', role: 'user', send_invite: false });
+    setCreateForm({ email: '', password: '', name: '', phone: '', role: 'user', send_invite: false });
     setCreating(false);
     loadAll();
   }
@@ -1019,6 +1019,12 @@ export default function AdminPage() {
               <div>
                 <label style={{ fontSize: 12, fontWeight: 600, color: c.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>Nome (opcional)</label>
                 <input value={createForm.name} onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))} placeholder="Nome completo" style={{ ...inputStyle, width: '100%' }}/>
+              </div>
+
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: c.textMuted, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 6 }}>📱 WhatsApp (opcional)</label>
+                <input value={createForm.phone} onChange={e => setCreateForm(f => ({ ...f, phone: e.target.value }))} placeholder="Ex: 62 99999-9999 (com DDD)" type="tel" style={{ ...inputStyle, width: '100%' }}/>
+                <p style={{ margin: '5px 0 0', fontSize: 11, color: c.textFaint }}>Necessário para receber mensagens via WhatsApp.</p>
               </div>
 
               <div>
