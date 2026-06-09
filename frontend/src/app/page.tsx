@@ -258,6 +258,23 @@ export default function Home() {
       {/* ── Trust bar ── */}
       <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '20px 48px', background: 'rgba(255,255,255,0.02)' }}>
         <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 48, flexWrap: 'wrap' }}>
+          {/* Avatares + contador de usuários */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ display: 'flex' }}>
+              {['#22c55e','#6366f1','#f97316','#06b6d4','#f43f5e'].map((c, i) => (
+                <div key={i} style={{ width: 28, height: 28, borderRadius: '50%', background: c, border: '2px solid #020617', marginLeft: i === 0 ? 0 : -8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+                  {['A','C','F','R','M'][i]}
+                </div>
+              ))}
+            </div>
+            <div>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: '#f1f5f9' }}>+1.300 pessoas</p>
+              <p style={{ margin: 0, fontSize: 11, color: '#475569' }}>já organizam suas finanças</p>
+            </div>
+          </div>
+
+          <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,0.08)' }}/>
+
           {[
             { icon: '⭐', text: '4.9/5 avaliação' },
             { icon: '🔒', text: 'Dados 100% seguros' },
