@@ -68,16 +68,45 @@ export class ReportsService {
     const lastMonth_ = summarize(lastMonthData.data || []);
     const year_ = summarize(yearData.data || []);
 
+    // Compute top spending categories from month transactions
+    const categoryTotals: Record<string, number> = {};
+    for (const tx of monthData.data || []) {
+      if (tx.type === 'expense') {
+        const cat = (tx.categories as any)?.name ?? 'Outros';
+        categoryTotals[cat] = (categoryTotals[cat] || 0) + tx.amount;
+      }
+    }
+    const topCategories = Object.entries(categoryTotals)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, total]) => ({ name, total }));
+
+    // Today's transactions formatted
+    const todayTransactions = (todayData.data || []).map((t: any) => ({
+      type: t.type,
+      amount: t.amount,
+      description: t.description,
+      category: (t.categories as any)?.name ?? 'Outros',
+    }));
+
     return {
-      today: { ...today_, balance: today_.income - today_.expense, transactions: todayData.data },
+      today: {
+        ...today_,
+        balance: today_.income - today_.expense,
+        isPositive: today_.income >= today_.expense,
+        transactions: todayTransactions,
+      },
       currentMonth: {
         ...month_,
         balance: month_.income - month_.expense,
-        savings: month_.income - month_.expense,
+        isPositive: month_.income >= month_.expense,
+        topSpendingCategory: topCategories[0] ?? null,
+        topCategories,
       },
       lastMonth: {
         ...lastMonth_,
         balance: lastMonth_.income - lastMonth_.expense,
+        isPositive: lastMonth_.income >= lastMonth_.expense,
       },
       comparison: {
         expenseDiff: month_.expense - lastMonth_.expense,
@@ -85,10 +114,14 @@ export class ReportsService {
           lastMonth_.expense > 0
             ? (((month_.expense - lastMonth_.expense) / lastMonth_.expense) * 100).toFixed(1)
             : null,
+        spendingMore: month_.expense > lastMonth_.expense,
       },
       year: { ...year_, balance: year_.income - year_.expense },
-      categories: categoryData.data || [],
-      billsDueThisWeek: billsData.data || [],
+      billsDueThisWeek: (billsData.data || []).map((b: any) => ({
+        description: b.description,
+        amount: b.amount,
+        due_date: b.due_date,
+      })),
       generatedAt: new Date().toISOString(),
     };
   }

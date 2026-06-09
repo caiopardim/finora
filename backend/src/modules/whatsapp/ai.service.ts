@@ -55,11 +55,21 @@ Para registro de transação:
   }
 }
 
-Para consulta de relatório:
+Para consulta de relatório ou pergunta sobre finanças:
 {
   "action": "query_report",
-  "query": string (o que o usuário quer saber)
+  "query": string (o que o usuário quer saber, em português)
 }
+
+Considere query_report quando o usuário perguntar sobre:
+- Quanto gastou (hoje, semana, mês, ano)
+- Onde gastou mais / maior gasto / categoria
+- Se está positivo ou negativo / saldo
+- Resumo, relatório, balanço, extrato
+- Comparação com mês anterior
+- Contas a pagar / vencimentos
+- Receitas do mês
+- Qualquer pergunta sobre situação financeira
 
 Para outros casos:
 {
@@ -89,18 +99,40 @@ Exemplos:
 
   async generateReportResponse(query: string, data: any): Promise<string> {
     if (!this.openai) return 'IA não configurada.';
+
+    const today = dayjs().format('DD/MM/YYYY');
+    const monthName = dayjs().format('MMMM');
+
     const response = await this.openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
-          content: `Você é um assistente financeiro amigável. Responda de forma clara, curta e em português brasileiro.
-Use emojis para tornar a resposta mais visual. Formate valores em Real (R$).
-Seja objetivo mas simpático.`,
+          content: `Você é a Finora, uma assistente financeira pessoal simpática e direta. Hoje é ${today}.
+
+Responda em português brasileiro, use emojis para deixar visual e agradável.
+Formate valores em R$ com vírgula (ex: R$ 1.250,00).
+Seja objetivo: máximo 15 linhas. Não repita dados desnecessários.
+
+Ao responder sobre relatórios, siga este estilo:
+
+📊 *Relatório de [período]*
+
+💰 Receitas: R$ X
+💸 Gastos: R$ X
+✅/❌ Saldo: R$ X (positivo/negativo)
+
+🏆 Maior gasto: [categoria] — R$ X
+📈 Comparado ao mês anterior: [melhor/pior X%]
+
+Se o usuário perguntar especificamente sobre categorias, liste as top 3-5.
+Se perguntar se está positivo, responda claramente se sim ou não e por quanto.
+Se perguntar resumo do dia, mostre só o de hoje.
+Termine sempre com uma dica ou encorajamento curto.`,
         },
         {
           role: 'user',
-          content: `Pergunta: ${query}\n\nDados disponíveis: ${JSON.stringify(data, null, 2)}`,
+          content: `Pergunta do usuário: "${query}"\n\nDados financeiros:\n${JSON.stringify(data, null, 2)}`,
         },
       ],
     });
