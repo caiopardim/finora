@@ -4,6 +4,9 @@ import { createClient } from '@supabase/supabase-js';
 export const runtime = 'nodejs';
 
 const MP_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN!;
+const EVOLUTION_URL = process.env.EVOLUTION_API_URL!;
+const EVOLUTION_KEY = process.env.EVOLUTION_API_KEY!;
+const EVOLUTION_INSTANCE = process.env.EVOLUTION_INSTANCE || 'finora';
 
 function getAdmin() {
   return createClient(
@@ -11,6 +14,28 @@ function getAdmin() {
     process.env.SUPABASE_SERVICE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }
   );
+}
+
+async function sendWelcomeMessage(phone: string, name: string, planType: string) {
+  if (!EVOLUTION_URL || !EVOLUTION_KEY) return;
+  const planLabel = planType === 'annual' ? 'Anual' : 'Mensal';
+  const message =
+    `🎉 *Bem-vindo ao Finora, ${name || 'pessoal'}!*\n\n` +
+    `Seu plano *${planLabel}* está ativo. A partir de agora você pode controlar suas finanças direto aqui pelo WhatsApp!\n\n` +
+    `Experimente agora mesmo:\n` +
+    `💸 _"Gastei R$ 50 no mercado"_\n` +
+    `💰 _"Recebi R$ 3.000 de salário"_\n` +
+    `📊 _"Quanto gastei este mês?"_\n` +
+    `📅 _"Agende dentista quinta às 9h"_\n\n` +
+    `Qualquer dúvida é só perguntar aqui! 🐷`;
+
+  try {
+    await fetch(`${EVOLUTION_URL}/message/sendText/${EVOLUTION_INSTANCE}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: EVOLUTION_KEY },
+      body: JSON.stringify({ number: `${phone}@s.whatsapp.net`, text: message }),
+    });
+  } catch { /* silently fail */ }
 }
 
 export async function POST(req: NextRequest) {
@@ -60,6 +85,12 @@ export async function POST(req: NextRequest) {
       plan_expires_at: expires.toISOString(),
     }).eq('id', userId);
 
+    // Send welcome WhatsApp message
+    const { data: profile } = await admin.from('profiles').select('phone, name').eq('id', userId).single();
+    if (profile?.phone) {
+      await sendWelcomeMessage(profile.phone, profile.name, planType);
+    }
+
     return NextResponse.json({ ok: true });
   }
 
@@ -87,7 +118,6 @@ export async function POST(req: NextRequest) {
     if (status === 'authorized') {
       plan_status = 'active';
       paid = true;
-      // Calculate expiry based on plan
       const now = new Date();
       if (planType === 'annual') {
         now.setFullYear(now.getFullYear() + 1);
@@ -108,6 +138,14 @@ export async function POST(req: NextRequest) {
       mp_subscription_id: id,
       plan_type: planType,
     }).eq('id', userId);
+
+    // Send welcome message only when newly activated
+    if (status === 'authorized') {
+      const { data: profile } = await admin.from('profiles').select('phone, name').eq('id', userId).single();
+      if (profile?.phone) {
+        await sendWelcomeMessage(profile.phone, profile.name, planType);
+      }
+    }
   }
 
   return NextResponse.json({ ok: true });

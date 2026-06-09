@@ -28,9 +28,10 @@ function AssinaturaContent() {
   const [error, setError]   = useState('');
   const [showPass, setShowPass] = useState(false);
 
-  const [name, setName]   = useState('');
-  const [email, setEmail] = useState('');
-  const [pass, setPass]   = useState('');
+  const [name, setName]     = useState('');
+  const [email, setEmail]   = useState('');
+  const [pass, setPass]     = useState('');
+  const [phone, setPhone]   = useState('');
 
   const [pixQr, setPixQr]       = useState('');
   const [pixCode, setPixCode]   = useState('');
@@ -46,8 +47,12 @@ function AssinaturaContent() {
 
   async function handleRegister() {
     setError('');
-    if (!name || !email || !pass) { setError('Preencha todos os campos'); return; }
+    if (!name || !email || !pass || !phone) { setError('Preencha todos os campos'); return; }
     if (pass.length < 6) { setError('Senha deve ter ao menos 6 caracteres'); return; }
+    // Normalize phone: keep only digits, add 55 if needed
+    const rawPhone = phone.replace(/\D/g, '');
+    const normalizedPhone = rawPhone.startsWith('55') ? rawPhone : '55' + rawPhone;
+    if (normalizedPhone.length < 12) { setError('Número de WhatsApp inválido'); return; }
     setLoading(true);
     const { error: signUpErr } = await supabase.auth.signUp({ email, password: pass, options: { data: { name } } });
     if (signUpErr) {
@@ -55,6 +60,11 @@ function AssinaturaContent() {
       if (signInErr) { setError('E-mail já cadastrado ou senha incorreta'); setLoading(false); return; }
     } else {
       await supabase.auth.signInWithPassword({ email, password: pass });
+    }
+    // Save phone to profile
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      await supabase.from('profiles').update({ phone: normalizedPhone, name }).eq('id', session.user.id);
     }
     setLoading(false);
     setStep('payment');
@@ -203,6 +213,10 @@ function AssinaturaContent() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <input value={name} onChange={e => setName(e.target.value)} placeholder="Seu nome completo" style={inputStyle}/>
               <input value={email} onChange={e => setEmail(e.target.value)} placeholder="E-mail" type="email" style={inputStyle}/>
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 15, pointerEvents: 'none' }}>📱</span>
+                <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="WhatsApp com DDD (ex: 62 99999-9999)" type="tel" style={{ ...inputStyle, paddingLeft: 40 }}/>
+              </div>
               <div style={{ position: 'relative' }}>
                 <input value={pass} onChange={e => setPass(e.target.value)} placeholder="Crie uma senha (mín. 6 caracteres)" type={showPass ? 'text' : 'password'} style={{ ...inputStyle, paddingRight: 44 }}/>
                 <button onClick={() => setShowPass(v => !v)} type="button" style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
