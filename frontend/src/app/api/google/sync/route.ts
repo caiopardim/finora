@@ -105,12 +105,24 @@ async function importFromGoogle(userId: string, accessToken: string, syncedMap: 
       continue;
     }
 
+    const scheduledDate = new Date(scheduledAt);
+    const dateStr = scheduledDate.toISOString().split('T')[0]; // YYYY-MM-DD
+    // Extract local time in Brazil (UTC-3)
+    const localHour   = String(scheduledDate.getUTCHours() < 3 ? scheduledDate.getUTCHours() + 21 : scheduledDate.getUTCHours() - 3).padStart(2, '0');
+    const localMinute = String(scheduledDate.getUTCMinutes()).padStart(2, '0');
+    const timeStr = event.start?.dateTime ? `${localHour}:${localMinute}` : null;
+
     console.log('[google-sync] inserting event:', event.id, event.summary, scheduledAt);
     const { error: insertError } = await getAdmin().from('appointments').insert({
       user_id:         userId,
       title:           event.summary || 'Compromisso',
       description:     event.description || null,
       scheduled_at:    scheduledAt,
+      date:            dateStr,
+      time:            timeStr,
+      color:           '#4285f4',
+      icon:            '📅',
+      done:            false,
       google_event_id: event.id,
     });
     if (insertError) {
