@@ -69,7 +69,7 @@ export default function PlanoPage() {
   }
 
   const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-    trial:     { label: 'Trial ativo', color: '#f59e0b', icon: <Clock size={16}/> },
+    trial:     { label: 'Grátis ativo', color: '#f59e0b', icon: <Clock size={16}/> },
     active:    { label: 'Ativo',       color: '#22c55e', icon: <CheckCircle size={16}/> },
     paused:    { label: 'Pausado',     color: '#f59e0b', icon: <AlertTriangle size={16}/> },
     cancelled: { label: 'Cancelado',   color: '#ef4444', icon: <XCircle size={16}/> },
@@ -103,11 +103,11 @@ export default function PlanoPage() {
             {info.in_trial && (
               <div style={{ background: '#fef3c715', border: '1px solid #f59e0b30', borderRadius: 12, padding: 16, marginBottom: 16 }}>
                 <p style={{ margin: 0, fontSize: 14, color: '#fbbf24', fontWeight: 600 }}>
-                  🎉 Você tem {info.trial_days_left} dia{info.trial_days_left !== 1 ? 's' : ''} de trial restante{info.trial_days_left !== 1 ? 's' : ''}
+                  🎉 Você tem {info.trial_days_left} dia{info.trial_days_left !== 1 ? 's' : ''} grátis restante{info.trial_days_left !== 1 ? 's' : ''}
                 </p>
                 {info.trial_ends_at && (
                   <p style={{ margin: '4px 0 0', fontSize: 13, color: c.textMuted }}>
-                    Trial termina em {fmtDate(info.trial_ends_at)}
+                    Período grátis termina em {fmtDate(info.trial_ends_at)}
                   </p>
                 )}
               </div>
@@ -143,7 +143,7 @@ export default function PlanoPage() {
           {(info.in_trial || !info.is_active || info.plan_status === 'cancelled') && (
             <div style={{ background: c.surface, border: `1px solid ${c.border}`, borderRadius: 16, padding: 24, marginBottom: 20 }}>
               <h2 style={{ fontSize: 16, fontWeight: 700, color: c.text, margin: '0 0 16px' }}>
-                {info.in_trial ? 'Assine agora para continuar após o trial' : 'Reativar assinatura'}
+                {info.in_trial ? 'Assine agora para continuar após o período grátis' : 'Reativar assinatura'}
               </h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: 12 }}>
                 <button onClick={() => router.push('/assinar?plan=monthly')} style={{ padding: 16, borderRadius: 12, border: `1px solid ${c.border}`, background: c.bg, cursor: 'pointer', textAlign: 'left' }}>

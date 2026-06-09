@@ -83,7 +83,7 @@ export default function PaywallGuard({ children }: { children: React.ReactNode }
           </div>
 
           <h2 style={{ fontSize: 22, fontWeight: 800, color: '#fff', margin: '0 0 10px' }}>
-            {info?.plan_status === 'cancelled' ? 'Assinatura cancelada' : 'Seu trial encerrou'}
+            {info?.plan_status === 'cancelled' ? 'Assinatura cancelada' : 'Seu período grátis encerrou'}
           </h2>
           <p style={{ fontSize: 15, color: '#94a3b8', margin: '0 0 28px', lineHeight: 1.6 }}>
             {info?.plan_status === 'cancelled'

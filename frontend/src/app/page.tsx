@@ -116,7 +116,7 @@ const TESTIMONIALS = [
 ];
 
 const FAQS = [
-  { q: 'Como funciona o trial grátis?', a: 'Você tem 3 dias para usar a Finora sem pagar nada e sem precisar cadastrar cartão de crédito. Depois do período, escolhe o plano que preferir.' },
+  { q: 'Como funciona o período grátis?', a: 'Você tem 3 dias para usar a Finora sem pagar nada e sem precisar cadastrar cartão de crédito. Depois do período, escolhe o plano que preferir.' },
   { q: 'Funciona com qualquer número de WhatsApp?', a: 'Sim! Basta ter um WhatsApp ativo. Você adiciona o número da Finora e começa a mandar mensagem normalmente.' },
   { q: 'A IA entende mensagens do dia a dia?', a: 'Sim. Você pode escrever como fala: "Gastei 45 no mercado", "Paguei 120 de internet", "Recebi 3.500 de salário". A IA entende tudo.' },
   { q: 'Posso cancelar a qualquer momento?', a: 'Sim, sem burocracia. No plano mensal você cancela quando quiser. No anual, 7 dias de garantia com reembolso total.' },
@@ -233,7 +233,7 @@ export default function Home() {
               {/* Stats */}
               <div style={{ opacity: heroVisible ? 1 : 0, transition: 'all 0.7s ease 0.3s', display: 'flex', gap: 48, flexWrap: 'wrap' }}>
                 {[
-                  { value: 3, suffix: ' dias', label: 'de trial grátis' },
+                  { value: 3, suffix: ' dias', label: 'grátis' },
                   { value: 12, suffix: '+', label: 'funcionalidades' },
                   { value: priceMonthly, suffix: '', prefix: 'R$ ', label: 'por mês' },
                 ].map(s => (
@@ -261,7 +261,7 @@ export default function Home() {
           {[
             { icon: '⭐', text: '4.9/5 avaliação' },
             { icon: '🔒', text: 'Dados 100% seguros' },
-            { icon: '💳', text: 'Sem cartão no trial' },
+            { icon: '💳', text: 'Sem cartão de crédito' },
             { icon: '🇧🇷', text: 'Feito para o Brasil' },
           ].map(item => (
             <div key={item.text} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

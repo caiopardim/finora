@@ -164,7 +164,7 @@ export default function PlanosPage() {
       <div style={{ maxWidth: 600, margin: '0 auto 60px', textAlign: 'center' }}>
         <p style={{ fontSize: 14, color: '#475569', lineHeight: 1.7 }}>
           🎉 <strong style={{ color: '#94a3b8' }}>3 dias grátis</strong> ao criar sua conta — sem precisar cadastrar cartão.<br/>
-          Após o trial, escolha o plano que preferir para continuar usando.
+          Após o período gratuito, escolha o plano que preferir para continuar usando.
         </p>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginTop: 20, flexWrap: 'wrap' }}>
           {['Cancele a qualquer momento', 'Pagamento 100% seguro', 'Suporte via WhatsApp'].map(t => (
