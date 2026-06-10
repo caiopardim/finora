@@ -260,11 +260,6 @@ export default function AdminPage() {
     { id: 'costs',       label: 'P&L / Custos', short: 'P&L',      icon: TrendingUp },
   ];
 
-  // P&L helpers
-  const totalMonthlyCosts = costs.reduce((s, ci) => s + (ci.freq === 'monthly' ? ci.amount : ci.amount / 12), 0);
-  const profit = mrr - totalMonthlyCosts;
-  const margin = mrr > 0 ? (profit / mrr) * 100 : 0;
-
   async function saveCosts(updated: CostItem[]) {
     setCostsSaving(true);
     await adminFetch('/api/admin/settings', {
@@ -305,6 +300,11 @@ export default function AdminPage() {
   const annualPaying   = payingUsers.filter(u => u.plan_type === 'annual');
   const mrr = monthlyPaying.length * 29 + annualPaying.length * (199 / 12);
   const arr = mrr * 12;
+
+  // P&L helpers (after mrr is defined)
+  const totalMonthlyCosts = costs.reduce((s, ci) => s + (ci.freq === 'monthly' ? ci.amount : ci.amount / 12), 0);
+  const profit = mrr - totalMonthlyCosts;
+  const margin = mrr > 0 ? (profit / mrr) * 100 : 0;
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
