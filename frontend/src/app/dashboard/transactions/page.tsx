@@ -96,7 +96,7 @@ export default function TransactionsPage() {
         </div>
 
         {/* Período */}
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none', paddingBottom: 2 } as any}>
           {[
             { id: 'hoje',   label: 'Hoje',         fn: () => { const t = new Date().toISOString().split('T')[0]; setFilters(f => ({ ...f, start_date: t, end_date: t })); } },
             { id: '7d',     label: '7 dias',        fn: () => { const n = new Date(); setFilters(f => ({ ...f, start_date: new Date(n.getTime()-6*86400000).toISOString().split('T')[0], end_date: n.toISOString().split('T')[0] })); } },
@@ -106,29 +106,29 @@ export default function TransactionsPage() {
           ].map(({ id, label, fn }) => {
             const active = periodPreset === id;
             return (
-              <button key={id} onClick={() => { setPeriodPreset(id); setPage(0); fn(); }} style={{ padding: '6px 16px', borderRadius: 99, border: active ? '1.5px solid #22c55e' : `1.5px solid ${c.border}`, cursor: 'pointer', fontSize: 13, fontWeight: active ? 600 : 400, background: active ? '#22c55e18' : 'transparent', color: active ? '#22c55e' : c.textMuted, transition: 'all 0.15s' }}>{label}</button>
+              <button key={id} onClick={() => { setPeriodPreset(id); setPage(0); fn(); }} style={{ padding: '6px 16px', borderRadius: 99, border: active ? '1.5px solid #22c55e' : `1.5px solid ${c.border}`, cursor: 'pointer', fontSize: 13, fontWeight: active ? 600 : 400, background: active ? '#22c55e18' : 'transparent', color: active ? '#22c55e' : c.textMuted, transition: 'all 0.15s', flexShrink: 0, whiteSpace: 'nowrap' }}>{label}</button>
             );
           })}
         </div>
 
         {/* Date range — dois cards separados */}
         {periodPreset === 'custom' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ flex: 1, background: c.inputBg, borderRadius: 10, border: `1px solid ${c.border}`, padding: '8px 14px', colorScheme: isDark ? 'dark' : 'light' } as any}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 120, background: c.inputBg, borderRadius: 10, border: `1px solid ${c.border}`, padding: '8px 14px', colorScheme: isDark ? 'dark' : 'light' } as any}>
               <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>De</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 <input type="date" value={filters.start_date} onChange={e => { setPage(0); setFilters({ ...filters, start_date: e.target.value }); }}
-                  style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 14, fontWeight: 500, color: c.text, outline: 'none', cursor: 'pointer', colorScheme: 'inherit' } as any}/>
+                  style={{ flex: 1, minWidth: 0, border: 'none', background: 'transparent', fontSize: 14, fontWeight: 500, color: c.text, outline: 'none', cursor: 'pointer', colorScheme: 'inherit' } as any}/>
               </div>
             </div>
             <span style={{ color: c.textFaint, fontSize: 18, flexShrink: 0 }}>→</span>
-            <div style={{ flex: 1, background: c.inputBg, borderRadius: 10, border: `1px solid ${c.border}`, padding: '8px 14px', colorScheme: isDark ? 'dark' : 'light' } as any}>
+            <div style={{ flex: 1, minWidth: 120, background: c.inputBg, borderRadius: 10, border: `1px solid ${c.border}`, padding: '8px 14px', colorScheme: isDark ? 'dark' : 'light' } as any}>
               <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Até</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
                 <input type="date" value={filters.end_date} onChange={e => { setPage(0); setFilters({ ...filters, end_date: e.target.value }); }}
-                  style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 14, fontWeight: 500, color: c.text, outline: 'none', cursor: 'pointer', colorScheme: 'inherit' } as any}/>
+                  style={{ flex: 1, minWidth: 0, border: 'none', background: 'transparent', fontSize: 14, fontWeight: 500, color: c.text, outline: 'none', cursor: 'pointer', colorScheme: 'inherit' } as any}/>
               </div>
             </div>
           </div>
