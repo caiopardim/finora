@@ -62,28 +62,39 @@ function toLocalBrazil(d: Date) {
 }
 
 async function importFromGoogle(userId: string, accessToken: string, syncedMap: Record<string, string>) {
-  // Fetch all events with pagination
   const timeMin = new Date().toISOString();
   const timeMax = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+  const headers = { Authorization: `Bearer ${accessToken}` };
+
+  // Fetch all calendars the user has access to
+  const calListRes = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=50', { headers });
+  const calListData = await calListRes.json();
+  if (calListData.error) { console.error('[google-sync] calendarList error:', calListData.error); }
+  const calendars: string[] = (calListData.items || []).map((c: any) => c.id);
+  if (!calendars.length) calendars.push('primary');
+  console.log(`[google-sync] calendars found: ${calendars.length}`);
+
+  // Fetch events from all calendars
   const events: any[] = [];
-  let pageToken: string | undefined;
+  for (const calId of calendars) {
+    let pageToken: string | undefined;
+    do {
+      const url = new URL(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events`);
+      url.searchParams.set('timeMin', timeMin);
+      url.searchParams.set('timeMax', timeMax);
+      url.searchParams.set('singleEvents', 'true');
+      url.searchParams.set('orderBy', 'startTime');
+      url.searchParams.set('maxResults', '500');
+      if (pageToken) url.searchParams.set('pageToken', pageToken);
 
-  do {
-    const url = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
-    url.searchParams.set('timeMin', timeMin);
-    url.searchParams.set('timeMax', timeMax);
-    url.searchParams.set('singleEvents', 'true');
-    url.searchParams.set('orderBy', 'startTime');
-    url.searchParams.set('maxResults', '500');
-    if (pageToken) url.searchParams.set('pageToken', pageToken);
-
-    const res = await fetch(url.toString(), { headers: { Authorization: `Bearer ${accessToken}` } });
-    const data = await res.json();
-    if (data.error) { console.error('[google-sync] API error:', data.error); break; }
-    events.push(...(data.items || []));
-    pageToken = data.nextPageToken;
-    console.log(`[google-sync] page fetched: ${data.items?.length}, total: ${events.length}, more: ${!!pageToken}`);
-  } while (pageToken);
+      const res = await fetch(url.toString(), { headers });
+      const data = await res.json();
+      if (data.error) { console.error(`[google-sync] events error for ${calId}:`, data.error); break; }
+      events.push(...(data.items || []));
+      pageToken = data.nextPageToken;
+    } while (pageToken);
+  }
+  console.log(`[google-sync] total events fetched across all calendars: ${events.length}`);
 
   // Get already-imported google_event_ids
   const { data: existingAppts } = await getAdmin()
@@ -119,7 +130,7 @@ async function importFromGoogle(userId: string, accessToken: string, syncedMap: 
     });
   }
 
-  console.log(`[google-sync] inserting ${toInsert.length} new events`);
+  console.log(`[google-sync] total fetched: ${events.length}, existingIds: ${existingGoogleIds.size}, finoraIds: ${finoraExportedIds.size}, toInsert: ${toInsert.length}`);
 
   // Batch insert in chunks of 100
   let imported = 0;

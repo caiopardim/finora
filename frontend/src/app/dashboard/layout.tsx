@@ -213,10 +213,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               })}
             </div>
           )}
-          <div style={{ padding: '10px 16px', borderTop: `1px solid ${c.borderLight}`, display: 'flex', gap: 12, justifyContent: 'center' }}>
-            <Link href="/dashboard/bills" onClick={() => setShowAlerts(false)} style={{ fontSize: 12, color: '#6366f1', fontWeight: 600, textDecoration: 'none' }}>Ver contas →</Link>
-            <span style={{ color: c.borderLight }}>|</span>
-            <Link href="/dashboard/budget" onClick={() => setShowAlerts(false)} style={{ fontSize: 12, color: '#22c55e', fontWeight: 600, textDecoration: 'none' }}>Ver orçamento →</Link>
+          <div style={{ padding: '10px 16px', borderTop: `1px solid ${c.borderLight}`, display: 'flex', gap: 8, justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 10 }}>
+              <Link href="/dashboard/bills" onClick={() => setShowAlerts(false)} style={{ fontSize: 12, color: '#6366f1', fontWeight: 600, textDecoration: 'none' }}>Ver contas →</Link>
+              <span style={{ color: c.borderLight }}>|</span>
+              <Link href="/dashboard/budget" onClick={() => setShowAlerts(false)} style={{ fontSize: 12, color: '#22c55e', fontWeight: 600, textDecoration: 'none' }}>Ver orçamento →</Link>
+            </div>
+            {alerts.length > 0 && (
+              <button onClick={() => { setAlerts([]); setShowAlerts(false); }} style={{ fontSize: 11, color: '#64748b', background: c.inputBg, border: 'none', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 500 }}>Limpar tudo</button>
+            )}
           </div>
         </div>
       )}
@@ -269,7 +274,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* WhatsApp floating button - mobile */}
         <a
-          href={`https://wa.me/5562982237323?text=${encodeURIComponent('Olá Finora! Quero começar a organizar meus gastos 🐷')}`}
+          href={`https://wa.me/5562982237323?text=${encodeURIComponent('Olá, Finora! Preciso de ajuda. 🐷')}`}
           target="_blank"
           rel="noopener noreferrer"
           style={{
@@ -450,7 +455,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* WhatsApp floating button */}
       <a
-        href={`https://wa.me/5562982237323?text=${encodeURIComponent('Olá Finora! Quero começar a organizar meus gastos 🐷')}`}
+        href={`https://wa.me/5562982237323?text=${encodeURIComponent('Olá, Finora! Preciso de ajuda. 🐷')}`}
         target="_blank"
         rel="noopener noreferrer"
         title="Falar com a Finora no WhatsApp"

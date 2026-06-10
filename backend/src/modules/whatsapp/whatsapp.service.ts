@@ -18,6 +18,8 @@ export class WhatsappService {
   private readonly evolutionKey: string;
   private readonly instance: string;
   private readonly dashboardUrl: string;
+  // Pending delete confirmations: phone -> { txId, description, amount, date }
+  private readonly pendingDeletes = new Map<string, { txId: string; description: string; amount: number; date: string }>();
 
   constructor(
     private config: ConfigService,
@@ -66,6 +68,26 @@ export class WhatsappService {
           `Qualquer dúvida, é só responder aqui! 😊`,
         );
         return;
+      }
+
+      // Check if user has a pending delete confirmation
+      const pending = this.pendingDeletes.get(normalizedPhone);
+      if (pending) {
+        const msg = message.trim().toLowerCase();
+        if (msg === 'sim' || msg === 'confirmar' || msg === 'confirma' || msg === 's') {
+          this.pendingDeletes.delete(normalizedPhone);
+          await this.transactions.remove(user.id, pending.txId);
+          const fmtAmt = pending.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          await this.sendMessage(normalizedPhone, `✅ *Transação excluída!*\n\n📝 *${pending.description}*\n💸 R$ ${fmtAmt}\n📅 ${new Date(pending.date + 'T12:00:00').toLocaleDateString('pt-BR')}`);
+          return;
+        } else if (msg === 'não' || msg === 'nao' || msg === 'n' || msg === 'cancelar') {
+          this.pendingDeletes.delete(normalizedPhone);
+          await this.sendMessage(normalizedPhone, `↩️ Cancelado! A transação *${pending.description}* foi mantida.`);
+          return;
+        } else {
+          // Clear pending and continue processing as new message
+          this.pendingDeletes.delete(normalizedPhone);
+        }
       }
 
       this.logger.log(`[2] User found: ${user?.id} — parsing message with AI`);
@@ -128,9 +150,11 @@ export class WhatsappService {
             await this.sendMessage(normalizedPhone, `❌ Não encontrei nenhuma transação com *"${del.description}"*.\n\nVerifique no dashboard ou tente com outro termo.`);
             break;
           }
-          await this.transactions.remove(user.id, tx.id);
-          const formattedAmount = Number(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-          await this.sendMessage(normalizedPhone, `✅ *Transação excluída!*\n\n📝 *${tx.description}*\n💸 R$ ${formattedAmount}\n📅 ${new Date(tx.date + 'T12:00:00').toLocaleDateString('pt-BR')}`);
+          const fmtAmt = Number(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const fmtDate = new Date(tx.date + 'T12:00:00').toLocaleDateString('pt-BR');
+          // Store pending delete and ask for confirmation
+          this.pendingDeletes.set(normalizedPhone, { txId: tx.id, description: tx.description, amount: Number(tx.amount), date: tx.date });
+          await this.sendMessage(normalizedPhone, `⚠️ *Confirmar exclusão?*\n\n📝 *${tx.description}*\n💸 R$ ${fmtAmt}\n📅 ${fmtDate}\n\nResponda *sim* para confirmar ou *não* para cancelar.`);
           break;
         }
 

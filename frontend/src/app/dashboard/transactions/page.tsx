@@ -21,12 +21,24 @@ export default function TransactionsPage() {
   const [editTx, setEditTx] = useState<any | null>(null);
   const [filters, setFilters] = useState({ type: '', start_date: '', end_date: '' });
   const [page, setPage] = useState(0);
+  const [monthStats, setMonthStats] = useState({ income: 0, expense: 0 });
   const limit = 20;
 
   async function load() {
     setLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setLoading(false); return; }
+
+    // Fetch full month totals (independent of filters/pagination)
+    const now = new Date();
+    const monthStart = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+    const monthEnd = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().split('T')[0];
+    const { data: monthTxs } = await supabase.from('transactions')
+      .select('type,amount').eq('user_id', session.user.id)
+      .gte('date', monthStart).lte('date', monthEnd);
+    const mIncome  = (monthTxs||[]).filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
+    const mExpense = (monthTxs||[]).filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0);
+    setMonthStats({ income: mIncome, expense: mExpense });
 
     let q = supabase.from('transactions')
       .select('id,type,amount,description,date,source,recurring_template_id,categories(name,icon,color)', { count: 'exact' })
@@ -47,9 +59,6 @@ export default function TransactionsPage() {
 
   useEffect(() => { load(); }, [filters, page]);
 
-  const totalIncome  = transactions.filter(t => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
-  const totalExpense = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
-
   return (
     <div style={{ maxWidth: 900, margin: '0 auto' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
@@ -62,21 +71,20 @@ export default function TransactionsPage() {
         </button>
       </div>
 
-      {transactions.length > 0 && (
-        <div className="grid-stats" style={{ marginBottom: 20 }}>
-          {[
-            { label: 'Receitas filtradas', value: fmt(totalIncome),  color: '#22c55e', accent: '#22c55e' },
-            { label: 'Despesas filtradas', value: fmt(totalExpense), color: '#ef4444', accent: '#ef4444' },
-            { label: 'Balanço',            value: fmt(totalIncome - totalExpense), color: totalIncome >= totalExpense ? '#22c55e' : '#ef4444', accent: '#6366f1' },
-            { label: 'Transações',         value: String(transactions.length), color: '#6366f1', accent: '#6366f1' },
-          ].map(s => (
-            <div key={s.label} style={{ background: c.surface, borderRadius: 14, border: `1px solid ${c.border}`, padding: '14px 18px', borderTop: `3px solid ${s.accent}` }}>
-              <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</p>
-              <p style={{ margin: 0, fontSize: 20, fontWeight: 700, color: s.color }}>{s.value}</p>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Resumo do mês vigente — sempre visível */}
+      <div className="grid-stats" style={{ marginBottom: 20 }}>
+        {[
+          { label: `Receitas de ${new Date().toLocaleString('pt-BR',{month:'long'})}`, value: fmt(monthStats.income),  color: '#22c55e', accent: '#22c55e' },
+          { label: `Despesas de ${new Date().toLocaleString('pt-BR',{month:'long'})}`, value: fmt(monthStats.expense), color: '#ef4444', accent: '#ef4444' },
+          { label: 'Balanço do mês', value: fmt(monthStats.income - monthStats.expense), color: monthStats.income >= monthStats.expense ? '#22c55e' : '#ef4444', accent: '#6366f1' },
+          { label: 'Transações', value: String(count), color: '#6366f1', accent: '#6366f1' },
+        ].map(s => (
+          <div key={s.label} style={{ background: c.surface, borderRadius: 14, border: `1px solid ${c.border}`, padding: '14px 18px', borderTop: `3px solid ${s.accent}` }}>
+            <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</p>
+            <p style={{ margin: 0, fontSize: 20, fontWeight: 700, color: s.color }}>{s.value}</p>
+          </div>
+        ))}
+      </div>
 
       <div style={{ background: c.surface, borderRadius: 14, border: `1px solid ${c.border}`, padding: '14px 18px', marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>

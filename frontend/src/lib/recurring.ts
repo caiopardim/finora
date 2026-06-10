@@ -9,6 +9,7 @@ export async function checkRecurring(userId: string) {
   const today = dayjs();
   const monthStart = today.startOf('month').format('YYYY-MM-DD');
   const monthEnd   = today.endOf('month').format('YYYY-MM-DD');
+  const monthKey   = today.format('YYYY-MM');
 
   // Get recurring transaction templates
   const { data: templates } = await supabase
@@ -30,9 +31,19 @@ export async function checkRecurring(userId: string) {
 
   const generatedIds = new Set((existing || []).map(t => t.recurring_template_id));
 
+  // Get skipped templates this month
+  const { data: skips } = await supabase
+    .from('recurring_skips')
+    .select('template_id')
+    .eq('user_id', userId)
+    .eq('month', monthKey);
+
+  const skippedIds = new Set((skips || []).map((s: any) => s.template_id));
+
   const toInsert = [];
   for (const t of templates) {
     if (generatedIds.has(t.id)) continue;
+    if (skippedIds.has(t.id)) continue; // foi deletado manualmente esse mês
 
     // Determine due date for this month
     let dueDay = t.day_of_month || today.date();

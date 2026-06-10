@@ -24,7 +24,7 @@ export class ReportsService {
 
         this.supabase
           .from('transactions')
-          .select('type, amount, categories(name)')
+          .select('type, amount, description, categories(name)')
           .eq('user_id', userId)
           .gte('date', monthStart)
           .lte('date', today),
@@ -89,6 +89,14 @@ export class ReportsService {
       category: (t.categories as any)?.name ?? 'Outros',
     }));
 
+    // All month transactions grouped by category (for specific category queries)
+    const monthTransactionsByCategory: Record<string, { description: string; amount: number; type: string }[]> = {};
+    for (const tx of monthData.data || []) {
+      const cat = (tx.categories as any)?.name ?? 'Outros';
+      if (!monthTransactionsByCategory[cat]) monthTransactionsByCategory[cat] = [];
+      monthTransactionsByCategory[cat].push({ description: (tx as any).description, amount: tx.amount, type: tx.type });
+    }
+
     return {
       today: {
         ...today_,
@@ -122,6 +130,7 @@ export class ReportsService {
         amount: b.amount,
         due_date: b.due_date,
       })),
+      transactionsByCategory: monthTransactionsByCategory,
       generatedAt: new Date().toISOString(),
     };
   }
