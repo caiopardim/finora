@@ -22,6 +22,7 @@ export default function TransactionsPage() {
   const [filters, setFilters] = useState({ type: '', start_date: '', end_date: '' });
   const [page, setPage] = useState(0);
   const [monthStats, setMonthStats] = useState({ income: 0, expense: 0 });
+  const [periodPreset, setPeriodPreset] = useState('mes');
   const limit = 20;
 
   async function load() {
@@ -90,35 +91,36 @@ export default function TransactionsPage() {
         {/* Tipo */}
         <div style={{ display: 'flex', gap: 6 }}>
           {[['', 'Todos'], ['income', '💰 Receitas'], ['expense', '💸 Despesas']].map(([v, l]) => (
-            <button key={v} onClick={() => { setPage(0); setFilters({ ...filters, type: v }); }} style={{ padding: '7px 16px', borderRadius: 8, border: filters.type === v ? '1.5px solid #6366f1' : `1.5px solid ${c.border}`, cursor: 'pointer', fontSize: 13, fontWeight: 600, background: filters.type === v ? '#6366f115' : 'transparent', color: filters.type === v ? '#6366f1' : c.textMuted, transition: 'all 0.15s' }}>{l}</button>
+            <button key={v} onClick={() => { setPage(0); setFilters({ ...filters, type: v }); }} style={{ padding: '7px 16px', borderRadius: 8, border: filters.type === v ? '1.5px solid #6366f1' : `1.5px solid ${c.border}`, cursor: 'pointer', fontSize: 13, fontWeight: 600, background: filters.type === v ? '#6366f115' : 'transparent', color: filters.type === v ? '#6366f1' : c.textMuted }}>{l}</button>
           ))}
         </div>
 
-        {/* Atalhos de período */}
+        {/* Período */}
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
           {[
-            { label: 'Este mês', fn: () => { const n = new Date(); setFilters(f => ({ ...f, start_date: `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-01`, end_date: new Date(n.getFullYear(), n.getMonth()+1, 0).toISOString().split('T')[0] })); setPage(0); } },
-            { label: 'Mês passado', fn: () => { const n = new Date(); const m = new Date(n.getFullYear(), n.getMonth()-1, 1); setFilters(f => ({ ...f, start_date: `${m.getFullYear()}-${String(m.getMonth()+1).padStart(2,'0')}-01`, end_date: new Date(m.getFullYear(), m.getMonth()+1, 0).toISOString().split('T')[0] })); setPage(0); } },
-            { label: 'Últimos 7 dias', fn: () => { const n = new Date(); const s = new Date(n.getTime() - 6*86400000); setFilters(f => ({ ...f, start_date: s.toISOString().split('T')[0], end_date: n.toISOString().split('T')[0] })); setPage(0); } },
-            { label: 'Este ano', fn: () => { const n = new Date(); setFilters(f => ({ ...f, start_date: `${n.getFullYear()}-01-01`, end_date: `${n.getFullYear()}-12-31` })); setPage(0); } },
-          ].map(({ label, fn }) => (
-            <button key={label} onClick={fn} style={{ padding: '5px 12px', borderRadius: 20, border: `1px solid ${c.border}`, cursor: 'pointer', fontSize: 12, fontWeight: 500, background: 'transparent', color: c.textMuted, transition: 'all 0.15s' }}
-              onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = '#6366f1'; (e.currentTarget as HTMLElement).style.color = '#6366f1'; }}
-              onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = c.border; (e.currentTarget as HTMLElement).style.color = c.textMuted; }}
-            >{label}</button>
-          ))}
+            { id: 'hoje',   label: 'Hoje',         fn: () => { const t = new Date().toISOString().split('T')[0]; setFilters(f => ({ ...f, start_date: t, end_date: t })); } },
+            { id: '7d',     label: '7 dias',        fn: () => { const n = new Date(); setFilters(f => ({ ...f, start_date: new Date(n.getTime()-6*86400000).toISOString().split('T')[0], end_date: n.toISOString().split('T')[0] })); } },
+            { id: '30d',    label: '30 dias',       fn: () => { const n = new Date(); setFilters(f => ({ ...f, start_date: new Date(n.getTime()-29*86400000).toISOString().split('T')[0], end_date: n.toISOString().split('T')[0] })); } },
+            { id: 'mes',    label: 'Este mês',      fn: () => { const n = new Date(); setFilters(f => ({ ...f, start_date: `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-01`, end_date: new Date(n.getFullYear(), n.getMonth()+1, 0).toISOString().split('T')[0] })); } },
+            { id: 'custom', label: 'Personalizado', fn: () => {} },
+          ].map(({ id, label, fn }) => {
+            const active = periodPreset === id;
+            return (
+              <button key={id} onClick={() => { setPeriodPreset(id); setPage(0); fn(); }} style={{ padding: '6px 16px', borderRadius: 99, border: active ? '1.5px solid #22c55e' : `1.5px solid ${c.border}`, cursor: 'pointer', fontSize: 13, fontWeight: active ? 600 : 400, background: active ? '#22c55e18' : 'transparent', color: active ? '#22c55e' : c.textMuted, transition: 'all 0.15s' }}>{label}</button>
+            );
+          })}
         </div>
 
-        {/* Datas customizadas */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: c.inputBg, borderRadius: 10, padding: '6px 10px', border: `1.5px solid ${(filters.start_date || filters.end_date) ? '#6366f1' : c.border}`, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 15 }}>📅</span>
-          <input type="date" value={filters.start_date} onChange={e => { setPage(0); setFilters({ ...filters, start_date: e.target.value }); }}
-            style={{ flex: 1, minWidth: 120, border: 'none', background: 'transparent', fontSize: 13, color: filters.start_date ? c.text : c.textFaint, outline: 'none', cursor: 'pointer' }}/>
-          <span style={{ color: c.textFaint, fontSize: 13, fontWeight: 500 }}>→</span>
-          <input type="date" value={filters.end_date} onChange={e => { setPage(0); setFilters({ ...filters, end_date: e.target.value }); }}
-            style={{ flex: 1, minWidth: 120, border: 'none', background: 'transparent', fontSize: 13, color: filters.end_date ? c.text : c.textFaint, outline: 'none', cursor: 'pointer' }}/>
-          {(filters.type || filters.start_date || filters.end_date) && (
-            <button onClick={() => { setPage(0); setFilters({ type: '', start_date: '', end_date: '' }); }} style={{ padding: '4px 10px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 12, color: '#ef4444', background: '#fef2f2', fontWeight: 600 }}>✕</button>
+        {/* Date range bar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: c.inputBg, borderRadius: 10, border: `1px solid ${c.border}`, overflow: 'hidden', padding: '0 14px', height: 44 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.textFaint} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginRight: 10 }}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <input type="date" value={filters.start_date} onChange={e => { setPage(0); setPeriodPreset('custom'); setFilters({ ...filters, start_date: e.target.value }); }}
+            style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 13, color: c.text, outline: 'none', cursor: 'pointer' }}/>
+          <div style={{ width: 40, height: 1, background: c.border, flexShrink: 0 }}/>
+          <input type="date" value={filters.end_date} onChange={e => { setPage(0); setPeriodPreset('custom'); setFilters({ ...filters, end_date: e.target.value }); }}
+            style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 13, color: c.text, outline: 'none', cursor: 'pointer', textAlign: 'right' }}/>
+          {(filters.start_date || filters.end_date) && (
+            <button onClick={() => { setPage(0); setPeriodPreset('mes'); const n = new Date(); setFilters(f => ({ ...f, start_date: `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-01`, end_date: new Date(n.getFullYear(), n.getMonth()+1, 0).toISOString().split('T')[0] })); }} style={{ marginLeft: 8, background: 'none', border: 'none', cursor: 'pointer', color: c.textFaint, fontSize: 16, lineHeight: 1, padding: 4 }}>⌄</button>
           )}
         </div>
       </div>
