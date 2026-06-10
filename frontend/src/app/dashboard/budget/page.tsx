@@ -145,114 +145,47 @@ export default function BudgetPage() {
         <p style={{ color: c.textFaint, fontSize: 14, margin: 0 }}>Defina quanto você quer gastar em {dayjs().format('MMMM [de] YYYY')}</p>
       </div>
 
-      {/* Global budget config */}
-      <div style={{ background: c.surface, borderRadius: 18, border: `1px solid ${c.border}`, padding: 24, marginBottom: 20, boxShadow: c.shadow }}>
-        <p style={{ margin: '0 0 18px', fontWeight: 700, fontSize: 16, color: c.text }}>💰 Limite Global de Gastos</p>
+      {/* Progress this month — based on category budgets */}
+      {(() => {
+        const totalBudget = cats.reduce((s, c) => s + Number(c.budget_limit || 0), 0);
+        if (totalBudget === 0) return null;
+        const pct_ = Math.round(expense / totalBudget * 100);
+        const over = expense > totalBudget;
+        const remaining_ = Math.max(totalBudget - expense, 0);
+        return (
+          <div style={{ background: c.surface, borderRadius: 18, border: `1px solid ${over ? '#fca5a5' : c.border}`, padding: 24, marginBottom: 20, boxShadow: c.shadow }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <p style={{ margin: 0, fontWeight: 700, fontSize: 16, color: c.text }}>📊 Progresso do Mês</p>
+              <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 12px', borderRadius: 99, background: over ? '#fee2e2' : pct_ > 80 ? '#fff7ed' : '#dcfce7', color: over ? '#dc2626' : pct_ > 80 ? '#ea580c' : '#16a34a' }}>
+                {pct_}% usado
+              </span>
+            </div>
 
-        {/* Mode toggle */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-          {([['percent','% da renda'], ['fixed','Valor fixo']] as const).map(([m, label]) => (
-            <button key={m} onClick={() => setMode(m)} style={{
-              flex: 1, padding: '10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 500,
-              background: mode === m ? (isDark ? '#1e293b' : '#0f172a') : c.inputBg,
-              color: mode === m ? '#22c55e' : c.textMuted,
-              outline: mode === m ? '2px solid #22c55e' : 'none',
-            }}>{label}</button>
-          ))}
-        </div>
-
-        {mode === 'percent' ? (
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: c.textMuted, letterSpacing: '0.04em', textTransform: 'uppercase', display: 'block', marginBottom: 8 }}>
-              % da renda mensal para gastar
-            </label>
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
-              {['20','30','50','70','80','100'].map(p => (
-                <button key={p} onClick={() => setPct(p)} style={{
-                  padding: '8px 16px', borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600,
-                  background: pct === p ? '#22c55e' : c.inputBg,
-                  color: pct === p ? '#fff' : c.textMuted,
-                }}>{p}%</button>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 20 }}>
+              {[
+                { label: 'Orçamento', value: formatCurrency(totalBudget), color: c.text },
+                { label: 'Gasto',     value: formatCurrency(expense),     color: over ? '#ef4444' : '#f97316' },
+                { label: over ? 'Excedido' : 'Restante', value: over ? `+${formatCurrency(expense - totalBudget)}` : formatCurrency(remaining_), color: over ? '#ef4444' : '#22c55e' },
+              ].map(({ label, value, color }) => (
+                <div key={label} style={{ background: c.inputBg, borderRadius: 12, padding: '10px 8px', textAlign: 'center' }}>
+                  <p style={{ margin: '0 0 4px', fontSize: 10, color: c.textFaint, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</p>
+                  <p style={{ margin: 0, fontSize: 'clamp(12px, 3vw, 17px)' as any, fontWeight: 700, color, wordBreak: 'break-all' }}>{value}</p>
+                </div>
               ))}
-              <input
-                type="number" min="1" max="200" value={pct}
-                onChange={e => setPct(e.target.value)}
-                style={{ ...inputStyle, width: 80, display: 'inline-block' }}
-              />
             </div>
-            <div style={{ background: c.inputBg, borderRadius: 12, padding: '12px 16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontSize: 13, color: c.textMuted }}>Receita do mês</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: c.text }}>{formatCurrency(income)}</span>
+
+            <div style={{ background: c.inputBg, borderRadius: 99, height: 10, overflow: 'hidden' }}>
+              <div style={{ height: '100%', borderRadius: 99, width: `${Math.min(pct_, 100)}%`, background: over ? 'linear-gradient(90deg,#ef4444,#dc2626)' : pct_ > 80 ? 'linear-gradient(90deg,#f97316,#ea580c)' : 'linear-gradient(90deg,#22c55e,#16a34a)', transition: 'width 0.6s' }}/>
+            </div>
+            {over && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, padding: '8px 12px', background: '#fef2f2', borderRadius: 8 }}>
+                <AlertTriangle size={14} color="#dc2626"/>
+                <span style={{ fontSize: 12, color: '#dc2626', fontWeight: 500 }}>Você ultrapassou o limite em {formatCurrency(expense - totalBudget)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 13, color: c.textMuted }}>Limite de gastos ({pct}%)</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color: '#22c55e' }}>{formatCurrency(income * Number(pct) / 100)}</span>
-              </div>
-            </div>
+            )}
           </div>
-        ) : (
-          <div>
-            <label style={{ fontSize: 12, fontWeight: 600, color: c.textMuted, letterSpacing: '0.04em', textTransform: 'uppercase', display: 'block', marginBottom: 6 }}>
-              Valor máximo de gastos no mês
-            </label>
-            <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 14, color: c.textMuted }}>R$</span>
-              <input
-                type="text" inputMode="numeric"
-                value={fmtDisplay(fixedRaw)}
-                onChange={e => setFixedRaw(e.target.value.replace(/\D/g, ''))}
-                placeholder="0,00"
-                style={{ ...inputStyle, paddingLeft: 36 }}
-              />
-            </div>
-          </div>
-        )}
-
-        <button onClick={saveGlobal} style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 8, padding: '11px 22px', borderRadius: 11, border: 'none', background: globalSaved ? '#22c55e' : 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}>
-          {globalSaved ? <><Check size={15}/> Salvo!</> : 'Salvar orçamento'}
-        </button>
-      </div>
-
-      {/* Progress this month */}
-      {globalLimit > 0 && (
-        <div style={{ background: c.surface, borderRadius: 18, border: `1px solid ${globalOver ? '#fca5a5' : c.border}`, padding: 24, marginBottom: 20, boxShadow: c.shadow }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <p style={{ margin: 0, fontWeight: 700, fontSize: 16, color: c.text }}>📊 Progresso do Mês</p>
-            <span style={{ fontSize: 12, fontWeight: 700, padding: '3px 12px', borderRadius: 99, background: globalOver ? '#fee2e2' : globalPct > 80 ? '#fff7ed' : '#dcfce7', color: globalOver ? '#dc2626' : globalPct > 80 ? '#ea580c' : '#16a34a' }}>
-              {globalPct}% usado
-            </span>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginBottom: 20 }}>
-            {[
-              { label: 'Limite',                  value: formatCurrency(globalLimit),                                             color: c.text },
-              { label: 'Gasto',                   value: formatCurrency(expense),                                                 color: globalOver ? '#ef4444' : '#f97316' },
-              { label: globalOver ? 'Excedido' : 'Restante', value: globalOver ? `+${formatCurrency(expense - globalLimit)}` : formatCurrency(remaining), color: globalOver ? '#ef4444' : '#22c55e' },
-            ].map(({ label, value, color }) => (
-              <div key={label} style={{ background: c.inputBg, borderRadius: 12, padding: '10px 8px', textAlign: 'center' }}>
-                <p style={{ margin: '0 0 4px', fontSize: 10, color: c.textFaint, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{label}</p>
-                <p style={{ margin: 0, fontSize: 'clamp(12px, 3vw, 17px)' as any, fontWeight: 700, color, wordBreak: 'break-all' }}>{value}</p>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ background: c.inputBg, borderRadius: 99, height: 10, overflow: 'hidden' }}>
-            <div style={{
-              height: '100%', borderRadius: 99,
-              width: `${Math.min(globalPct, 100)}%`,
-              background: globalOver ? 'linear-gradient(90deg,#ef4444,#dc2626)' : globalPct > 80 ? 'linear-gradient(90deg,#f97316,#ea580c)' : 'linear-gradient(90deg,#22c55e,#16a34a)',
-              transition: 'width 0.6s',
-            }}/>
-          </div>
-          {globalOver && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, padding: '8px 12px', background: '#fef2f2', borderRadius: 8 }}>
-              <AlertTriangle size={14} color="#dc2626"/>
-              <span style={{ fontSize: 12, color: '#dc2626', fontWeight: 500 }}>Você ultrapassou o limite em {formatCurrency(expense - globalLimit)}</span>
-            </div>
-          )}
-        </div>
-      )}
+        );
+      })()}
 
       {/* Per-category budgets */}
       <div style={{ background: c.surface, borderRadius: 18, border: `1px solid ${c.border}`, overflow: 'hidden', boxShadow: c.shadow }}>

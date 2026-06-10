@@ -163,28 +163,32 @@ export default function DashboardPage() {
           badge={`${data.todayCount} transaç${data.todayCount===1?'ão':'ões'}`} badgeGreen />
       </div>
 
-      {/* Global budget bar */}
-      {data.globalLimit > 0 && (
-        <div style={{ background: c.surface, borderRadius: 16, border: `1px solid ${data.globalOver ? '#fca5a5' : c.border}`, padding: '16px 20px', marginBottom: 16, boxShadow: c.shadow }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 16 }}>💰</span>
-              <span style={{ fontWeight: 700, fontSize: 14, color: c.textSecondary }}>Orçamento do Mês</span>
+      {/* Budget progress bar — based on category budgets total */}
+      {data.forecast > 0 && (() => {
+        const pct = Math.round(data.expense / data.forecast * 100);
+        const over = data.expense > data.forecast;
+        return (
+          <div style={{ background: c.surface, borderRadius: 16, border: `1px solid ${over ? '#fca5a5' : c.border}`, padding: '16px 20px', marginBottom: 16, boxShadow: c.shadow }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 16 }}>💰</span>
+                <span style={{ fontWeight: 700, fontSize: 14, color: c.textSecondary }}>Orçamento do Mês</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 13, color: c.textMuted }}>{fmt(data.expense)} / {fmt(data.forecast)}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 99, background: over ? '#fee2e2' : pct > 80 ? '#fff7ed' : '#dcfce7', color: over ? '#dc2626' : pct > 80 ? '#ea580c' : '#16a34a' }}>
+                  {pct}%
+                </span>
+                <Link href="/dashboard/budget" style={{ fontSize: 12, color: '#6366f1', fontWeight: 600, textDecoration: 'none' }}>Editar →</Link>
+              </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 13, color: c.textMuted }}>{fmt(data.expense)} / {fmt(data.globalLimit)}</span>
-              <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 10px', borderRadius: 99, background: data.globalOver ? '#fee2e2' : data.globalPct > 80 ? '#fff7ed' : '#dcfce7', color: data.globalOver ? '#dc2626' : data.globalPct > 80 ? '#ea580c' : '#16a34a' }}>
-                {data.globalPct}%
-              </span>
-              <Link href="/dashboard/budget" style={{ fontSize: 12, color: '#6366f1', fontWeight: 600, textDecoration: 'none' }}>Editar →</Link>
+            <div style={{ background: c.inputBg, borderRadius: 99, height: 8, overflow: 'hidden' }}>
+              <div style={{ height: '100%', borderRadius: 99, width: `${Math.min(pct, 100)}%`, background: over ? '#ef4444' : pct > 80 ? '#f97316' : '#22c55e', transition: 'width 0.6s' }}/>
             </div>
+            {over && <p style={{ margin: '8px 0 0', fontSize: 12, color: '#dc2626', fontWeight: 500 }}>⚠️ Limite ultrapassado em {fmt(data.expense - data.forecast)}</p>}
           </div>
-          <div style={{ background: c.inputBg, borderRadius: 99, height: 8, overflow: 'hidden' }}>
-            <div style={{ height: '100%', borderRadius: 99, width: `${Math.min(data.globalPct, 100)}%`, background: data.globalOver ? '#ef4444' : data.globalPct > 80 ? '#f97316' : '#22c55e', transition: 'width 0.6s' }}/>
-          </div>
-          {data.globalOver && <p style={{ margin: '8px 0 0', fontSize: 12, color: '#dc2626', fontWeight: 500 }}>⚠️ Limite ultrapassado em {fmt(data.expense - data.globalLimit)}</p>}
-        </div>
-      )}
+        );
+      })()}
 
       {/* Weekly + Forecast row */}
       <div className="grid-2col-eq">
