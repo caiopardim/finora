@@ -93,11 +93,19 @@ export default function TransactionsPage() {
           ))}
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          {(['start_date', 'end_date'] as const).map(k => (
-            <input key={k} type="date" value={filters[k]} onChange={e => { setPage(0); setFilters({ ...filters, [k]: e.target.value }); }} style={{ flex: 1, minWidth: 120, padding: '7px 12px', borderRadius: 8, border: `1.5px solid ${c.border}`, fontSize: 13, color: c.textSecondary, background: c.bg, outline: 'none' }}/>
-          ))}
+          <div style={{ flex: 1, minWidth: 130, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <label style={{ fontSize: 10, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>De</label>
+            <input type="date" value={filters.start_date} onChange={e => { setPage(0); setFilters({ ...filters, start_date: e.target.value }); }} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${filters.start_date ? '#6366f1' : c.border}`, fontSize: 13, color: c.text, background: c.inputBg, outline: 'none', cursor: 'pointer' }}/>
+          </div>
+          <div style={{ flex: 1, minWidth: 130, display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <label style={{ fontSize: 10, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Até</label>
+            <input type="date" value={filters.end_date} onChange={e => { setPage(0); setFilters({ ...filters, end_date: e.target.value }); }} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: `1.5px solid ${filters.end_date ? '#6366f1' : c.border}`, fontSize: 13, color: c.text, background: c.inputBg, outline: 'none', cursor: 'pointer' }}/>
+          </div>
           {(filters.type || filters.start_date || filters.end_date) && (
-            <button onClick={() => { setPage(0); setFilters({ type: '', start_date: '', end_date: '' }); }} style={{ padding: '7px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, color: '#ef4444', background: '#fef2f2', fontWeight: 500 }}>Limpar</button>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <label style={{ fontSize: 10, color: 'transparent' }}>-</label>
+              <button onClick={() => { setPage(0); setFilters({ type: '', start_date: '', end_date: '' }); }} style={{ padding: '8px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, color: '#ef4444', background: '#fef2f2', fontWeight: 600 }}>Limpar</button>
+            </div>
           )}
         </div>
       </div>
