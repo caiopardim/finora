@@ -202,7 +202,7 @@ export default function TransactionsPage() {
         ))}
       </div>
 
-      <div style={{ background: c.surface, borderRadius: 14, border: `1px solid ${c.border}`, padding: '14px 18px', marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ background: c.surface, borderRadius: 14, border: `1px solid ${c.border}`, padding: '14px 18px', marginBottom: 20, display: 'flex', flexDirection: 'column', gap: 12, overflow: 'visible' }}>
         {/* Tipo */}
         <div style={{ display: 'flex', gap: 6 }}>
           {[['', 'Todos'], ['income', '💰 Receitas'], ['expense', '💸 Despesas']].map(([v, l]) => (
@@ -211,7 +211,7 @@ export default function TransactionsPage() {
         </div>
 
         {/* Período */}
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none', paddingBottom: 2 } as any}>
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none', paddingBottom: 2, paddingRight: 18, marginRight: -18 } as any}>
           {[
             { id: 'hoje',   label: 'Hoje',         fn: () => { const t = new Date().toISOString().split('T')[0]; setFilters(f => ({ ...f, start_date: t, end_date: t })); } },
             { id: '7d',     label: '7 dias',        fn: () => { const n = new Date(); setFilters(f => ({ ...f, start_date: new Date(n.getTime()-6*86400000).toISOString().split('T')[0], end_date: n.toISOString().split('T')[0] })); } },
