@@ -110,18 +110,15 @@ export default function TransactionsPage() {
         </div>
 
         {/* Datas customizadas */}
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: 130 }}>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: c.textFaint, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>De</label>
-            <input type="date" value={filters.start_date} onChange={e => { setPage(0); setFilters({ ...filters, start_date: e.target.value }); }} style={{ width: '100%', padding: '8px 12px', borderRadius: 9, border: `1.5px solid ${filters.start_date ? '#6366f1' : c.border}`, fontSize: 13, color: c.text, background: c.inputBg, outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}/>
-          </div>
-          <div style={{ color: c.textFaint, fontSize: 18, paddingBottom: 8 }}>→</div>
-          <div style={{ flex: 1, minWidth: 130 }}>
-            <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: c.textFaint, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Até</label>
-            <input type="date" value={filters.end_date} onChange={e => { setPage(0); setFilters({ ...filters, end_date: e.target.value }); }} style={{ width: '100%', padding: '8px 12px', borderRadius: 9, border: `1.5px solid ${filters.end_date ? '#6366f1' : c.border}`, fontSize: 13, color: c.text, background: c.inputBg, outline: 'none', cursor: 'pointer', boxSizing: 'border-box' }}/>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: c.inputBg, borderRadius: 10, padding: '6px 10px', border: `1.5px solid ${(filters.start_date || filters.end_date) ? '#6366f1' : c.border}`, flexWrap: 'wrap' }}>
+          <span style={{ fontSize: 15 }}>📅</span>
+          <input type="date" value={filters.start_date} onChange={e => { setPage(0); setFilters({ ...filters, start_date: e.target.value }); }}
+            style={{ flex: 1, minWidth: 120, border: 'none', background: 'transparent', fontSize: 13, color: filters.start_date ? c.text : c.textFaint, outline: 'none', cursor: 'pointer' }}/>
+          <span style={{ color: c.textFaint, fontSize: 13, fontWeight: 500 }}>→</span>
+          <input type="date" value={filters.end_date} onChange={e => { setPage(0); setFilters({ ...filters, end_date: e.target.value }); }}
+            style={{ flex: 1, minWidth: 120, border: 'none', background: 'transparent', fontSize: 13, color: filters.end_date ? c.text : c.textFaint, outline: 'none', cursor: 'pointer' }}/>
           {(filters.type || filters.start_date || filters.end_date) && (
-            <button onClick={() => { setPage(0); setFilters({ type: '', start_date: '', end_date: '' }); }} style={{ padding: '8px 16px', borderRadius: 9, border: 'none', cursor: 'pointer', fontSize: 13, color: '#ef4444', background: '#fef2f2', fontWeight: 600, whiteSpace: 'nowrap' }}>✕ Limpar</button>
+            <button onClick={() => { setPage(0); setFilters({ type: '', start_date: '', end_date: '' }); }} style={{ padding: '4px 10px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 12, color: '#ef4444', background: '#fef2f2', fontWeight: 600 }}>✕</button>
           )}
         </div>
       </div>
