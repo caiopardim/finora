@@ -147,7 +147,7 @@ export default function BudgetPage() {
 
       {/* Progress this month — based on category budgets */}
       {(() => {
-        const totalBudget = cats.reduce((s, c) => s + Number(c.budget_limit || 0), 0);
+        const totalBudget = cats.filter(c => c.type === 'expense').reduce((s, c) => s + Number(c.budget_limit || 0), 0);
         if (totalBudget === 0) return null;
         const pct_ = Math.round(expense / totalBudget * 100);
         const over = expense > totalBudget;

@@ -54,7 +54,7 @@ export default function DashboardPage() {
       supabase.from('transactions').select('category_id,amount,categories(id,name,icon,color,budget_limit)').eq('user_id', uid).eq('type', 'expense').gte('date', monthStart).lte('date', monthEnd),
       supabase.from('bills').select('*').eq('user_id', uid).eq('paid', false).lte('due_date', weekEnd7).order('due_date', { ascending: true }),
       supabase.from('profiles').select('budget_mode,budget_pct,budget_fixed,name').eq('id', uid).maybeSingle(),
-      supabase.from('categories').select('id,budget_limit').eq('user_id', uid).not('budget_limit', 'is', null),
+      supabase.from('categories').select('id,budget_limit').eq('user_id', uid).eq('type', 'expense').not('budget_limit', 'is', null),
     ]);
 
     const income  = (txMonth.data||[]).filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);

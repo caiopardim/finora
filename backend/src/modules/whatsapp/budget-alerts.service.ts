@@ -36,6 +36,7 @@ export class BudgetAlertsService {
           .from('categories')
           .select('budget_limit')
           .eq('user_id', userId)
+          .eq('type', 'expense')
           .not('budget_limit', 'is', null),
         this.supabase
           .from('transactions')
