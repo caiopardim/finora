@@ -205,14 +205,14 @@ export class WhatsappService {
         default:
           await this.sendMessage(
             normalizedPhone,
-            `Hmm, não entendi muito bem o que você quis dizer. Lembre-se que eu sou um assistente financeiro e posso te ajudar a registrar seus gastos, consultar parcelas e ver seus relatórios. Como posso te ajudar com isso? 😊`,
+            `Hmm, não entendi muito bem o que você quis dizer. Lembre-se que eu sou um assistente financeiro e posso te ajudar a registrar seus gastos, consultar parcelas, ver seus relatórios e cuidar da sua agenda. Como posso te ajudar com isso? 😊`,
           );
       }
     } catch (error) {
       this.logger.error(`Error handling message: ${error.message}`, error.stack);
       await this.sendMessage(
         phone.replace(/\D/g, ''),
-        `Hmm, não entendi muito bem o que você quis dizer. Lembre-se que eu sou um assistente financeiro e posso te ajudar a registrar seus gastos, consultar parcelas e ver seus relatórios. Como posso te ajudar com isso? 😊`,
+        `Hmm, não entendi muito bem o que você quis dizer. Lembre-se que eu sou um assistente financeiro e posso te ajudar a registrar seus gastos, consultar parcelas, ver seus relatórios e cuidar da sua agenda. Como posso te ajudar com isso? 😊`,
       );
     }
   }
