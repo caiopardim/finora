@@ -212,7 +212,7 @@ export class WhatsappService {
       this.logger.error(`Error handling message: ${error.message}`, error.stack);
       await this.sendMessage(
         phone.replace(/\D/g, ''),
-        '❌ Ocorreu um erro ao processar sua mensagem. Tente novamente.',
+        `Hmm, não entendi muito bem o que você quis dizer. Lembre-se que eu sou um assistente financeiro e posso te ajudar a registrar seus gastos, consultar parcelas e ver seus relatórios. Como posso te ajudar com isso? 😊`,
       );
     }
   }
