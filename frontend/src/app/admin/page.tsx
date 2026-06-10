@@ -986,15 +986,15 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <label style={{ fontSize: 11, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>Valor (R$)</label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 20, fontWeight: 700, color: c.textMuted }}>R$</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: c.surface, borderRadius: 10, border: `1.5px solid ${c.border}`, padding: '10px 14px' }}>
+                      <span style={{ fontSize: 16, fontWeight: 700, color: c.textMuted, flexShrink: 0 }}>R$</span>
                       <input
-                        type="number" min="1" step="1"
+                        type="number" min="1" step="0.01"
                         value={priceMonthly}
                         onChange={e => setPriceMonthly(e.target.value)}
-                        style={{ flex: 1, padding: '12px 16px', borderRadius: 10, border: `1.5px solid ${c.border}`, fontSize: 22, fontWeight: 800, color: c.text, background: c.surface, outline: 'none', textAlign: 'center' }}
+                        style={{ flex: 1, border: 'none', fontSize: 22, fontWeight: 800, color: c.text, background: 'transparent', outline: 'none', textAlign: 'center', minWidth: 0 }}
                       />
-                      <span style={{ fontSize: 14, color: c.textFaint }}>/mês</span>
+                      <span style={{ fontSize: 13, color: c.textFaint, flexShrink: 0 }}>/mês</span>
                     </div>
                   </div>
 
@@ -1012,15 +1012,15 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <label style={{ fontSize: 11, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.05em', display: 'block', marginBottom: 8 }}>Valor (R$)</label>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <span style={{ fontSize: 20, fontWeight: 700, color: c.textMuted }}>R$</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: c.surface, borderRadius: 10, border: `1.5px solid #22c55e50`, padding: '10px 14px' }}>
+                      <span style={{ fontSize: 16, fontWeight: 700, color: c.textMuted, flexShrink: 0 }}>R$</span>
                       <input
-                        type="number" min="1" step="1"
+                        type="number" min="1" step="0.01"
                         value={priceAnnual}
                         onChange={e => setPriceAnnual(e.target.value)}
-                        style={{ flex: 1, padding: '12px 16px', borderRadius: 10, border: `1.5px solid ${c.border}`, fontSize: 22, fontWeight: 800, color: c.text, background: c.surface, outline: 'none', textAlign: 'center' }}
+                        style={{ flex: 1, border: 'none', fontSize: 22, fontWeight: 800, color: c.text, background: 'transparent', outline: 'none', textAlign: 'center', minWidth: 0 }}
                       />
-                      <span style={{ fontSize: 14, color: c.textFaint }}>/ano</span>
+                      <span style={{ fontSize: 13, color: c.textFaint, flexShrink: 0 }}>/ano</span>
                     </div>
                     <p style={{ margin: '10px 0 0', fontSize: 12, color: '#4ade80' }}>
                       Economia: R$ {(Number(priceMonthly) * 12 - Number(priceAnnual)).toFixed(2).replace('.', ',')} em relação ao mensal
