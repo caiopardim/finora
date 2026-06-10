@@ -1,4 +1,4 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject, Logger, forwardRef } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CLIENT } from '../../config/supabase.module';
 import { WhatsappService } from './whatsapp.service';
@@ -18,7 +18,7 @@ export class BudgetAlertsService {
 
   constructor(
     @Inject(SUPABASE_CLIENT) private supabase: SupabaseClient,
-    private whatsapp: WhatsappService,
+    @Inject(forwardRef(() => WhatsappService)) private whatsapp: WhatsappService,
   ) {}
 
   async checkAndNotify(userId: string): Promise<void> {

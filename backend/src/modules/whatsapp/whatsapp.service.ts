@@ -25,7 +25,7 @@ export class WhatsappService {
   constructor(
     private config: ConfigService,
     private ai: AiService,
-    private budgetAlerts: BudgetAlertsService,
+    @Inject(forwardRef(() => BudgetAlertsService)) private budgetAlerts: BudgetAlertsService,
     private transactions: TransactionsService,
     private users: UsersService,
     private reports: ReportsService,
