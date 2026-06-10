@@ -64,17 +64,29 @@ function toGoogleEvent(appt: any) {
 
 /** Import Google Calendar events into Finora appointments */
 async function importFromGoogle(userId: string, accessToken: string, syncedMap: Record<string, string>) {
-  // Fetch upcoming events from Google Calendar
+  // Fetch upcoming events from Google Calendar (with pagination)
   const timeMin = new Date().toISOString();
   const timeMax = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(); // next 90 days
 
-  const res = await fetch(
-    `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime&maxResults=100`,
-    { headers: { Authorization: `Bearer ${accessToken}` } }
-  );
-  const data = await res.json();
-  console.log('[google-sync] Google events response:', JSON.stringify({ status: res.status, itemCount: data.items?.length, error: data.error, firstEvent: data.items?.[0] ? { id: data.items[0].id, summary: data.items[0].summary, start: data.items[0].start } : null }));
-  const events = data.items || [];
+  const events: any[] = [];
+  let pageToken: string | undefined;
+
+  do {
+    const url = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
+    url.searchParams.set('timeMin', timeMin);
+    url.searchParams.set('timeMax', timeMax);
+    url.searchParams.set('singleEvents', 'true');
+    url.searchParams.set('orderBy', 'startTime');
+    url.searchParams.set('maxResults', '500');
+    if (pageToken) url.searchParams.set('pageToken', pageToken);
+
+    const res = await fetch(url.toString(), { headers: { Authorization: `Bearer ${accessToken}` } });
+    const data = await res.json();
+    if (data.error) { console.error('[google-sync] API error:', data.error); break; }
+    events.push(...(data.items || []));
+    pageToken = data.nextPageToken;
+    console.log(`[google-sync] fetched page: ${data.items?.length} events, total so far: ${events.length}, hasMore: ${!!pageToken}`);
+  } while (pageToken);
 
   // Get existing Finora appointments to avoid duplicates
   const { data: existingAppts } = await getAdmin()
