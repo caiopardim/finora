@@ -438,7 +438,7 @@ function TxList({ txs, onRefresh }: { txs: any[]; onRefresh: () => void }) {
               {tx.type==='income'?'+':'-'} {fmt(Number(tx.amount))}
             </p>
             <button onClick={() => setEditTx(tx)} style={{ background:'none', border:'none', cursor:'pointer', color:c.textFaint, padding:'0 2px', fontSize:13 }}>✏️</button>
-            <button onClick={() => setConfirmId(tx.id)} style={{ background:'none', border:'none', cursor:'pointer', color:c.border, padding:'0 2px' }}>✕</button>
+            <button onClick={() => setConfirmId(tx.id)} style={{ background:'none', border:'none', cursor:'pointer', color:c.textFaint, padding:'0 2px', fontSize:14 }}>✕</button>
           </div>
         </div>
       ))}
