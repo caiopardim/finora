@@ -12,7 +12,7 @@ function fmt(v: number) { return formatCurrency(v); }
 function fmtK(v: number) { return v >= 1000 ? `R$${(v/1000).toFixed(1)}k` : `R$${v}`; }
 
 // ──────────────── Calendar Picker ────────────────
-const CELL = 44;
+const CELL = 40;
 const DAYS_LABEL = ['D','S','T','Q','Q','S','S'];
 
 function CalendarPicker({ start, end, onApply, onClose }: {
@@ -71,14 +71,14 @@ function CalendarPicker({ start, end, onApply, onClose }: {
         </div>
 
         {/* Day labels */}
-        <div style={{ display:'grid', gridTemplateColumns:`repeat(7,${CELL}px)`, marginBottom:4 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', marginBottom:4 }}>
           {DAYS_LABEL.map((d,i) => (
             <div key={i} style={{ textAlign:'center', fontSize:11, fontWeight:600, color:c.textFaint, paddingBottom:6 }}>{d}</div>
           ))}
         </div>
 
         {/* Cells */}
-        <div style={{ display:'grid', gridTemplateColumns:`repeat(7,${CELL}px)` }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)' }}>
           {cells.map((day, idx) => {
             if (!day) return <div key={idx}/>;
             const ds = toStr(new Date(viewYear, viewMonth, day));
@@ -86,7 +86,7 @@ function CalendarPicker({ start, end, onApply, onClose }: {
             const selected = start_ || end_;
             const isToday = ds === toStr(today);
             return (
-              <div key={idx} style={{ position:'relative', height:CELL, display:'flex', alignItems:'center', justifyContent:'center' }}
+              <div key={idx} style={{ position:'relative', height:CELL, display:'flex', alignItems:'center', justifyContent:'center', minWidth:0 }}
                 onMouseEnter={() => { if (selStart && !selEnd) setHovered(ds); }}
                 onMouseLeave={() => setHovered('')}
               >

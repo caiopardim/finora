@@ -76,16 +76,16 @@ function CalendarPicker({ onApply, onClose, initialStart, initialEnd, c, isDark 
         </div>
 
         {/* Day headers */}
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(7, ${CELL}px)`, justifyContent: 'center', marginBottom: 4 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 4 }}>
           {['D','S','T','Q','Q','S','S'].map((d, i) => (
             <div key={i} style={{ textAlign: 'center', fontSize: 11, fontWeight: 600, color: c.textFaint, height: 32, lineHeight: '32px' }}>{d}</div>
           ))}
         </div>
 
         {/* Days */}
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(7, ${CELL}px)`, justifyContent: 'center' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
           {cells.map((day, i) => {
-            if (!day) return <div key={i} style={{ height: CELL }}/>;
+            if (!day) return <div key={i} style={{ height: CELL, minWidth:0 }}/>;
             const d = toYMD(new Date(year, month, day));
             const isS = isStart(d);
             const isE = isEnd(d);
@@ -100,7 +100,7 @@ function CalendarPicker({ onApply, onClose, initialStart, initialEnd, c, isDark 
                 onClick={() => handleDay(day)}
                 onMouseEnter={() => { if (start && !end) setHovered(d); }}
                 onMouseLeave={() => setHovered('')}
-                style={{ height: CELL, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative',
+                style={{ height: CELL, minWidth:0, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative',
                   background: inRange ? '#22c55e22' : 'transparent',
                   borderRadius: (isS && !isE) ? '99px 0 0 99px' : (!isS && isE) ? '0 99px 99px 0' : (isS && isE) ? 99 : (inRange && isFirstCol) ? '99px 0 0 99px' : (inRange && isLastCol) ? '0 99px 99px 0' : 0,
                 }}>
