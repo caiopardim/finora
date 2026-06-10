@@ -11,7 +11,7 @@ import { useTheme } from '@/lib/theme-context';
 function fmt(v: number) { return formatCurrency(v); }
 
 export default function TransactionsPage() {
-  const { c } = useTheme();
+  const { c, isDark } = useTheme();
   const [transactions, setTransactions] = useState<any[]>([]);
   const [count, setCount]   = useState(0);
   const [loading, setLoading] = useState(true);
