@@ -111,15 +111,26 @@ export default function TransactionsPage() {
           })}
         </div>
 
-        {/* Date range bar — só aparece no modo Personalizado */}
+        {/* Date range — dois cards separados */}
         {periodPreset === 'custom' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: c.inputBg, borderRadius: 10, border: `1.5px solid #22c55e`, overflow: 'hidden', padding: '0 14px', height: 44, colorScheme: isDark ? 'dark' : 'light' } as any}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={c.textFaint} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginRight: 10 }}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <input type="date" value={filters.start_date} onChange={e => { setPage(0); setFilters({ ...filters, start_date: e.target.value }); }}
-              style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 13, color: c.text, outline: 'none', cursor: 'pointer', colorScheme: 'inherit' } as any}/>
-            <div style={{ width: 40, height: 1, background: c.border, flexShrink: 0 }}/>
-            <input type="date" value={filters.end_date} onChange={e => { setPage(0); setFilters({ ...filters, end_date: e.target.value }); }}
-              style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 13, color: c.text, outline: 'none', cursor: 'pointer', textAlign: 'right', colorScheme: 'inherit' } as any}/>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ flex: 1, background: c.inputBg, borderRadius: 10, border: `1px solid ${c.border}`, padding: '8px 14px', colorScheme: isDark ? 'dark' : 'light' } as any}>
+              <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>De</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <input type="date" value={filters.start_date} onChange={e => { setPage(0); setFilters({ ...filters, start_date: e.target.value }); }}
+                  style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 14, fontWeight: 500, color: c.text, outline: 'none', cursor: 'pointer', colorScheme: 'inherit' } as any}/>
+              </div>
+            </div>
+            <span style={{ color: c.textFaint, fontSize: 18, flexShrink: 0 }}>→</span>
+            <div style={{ flex: 1, background: c.inputBg, borderRadius: 10, border: `1px solid ${c.border}`, padding: '8px 14px', colorScheme: isDark ? 'dark' : 'light' } as any}>
+              <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Até</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <input type="date" value={filters.end_date} onChange={e => { setPage(0); setFilters({ ...filters, end_date: e.target.value }); }}
+                  style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 14, fontWeight: 500, color: c.text, outline: 'none', cursor: 'pointer', colorScheme: 'inherit' } as any}/>
+              </div>
+            </div>
           </div>
         )}
       </div>
