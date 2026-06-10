@@ -186,20 +186,20 @@ export default function DashboardPage() {
         {/* Weekly summary */}
         <div style={{ background:c.surface, borderRadius:16, border:`1px solid ${c.border}`, padding:'18px 20px', boxShadow:c.shadow }}>
           <p style={{ margin:'0 0 14px', fontWeight:700, fontSize:14, color:c.textSecondary }}>📅 Resumo da Semana</p>
-          <div style={{ display:'flex', gap:8 }}>
-            <div style={{ flex:1, minWidth:0 }}>
-              <p style={{ margin:'0 0 3px', fontSize:10, color:c.textFaint, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.05em' }}>Entradas</p>
-              <p style={{ margin:0, fontSize:15, fontWeight:700, color:'#22c55e', wordBreak:'break-all' }}>{fmt(data.weekIncome)}</p>
+          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <p style={{ margin:0, fontSize:12, color:c.textFaint, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.05em' }}>Entradas</p>
+              <p style={{ margin:0, fontSize:16, fontWeight:700, color:'#22c55e' }}>{fmt(data.weekIncome)}</p>
             </div>
-            <div style={{ width:1, background:c.borderLight, flexShrink:0 }}/>
-            <div style={{ flex:1, minWidth:0 }}>
-              <p style={{ margin:'0 0 3px', fontSize:10, color:c.textFaint, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.05em' }}>Saídas</p>
-              <p style={{ margin:0, fontSize:15, fontWeight:700, color:'#ef4444', wordBreak:'break-all' }}>{fmt(data.weekExpense)}</p>
+            <div style={{ height:1, background:c.borderLight }}/>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <p style={{ margin:0, fontSize:12, color:c.textFaint, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.05em' }}>Saídas</p>
+              <p style={{ margin:0, fontSize:16, fontWeight:700, color:'#ef4444' }}>{fmt(data.weekExpense)}</p>
             </div>
-            <div style={{ width:1, background:c.borderLight, flexShrink:0 }}/>
-            <div style={{ flex:1, minWidth:0 }}>
-              <p style={{ margin:'0 0 3px', fontSize:10, color:c.textFaint, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.05em' }}>Saldo</p>
-              <p style={{ margin:0, fontSize:15, fontWeight:700, color:data.weekIncome-data.weekExpense>=0?'#6366f1':'#ef4444', wordBreak:'break-all' }}>{fmt(data.weekIncome-data.weekExpense)}</p>
+            <div style={{ height:1, background:c.borderLight }}/>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <p style={{ margin:0, fontSize:12, color:c.textFaint, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.05em' }}>Saldo</p>
+              <p style={{ margin:0, fontSize:16, fontWeight:700, color:data.weekIncome-data.weekExpense>=0?'#6366f1':'#ef4444' }}>{fmt(data.weekIncome-data.weekExpense)}</p>
             </div>
           </div>
         </div>
