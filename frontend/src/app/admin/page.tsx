@@ -25,7 +25,8 @@ async function adminFetch(path: string, opts: RequestInit = {}) {
   });
 }
 
-type Tab = 'overview' | 'revenue' | 'users' | 'broadcast' | 'maintenance' | 'pricing';
+type Tab = 'overview' | 'revenue' | 'users' | 'broadcast' | 'maintenance' | 'pricing' | 'costs';
+type CostItem = { id: string; name: string; amount: number; freq: 'monthly' | 'annual'; category: string };
 
 export default function AdminPage() {
   const { c, isDark } = useTheme();
@@ -66,6 +67,12 @@ export default function AdminPage() {
   const [priceAnnual, setPriceAnnual]   = useState('199');
   const [priceSaving, setPriceSaving]   = useState(false);
 
+  // Costs / P&L
+  const [costs, setCosts] = useState<CostItem[]>([]);
+  const [costsSaving, setCostsSaving] = useState(false);
+  const [showAddCost, setShowAddCost] = useState(false);
+  const [newCost, setNewCost] = useState({ name: '', amount: '', freq: 'monthly' as 'monthly' | 'annual', category: 'Infraestrutura' });
+
   // Email
   const [emailTarget, setEmailTarget]   = useState('');
   const [emailType, setEmailType]       = useState('reset_password');
@@ -101,10 +108,11 @@ export default function AdminPage() {
       if (broadcastRes.broadcast) { setBroadcastMsg(broadcastRes.broadcast.message); setBroadcastType(broadcastRes.broadcast.type); }
       if (maintenanceRes.maintenance) { setMaintenanceOn(true); setMaintenanceMsg(maintenanceRes.maintenance.message); }
 
-      // Load pricing
+      // Load pricing + costs
       const settingsRes = await adminFetch('/api/admin/settings').then(r => r.json());
       if (settingsRes.price_monthly) setPriceMonthly(settingsRes.price_monthly);
       if (settingsRes.price_annual)  setPriceAnnual(settingsRes.price_annual);
+      if (settingsRes.costs)         setCosts(settingsRes.costs);
     } catch (err: any) {
       setApiError('Falha ao conectar com a API: ' + (err?.message || String(err)));
     }
@@ -249,7 +257,36 @@ export default function AdminPage() {
     { id: 'broadcast',   label: 'Avisos',       short: 'Avisos',   icon: Bell },
     { id: 'maintenance', label: 'Manutenção',   short: 'Manut.',   icon: Wrench },
     { id: 'pricing',     label: 'Preços',       short: 'Preços',   icon: Tag },
+    { id: 'costs',       label: 'P&L / Custos', short: 'P&L',      icon: TrendingUp },
   ];
+
+  // P&L helpers
+  const totalMonthlyCosts = costs.reduce((s, ci) => s + (ci.freq === 'monthly' ? ci.amount : ci.amount / 12), 0);
+  const profit = mrr - totalMonthlyCosts;
+  const margin = mrr > 0 ? (profit / mrr) * 100 : 0;
+
+  async function saveCosts(updated: CostItem[]) {
+    setCostsSaving(true);
+    await adminFetch('/api/admin/settings', {
+      method: 'POST',
+      body: JSON.stringify({ costs: updated }),
+    });
+    setCosts(updated);
+    setCostsSaving(false);
+  }
+
+  function addCost() {
+    if (!newCost.name || !newCost.amount) return;
+    const item: CostItem = { id: Date.now().toString(), name: newCost.name, amount: Number(newCost.amount), freq: newCost.freq, category: newCost.category };
+    const updated = [...costs, item];
+    saveCosts(updated);
+    setNewCost({ name: '', amount: '', freq: 'monthly', category: 'Infraestrutura' });
+    setShowAddCost(false);
+  }
+
+  function removeCost(id: string) {
+    saveCosts(costs.filter(ci => ci.id !== id));
+  }
 
   // Revenue computed from users list
   const now = new Date();
@@ -996,6 +1033,138 @@ export default function AdminPage() {
                   </button>
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* ── P&L / COSTS ── */}
+          {tab === 'costs' && (
+            <div style={{ maxWidth: 720 }}>
+              {/* Summary cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 24 }}>
+                {[
+                  { label: 'Receita (MRR)', value: `R$ ${mrr.toFixed(2).replace('.',',')}`, color: '#22c55e', icon: '💰' },
+                  { label: 'Custos/mês', value: `R$ ${totalMonthlyCosts.toFixed(2).replace('.',',')}`, color: '#ef4444', icon: '💸' },
+                  { label: profit >= 0 ? 'Lucro/mês' : 'Prejuízo/mês', value: `R$ ${Math.abs(profit).toFixed(2).replace('.',',')}`, color: profit >= 0 ? '#6366f1' : '#f97316', icon: profit >= 0 ? '📈' : '📉' },
+                ].map(card => (
+                  <div key={card.label} style={{ background: c.surface, borderRadius: 14, border: `1px solid ${c.border}`, padding: '16px 18px', boxShadow: c.shadow }}>
+                    <p style={{ margin: '0 0 4px', fontSize: 11, color: c.textFaint, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{card.icon} {card.label}</p>
+                    <p style={{ margin: 0, fontSize: 22, fontWeight: 800, color: card.color }}>{card.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Margin bar */}
+              <div style={{ background: c.surface, borderRadius: 14, border: `1px solid ${c.border}`, padding: '16px 20px', marginBottom: 20, boxShadow: c.shadow }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 600, color: c.text }}>Margem de lucro</p>
+                  <span style={{ fontSize: 18, fontWeight: 800, color: margin >= 0 ? '#22c55e' : '#ef4444' }}>{margin.toFixed(1)}%</span>
+                </div>
+                <div style={{ background: c.bg, borderRadius: 99, height: 10, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', borderRadius: 99, width: `${Math.min(Math.max(margin, 0), 100)}%`, background: margin >= 50 ? '#22c55e' : margin >= 20 ? '#f97316' : '#ef4444', transition: 'width 0.5s' }}/>
+                </div>
+                <p style={{ margin: '8px 0 0', fontSize: 12, color: c.textFaint }}>
+                  {margin >= 50 ? '✅ Margem saudável' : margin >= 20 ? '⚠️ Margem apertada' : margin < 0 ? '🚨 Operando no prejuízo' : '⚠️ Margem baixa'}
+                </p>
+              </div>
+
+              {/* Costs list */}
+              <div style={{ background: c.surface, borderRadius: 14, border: `1px solid ${c.border}`, overflow: 'hidden', boxShadow: c.shadow, marginBottom: 16 }}>
+                <div style={{ padding: '16px 20px', borderBottom: `1px solid ${c.borderLight}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: c.text }}>🖥️ Custos de Infraestrutura</h3>
+                    <p style={{ margin: '2px 0 0', fontSize: 12, color: c.textFaint }}>Tudo que você paga para manter o Finora no ar</p>
+                  </div>
+                  <button onClick={() => setShowAddCost(true)} style={{ padding: '8px 14px', borderRadius: 9, border: 'none', background: '#6366f1', color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>+ Adicionar</button>
+                </div>
+
+                {costs.length === 0 ? (
+                  <div style={{ padding: '32px', textAlign: 'center' }}>
+                    <p style={{ fontSize: 28, margin: '0 0 8px' }}>📋</p>
+                    <p style={{ fontSize: 13, color: c.textFaint, margin: 0 }}>Nenhum custo cadastrado ainda.<br/>Adicione seus custos de infraestrutura.</p>
+                  </div>
+                ) : (
+                  <div>
+                    {/* Group by category */}
+                    {Array.from(new Set(costs.map(c => c.category))).map(cat => {
+                      const catCosts = costs.filter(ci => ci.category === cat);
+                      const catTotal = catCosts.reduce((s, ci) => s + (ci.freq === 'monthly' ? ci.amount : ci.amount / 12), 0);
+                      return (
+                        <div key={cat}>
+                          <div style={{ padding: '8px 20px', background: c.bg }}>
+                            <span style={{ fontSize: 11, fontWeight: 700, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{cat} · R$ {catTotal.toFixed(2).replace('.',',')}/mês</span>
+                          </div>
+                          {catCosts.map((cost, i) => (
+                            <div key={cost.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: `1px solid ${c.borderLight}` }}>
+                              <div style={{ flex: 1 }}>
+                                <p style={{ margin: '0 0 2px', fontSize: 14, fontWeight: 500, color: c.text }}>{cost.name}</p>
+                                <p style={{ margin: 0, fontSize: 12, color: c.textFaint }}>
+                                  R$ {cost.amount.toFixed(2).replace('.',',')} / {cost.freq === 'monthly' ? 'mês' : 'ano'}
+                                  {cost.freq === 'annual' && <span style={{ color: c.textFaint }}> = R$ {(cost.amount/12).toFixed(2).replace('.',',')}/mês</span>}
+                                </p>
+                              </div>
+                              <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#ef4444', flexShrink: 0 }}>
+                                - R$ {(cost.freq === 'monthly' ? cost.amount : cost.amount / 12).toFixed(2).replace('.',',')}
+                              </p>
+                              <button onClick={() => removeCost(cost.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.textFaint, padding: 4 }}>
+                                <X size={15}/>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })}
+                    <div style={{ padding: '14px 20px', background: c.bg, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: c.text }}>Total mensal</span>
+                      <span style={{ fontSize: 16, fontWeight: 800, color: '#ef4444' }}>- R$ {totalMonthlyCosts.toFixed(2).replace('.',',')}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Add cost modal */}
+              {showAddCost && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, padding: 16 }}>
+                  <div style={{ background: c.surface, borderRadius: 16, width: '100%', maxWidth: 400, padding: 24, border: `1px solid ${c.border}` }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+                      <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: c.text }}>Adicionar custo</h3>
+                      <button onClick={() => setShowAddCost(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.textFaint }}><X size={18}/></button>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 600, color: c.textMuted, display: 'block', marginBottom: 6 }}>Nome do serviço</label>
+                        <input value={newCost.name} onChange={e => setNewCost(v => ({ ...v, name: e.target.value }))} placeholder="Ex: Railway, Vercel, OpenAI..." style={{ width: '100%', padding: '10px 12px', borderRadius: 9, border: `1.5px solid ${c.border}`, background: c.bg, color: c.text, fontSize: 14, outline: 'none', boxSizing: 'border-box' as any }}/>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: c.textMuted, display: 'block', marginBottom: 6 }}>Valor (R$)</label>
+                          <input type="number" value={newCost.amount} onChange={e => setNewCost(v => ({ ...v, amount: e.target.value }))} placeholder="0,00" style={{ width: '100%', padding: '10px 12px', borderRadius: 9, border: `1.5px solid ${c.border}`, background: c.bg, color: c.text, fontSize: 14, outline: 'none', boxSizing: 'border-box' as any }}/>
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 12, fontWeight: 600, color: c.textMuted, display: 'block', marginBottom: 6 }}>Frequência</label>
+                          <select value={newCost.freq} onChange={e => setNewCost(v => ({ ...v, freq: e.target.value as 'monthly' | 'annual' }))} style={{ width: '100%', padding: '10px 12px', borderRadius: 9, border: `1.5px solid ${c.border}`, background: c.bg, color: c.text, fontSize: 14, outline: 'none' }}>
+                            <option value="monthly">Mensal</option>
+                            <option value="annual">Anual</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: 12, fontWeight: 600, color: c.textMuted, display: 'block', marginBottom: 6 }}>Categoria</label>
+                        <select value={newCost.category} onChange={e => setNewCost(v => ({ ...v, category: e.target.value }))} style={{ width: '100%', padding: '10px 12px', borderRadius: 9, border: `1.5px solid ${c.border}`, background: c.bg, color: c.text, fontSize: 14, outline: 'none' }}>
+                          <option>Infraestrutura</option>
+                          <option>IA / APIs</option>
+                          <option>WhatsApp</option>
+                          <option>Pagamentos</option>
+                          <option>Domínio / SSL</option>
+                          <option>Outros</option>
+                        </select>
+                      </div>
+                      <button onClick={addCost} disabled={costsSaving} style={{ padding: '12px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#6366f1,#4f46e5)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                        {costsSaving ? 'Salvando...' : '+ Adicionar custo'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </>

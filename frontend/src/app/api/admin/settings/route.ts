@@ -15,13 +15,29 @@ async function getAdmin(req: NextRequest) {
   return admin;
 }
 
-// GET — retorna todos os settings
+// GET — retorna todos os settings + admin_settings (costs etc)
 export async function GET(req: NextRequest) {
   const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-  const { data } = await anon.from('settings').select('key, value');
-  const map: Record<string, string> = {};
+  const svc  = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+  const [{ data }, { data: adminData }] = await Promise.all([
+    anon.from('settings').select('key, value'),
+    svc.from('admin_settings').select('key, value'),
+  ]);
+  const map: Record<string, any> = {};
   (data || []).forEach((r: any) => { map[r.key] = r.value; });
+  (adminData || []).forEach((r: any) => { map[r.key] = r.value; });
   return NextResponse.json(map);
+}
+
+// POST — salva admin settings (costs, etc)
+export async function POST(req: NextRequest) {
+  const admin = await getAdmin(req);
+  if (!admin) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const body = await req.json();
+  for (const [key, value] of Object.entries(body)) {
+    await admin.from('admin_settings').upsert({ key, value }, { onConflict: 'key' });
+  }
+  return NextResponse.json({ ok: true });
 }
 
 // PATCH — atualiza um setting (admin only)
