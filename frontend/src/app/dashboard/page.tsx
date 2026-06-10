@@ -65,11 +65,21 @@ export default function DashboardPage() {
     const weekIncome  = (txWeek.data||[]).filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
     const weekExpense = (txWeek.data||[]).filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0);
 
-    // Month forecast: recurring (fixed) + variable projection
+    // Month forecast: prefer sum of category budgets; fallback to pace extrapolation
+    const budgetSum = (catTx.data||[]).reduce((acc: Record<string,number>, t: any) => {
+      const bl = (t as any).categories?.budget_limit;
+      const key = t.category_id || 'none';
+      if (bl && !acc[key]) acc[key] = Number(bl);
+      return acc;
+    }, {} as Record<string,number>);
+    const totalBudget = Object.values(budgetSum).reduce((s: number, v: number) => s + v, 0);
+
     const recurringExpense = (txMonth.data||[]).filter(t=>t.type==='expense' && t.recurring_template_id).reduce((s,t)=>s+Number(t.amount),0);
     const variableExpense  = expense - recurringExpense;
     const dailyRate        = dayOfMonth > 0 ? variableExpense / dayOfMonth : 0;
-    const forecast         = recurringExpense + (dailyRate * daysInMonth);
+    const paceForecast     = recurringExpense + (dailyRate * daysInMonth);
+    // If user has budgets set, use budget total; otherwise use pace
+    const forecast         = totalBudget > 0 ? totalBudget : paceForecast;
     const forecastPct      = income > 0 ? Math.round(forecast / income * 100) : 0;
 
     // Budget usage by category
