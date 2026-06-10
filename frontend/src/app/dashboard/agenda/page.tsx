@@ -190,7 +190,7 @@ export default function AgendaPage() {
           <h1 style={{ fontSize: 24, fontWeight: 700, color: c.text, margin: '0 0 2px' }}>Agenda</h1>
           <p style={{ color: c.textFaint, fontSize: 14, margin: 0 }}>Seus compromissos organizados</p>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {googleConnected ? (
             <>
               <button onClick={syncGoogle} disabled={syncing} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 10, border: '1.5px solid #4285f4', background: '#eff6ff', color: '#4285f4', fontSize: 13, fontWeight: 600, cursor: syncing ? 'wait' : 'pointer' }}>
@@ -217,7 +217,7 @@ export default function AgendaPage() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 20, alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', gap: 20, alignItems: 'start' }} className="agenda-grid">
 
         {/* Calendar */}
         <div style={{ background: c.surface, borderRadius: 18, border: `1px solid ${c.border}`, padding: 24, boxShadow: c.shadow }}>

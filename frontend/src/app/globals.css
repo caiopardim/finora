@@ -63,6 +63,11 @@
   .grid-3col     { grid-template-columns: 1fr; gap: 10px; }
   .grid-4col     { grid-template-columns: repeat(2, 1fr); gap: 10px; }
   .grid-goals    { grid-template-columns: 1fr; gap: 12px; }
+  .agenda-grid   { grid-template-columns: 1fr !important; }
+}
+
+.agenda-grid {
+  grid-template-columns: 1fr 340px;
 }
 
 @media (max-width: 480px) {
