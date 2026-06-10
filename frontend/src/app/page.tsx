@@ -494,20 +494,18 @@ export default function Home() {
       </section>
 
       {/* ── Footer ── */}
-      <footer style={{ padding: '28px 48px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 44 }}/>
-          <span style={{ color: '#334155', fontSize: 13 }}>© 2025 Finora</span>
-        </div>
-        <div style={{ display: 'flex', gap: 24 }}>
+      <footer style={{ padding: '28px 24px', borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
+        <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 40 }}/>
+        <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', justifyContent: 'center' }}>
           {[
             { label: 'Privacidade', href: '/privacidade' },
             { label: 'Termos', href: '/termos' },
             { label: 'Suporte', href: 'https://wa.me/5562982237323' },
           ].map(l => (
-            <a key={l.label} href={l.href} target={l.href.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer" style={{ color: '#334155', fontSize: 13, textDecoration: 'none' }}>{l.label}</a>
+            <a key={l.label} href={l.href} target={l.href.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer" style={{ color: '#475569', fontSize: 13, textDecoration: 'none' }}>{l.label}</a>
           ))}
         </div>
+        <span style={{ color: '#334155', fontSize: 12 }}>© 2025 Finora · Todos os direitos reservados</span>
       </footer>
     </div>
   );
