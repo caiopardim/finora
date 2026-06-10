@@ -4,12 +4,135 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Download, TrendingUp, TrendingDown, Upload, X, Check, AlertCircle } from 'lucide-react';
+import { Download, TrendingUp, TrendingDown, Upload, X, Check, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import dayjs from 'dayjs';
 import { useTheme } from '@/lib/theme-context';
 
 function fmt(v: number) { return formatCurrency(v); }
 function fmtK(v: number) { return v >= 1000 ? `R$${(v/1000).toFixed(1)}k` : `R$${v}`; }
+
+// ──────────────── Calendar Picker ────────────────
+const CELL = 44;
+const DAYS_LABEL = ['D','S','T','Q','Q','S','S'];
+
+function CalendarPicker({ start, end, onApply, onClose }: {
+  start: string; end: string;
+  onApply: (s: string, e: string) => void;
+  onClose: () => void;
+}) {
+  const { c, isDark } = useTheme();
+  const today = new Date();
+  const [viewYear, setViewYear]   = useState(today.getFullYear());
+  const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const [selStart, setSelStart]   = useState(start || '');
+  const [selEnd, setSelEnd]       = useState(end || '');
+  const [hovered, setHovered]     = useState('');
+
+  function prevMonth() { if (viewMonth === 0) { setViewMonth(11); setViewYear(y => y-1); } else setViewMonth(m => m-1); }
+  function nextMonth() { if (viewMonth === 11) { setViewMonth(0); setViewYear(y => y+1); } else setViewMonth(m => m+1); }
+
+  const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+  const daysInMonth = new Date(viewYear, viewMonth+1, 0).getDate();
+
+  function toStr(d: Date) { return d.toISOString().split('T')[0]; }
+
+  function handleDay(day: number) {
+    const ds = toStr(new Date(viewYear, viewMonth, day));
+    if (!selStart || (selStart && selEnd)) { setSelStart(ds); setSelEnd(''); }
+    else {
+      if (ds < selStart) { setSelEnd(selStart); setSelStart(ds); }
+      else setSelEnd(ds);
+    }
+  }
+
+  function inRange(ds: string) {
+    const s = selStart, e = selEnd || hovered;
+    if (!s) return false;
+    const lo = s < e ? s : e, hi = s < e ? e : s;
+    return ds > lo && ds < hi;
+  }
+  function isStart(ds: string) { return ds === selStart; }
+  function isEnd(ds: string)   { return ds === (selEnd || ''); }
+
+  const monthName = new Date(viewYear, viewMonth, 1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+
+  const cells: (number|null)[] = [...Array(firstDay).fill(null), ...Array.from({length:daysInMonth},(_,i)=>i+1)];
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  return (
+    <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:300, padding:16 }} onClick={onClose}>
+      <div style={{ background:c.surface, borderRadius:20, padding:24, boxShadow:'0 20px 60px rgba(0,0,0,0.3)', border:`1px solid ${c.border}`, width: 320 }} onClick={e => e.stopPropagation()}>
+
+        {/* Header */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+          <button onClick={prevMonth} style={{ background:'none', border:'none', cursor:'pointer', color:c.textMuted, padding:6, borderRadius:8 }}><ChevronLeft size={18}/></button>
+          <span style={{ fontSize:14, fontWeight:600, color:c.text, textTransform:'capitalize' }}>{monthName}</span>
+          <button onClick={nextMonth} style={{ background:'none', border:'none', cursor:'pointer', color:c.textMuted, padding:6, borderRadius:8 }}><ChevronRight size={18}/></button>
+        </div>
+
+        {/* Day labels */}
+        <div style={{ display:'grid', gridTemplateColumns:`repeat(7,${CELL}px)`, marginBottom:4 }}>
+          {DAYS_LABEL.map((d,i) => (
+            <div key={i} style={{ textAlign:'center', fontSize:11, fontWeight:600, color:c.textFaint, paddingBottom:6 }}>{d}</div>
+          ))}
+        </div>
+
+        {/* Cells */}
+        <div style={{ display:'grid', gridTemplateColumns:`repeat(7,${CELL}px)` }}>
+          {cells.map((day, idx) => {
+            if (!day) return <div key={idx}/>;
+            const ds = toStr(new Date(viewYear, viewMonth, day));
+            const start_ = isStart(ds), end_ = isEnd(ds) && !!selEnd, range = inRange(ds);
+            const selected = start_ || end_;
+            const isToday = ds === toStr(today);
+            return (
+              <div key={idx} style={{ position:'relative', height:CELL, display:'flex', alignItems:'center', justifyContent:'center' }}
+                onMouseEnter={() => { if (selStart && !selEnd) setHovered(ds); }}
+                onMouseLeave={() => setHovered('')}
+              >
+                {(range || (start_ && selEnd) || end_) && (
+                  <div style={{ position:'absolute', top:6, bottom:6,
+                    left: start_ ? '50%' : 0,
+                    right: end_ ? '50%' : 0,
+                    background:'rgba(99,102,241,0.15)' }}/>
+                )}
+                <div onClick={() => handleDay(day)} style={{ position:'relative', zIndex:1, width:34, height:34, borderRadius:'50%', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', fontSize:13, fontWeight: selected ? 700 : 400,
+                  background: selected ? '#6366f1' : 'transparent',
+                  color: selected ? '#fff' : isToday ? '#6366f1' : c.text,
+                  border: isToday && !selected ? `1.5px solid #6366f1` : 'none',
+                }}>
+                  {day}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Selected range display */}
+        {(selStart || selEnd) && (
+          <div style={{ display:'flex', gap:8, marginTop:16 }}>
+            <div style={{ flex:1, background:c.inputBg, borderRadius:10, padding:'8px 12px', border:`1px solid ${selStart ? '#6366f1' : c.border}` }}>
+              <p style={{ margin:0, fontSize:10, color:c.textFaint, fontWeight:600 }}>DE</p>
+              <p style={{ margin:0, fontSize:13, color:selStart ? c.text : c.textFaint }}>{selStart ? new Date(selStart+'T12:00').toLocaleDateString('pt-BR') : '—'}</p>
+            </div>
+            <div style={{ flex:1, background:c.inputBg, borderRadius:10, padding:'8px 12px', border:`1px solid ${selEnd ? '#6366f1' : c.border}` }}>
+              <p style={{ margin:0, fontSize:10, color:c.textFaint, fontWeight:600 }}>ATÉ</p>
+              <p style={{ margin:0, fontSize:13, color:selEnd ? c.text : c.textFaint }}>{selEnd ? new Date(selEnd+'T12:00').toLocaleDateString('pt-BR') : '—'}</p>
+            </div>
+          </div>
+        )}
+
+        <button
+          disabled={!selStart || !selEnd}
+          onClick={() => onApply(selStart, selEnd)}
+          style={{ marginTop:16, width:'100%', padding:'12px', borderRadius:12, border:'none', background: selStart && selEnd ? '#6366f1' : c.inputBg, color: selStart && selEnd ? '#fff' : c.textFaint, fontSize:14, fontWeight:600, cursor: selStart && selEnd ? 'pointer' : 'not-allowed' }}
+        >
+          Aplicar filtro
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // ──────────────── CSV Import ────────────────
 type CsvRow = { date: string; description: string; amount: number; type: 'income' | 'expense' };
@@ -17,7 +140,6 @@ type CsvRow = { date: string; description: string; amount: number; type: 'income
 function parseCSV(text: string): CsvRow[] {
   const lines = text.trim().split('\n').filter(Boolean);
   if (lines.length < 2) return [];
-  // Auto-detect separator
   const sep = lines[0].includes(';') ? ';' : ',';
   const headers = lines[0].split(sep).map(h => h.trim().toLowerCase().replace(/['"]/g, ''));
   const idxDate  = headers.findIndex(h => h.includes('data') || h.includes('date'));
@@ -29,7 +151,6 @@ function parseCSV(text: string): CsvRow[] {
   for (let i = 1; i < lines.length; i++) {
     const cols = lines[i].split(sep).map(c => c.trim().replace(/^["']|["']$/g, ''));
     const rawDate = cols[idxDate] || '';
-    // Try to parse DD/MM/YYYY or YYYY-MM-DD
     let date = rawDate;
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(rawDate)) {
       const [d, m, y] = rawDate.split('/');
@@ -82,8 +203,6 @@ function ImportModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
     setTimeout(() => { onSuccess(); onClose(); }, 1500);
   }
 
-  const inputStyle: React.CSSProperties = { display:'block', width:'100%', padding:'10px 14px', borderRadius:10, border:`1.5px solid ${c.border}`, fontSize:14, color:c.text, background:c.input, outline:'none', boxSizing:'border-box' };
-
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:200, padding:16 }}>
       <div style={{ background:c.surface, borderRadius:20, width:'100%', maxWidth:540, boxShadow:'0 20px 60px rgba(0,0,0,0.25)', border:`1px solid ${c.border}`, maxHeight:'90vh', overflowY:'auto' }}>
@@ -92,7 +211,6 @@ function ImportModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
           <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:c.textFaint }}><X size={20}/></button>
         </div>
         <div style={{ padding:24 }}>
-          {/* Format hint */}
           <div style={{ background: c.inputBg, borderRadius:12, padding:'12px 16px', marginBottom:20, fontSize:12, color:c.textMuted, lineHeight:1.6 }}>
             <strong>Colunas esperadas:</strong> <code>data</code>, <code>descricao</code>, <code>valor</code>, <code>tipo</code> (receita/despesa)<br/>
             Separador: ponto-e-vírgula (<code>;</code>) ou vírgula (<code>,</code>). Datas: DD/MM/AAAA ou AAAA-MM-DD.
@@ -143,12 +261,20 @@ function ImportModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: (
   );
 }
 
+// ──────────────── Main Page ────────────────
+type Preset = '3m' | '6m' | '12m' | 'custom';
+
 export default function ReportsPage() {
   const { c } = useTheme();
-  const [data, setData]     = useState<any>(null);
-  const [months, setMonths] = useState(6);
-  const [loading, setLoading] = useState(true);
+  const [data, setData]         = useState<any>(null);
+  const [preset, setPreset]     = useState<Preset>('6m');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd]     = useState('');
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [loading, setLoading]   = useState(true);
   const [showImport, setShowImport] = useState(false);
+
+  const months = preset === '3m' ? 3 : preset === '12m' ? 12 : 6;
 
   async function load() {
     setLoading(true);
@@ -156,22 +282,33 @@ export default function ReportsPage() {
     if (!session) { setLoading(false); return; }
     const uid = session.user.id;
 
-    const now        = dayjs();
-    const monthStart = now.startOf('month').format('YYYY-MM-DD');
-    const monthEnd   = now.endOf('month').format('YYYY-MM-DD');
-    const lastStart  = now.subtract(1,'month').startOf('month').format('YYYY-MM-DD');
-    const lastEnd    = now.subtract(1,'month').endOf('month').format('YYYY-MM-DD');
-    const yearStart  = now.startOf('year').format('YYYY-MM-DD');
-    const histStart  = now.subtract(months-1,'month').startOf('month').format('YYYY-MM-DD');
-    const weekEnd    = now.add(7,'day').format('YYYY-MM-DD');
-    const today      = now.format('YYYY-MM-DD');
+    const now = dayjs();
+    let periodStart: string;
+    let periodEnd: string;
+    let histStart: string;
+
+    if (preset === 'custom' && customStart && customEnd) {
+      periodStart = customStart;
+      periodEnd   = customEnd;
+      histStart   = customStart;
+    } else {
+      periodStart = now.startOf('month').format('YYYY-MM-DD');
+      periodEnd   = now.endOf('month').format('YYYY-MM-DD');
+      histStart   = now.subtract(months-1,'month').startOf('month').format('YYYY-MM-DD');
+    }
+
+    const lastStart = now.subtract(1,'month').startOf('month').format('YYYY-MM-DD');
+    const lastEnd   = now.subtract(1,'month').endOf('month').format('YYYY-MM-DD');
+    const yearStart = now.startOf('year').format('YYYY-MM-DD');
+    const weekEnd   = now.add(7,'day').format('YYYY-MM-DD');
+    const today     = now.format('YYYY-MM-DD');
 
     const [txMonth, txLast, txYear, txHist, catMonth, bills] = await Promise.all([
-      supabase.from('transactions').select('type,amount').eq('user_id',uid).gte('date',monthStart).lte('date',monthEnd),
+      supabase.from('transactions').select('type,amount').eq('user_id',uid).gte('date',periodStart).lte('date',periodEnd),
       supabase.from('transactions').select('type,amount').eq('user_id',uid).gte('date',lastStart).lte('date',lastEnd),
       supabase.from('transactions').select('type,amount').eq('user_id',uid).gte('date',yearStart),
-      supabase.from('transactions').select('type,amount,date').eq('user_id',uid).gte('date',histStart),
-      supabase.from('transactions').select('category_id,amount,categories(id,name,icon,color,budget_limit)').eq('user_id',uid).eq('type','expense').gte('date',monthStart).lte('date',monthEnd),
+      supabase.from('transactions').select('type,amount,date').eq('user_id',uid).gte('date',histStart).lte('date',periodEnd),
+      supabase.from('transactions').select('category_id,amount,categories(id,name,icon,color,budget_limit)').eq('user_id',uid).eq('type','expense').gte('date',periodStart).lte('date',periodEnd),
       supabase.from('bills').select('*').eq('user_id',uid).eq('paid',false).lte('due_date',weekEnd).gte('due_date',today),
     ]);
 
@@ -183,7 +320,6 @@ export default function ReportsPage() {
     const lExpense = sum(txLast.data||[], 'expense');
     const yIncome  = sum(txYear.data||[], 'income');
 
-    // category breakdown
     const catMap: Record<string,any> = {};
     for (const t of (catMonth.data||[])) {
       const ct = (t as any).categories;
@@ -193,7 +329,6 @@ export default function ReportsPage() {
     }
     const categories = Object.values(catMap).sort((a:any,b:any)=>b.total-a.total);
 
-    // monthly history
     const histMap: Record<string,{income:number,expense:number}> = {};
     for (const t of (txHist.data||[])) {
       const mo = dayjs(t.date).format('YYYY-MM');
@@ -216,7 +351,10 @@ export default function ReportsPage() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, [months]);
+  useEffect(() => {
+    if (preset === 'custom' && (!customStart || !customEnd)) return;
+    load();
+  }, [preset, customStart, customEnd]);
 
   async function exportCSV() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -235,16 +373,29 @@ export default function ReportsPage() {
     a.click();
   }
 
+  // Period label for chart subtitle
+  const periodLabel = preset === 'custom' && customStart && customEnd
+    ? `${new Date(customStart+'T12:00').toLocaleDateString('pt-BR')} – ${new Date(customEnd+'T12:00').toLocaleDateString('pt-BR')}`
+    : `${months} meses`;
+
   if (loading) return <p style={{ textAlign:'center', color: c.textFaint, padding:80 }}>Carregando...</p>;
 
   const m = data.currentMonth;
   const l = data.lastMonth;
 
+  const kpiLabel = preset === 'custom' ? 'período' : 'mês';
   const kpis = [
-    { label:'Receitas (mês)',  value:m.income,  prev:l.income,  good:(d:number)=>d>0 },
-    { label:'Despesas (mês)',  value:m.expense, prev:l.expense, good:(d:number)=>d<0 },
-    { label:'Saldo (mês)',     value:m.balance, prev:l.balance, good:(d:number)=>d>0 },
+    { label:`Receitas (${kpiLabel})`,  value:m.income,  prev:preset !== 'custom' ? l.income : null,  good:(d:number)=>d>0 },
+    { label:`Despesas (${kpiLabel})`,  value:m.expense, prev:preset !== 'custom' ? l.expense : null, good:(d:number)=>d<0 },
+    { label:`Saldo (${kpiLabel})`,     value:m.balance, prev:preset !== 'custom' ? l.balance : null, good:(d:number)=>d>0 },
     { label:'Receitas (ano)',  value:data.year.income, prev:null, good:()=>true },
+  ];
+
+  const pills: { id: Preset; label: string }[] = [
+    { id:'3m',     label:'3 meses' },
+    { id:'6m',     label:'6 meses' },
+    { id:'12m',    label:'12 meses' },
+    { id:'custom', label:'Personalizado' },
   ];
 
   return (
@@ -264,13 +415,22 @@ export default function ReportsPage() {
         </div>
       </div>
 
-      {/* Period toggle */}
-      <div style={{ display:'flex', gap:8, marginBottom:24 }}>
-        {[3,6,12].map(m_ => (
-          <button key={m_} onClick={() => setMonths(m_)} style={{ padding:'8px 20px', borderRadius:9, border:months===m_?'none':`1.5px solid ${c.border}`, background:months===m_?c.text:c.surface, color:months===m_?c.surface:c.textMuted, fontSize:13, fontWeight:500, cursor:'pointer' }}>
-            {m_} meses
+      {/* Period pills */}
+      <div style={{ display:'flex', gap:8, marginBottom:24, flexWrap:'wrap' }}>
+        {pills.map(p => (
+          <button key={p.id}
+            onClick={() => { setPreset(p.id); if (p.id === 'custom') setShowCalendar(true); }}
+            style={{ padding:'8px 20px', borderRadius:9, border: preset===p.id ? 'none' : `1.5px solid ${c.border}`, background: preset===p.id ? c.text : c.surface, color: preset===p.id ? c.surface : c.textMuted, fontSize:13, fontWeight:500, cursor:'pointer' }}
+          >
+            {p.label}
           </button>
         ))}
+        {/* Custom date chip */}
+        {preset === 'custom' && customStart && customEnd && (
+          <div style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 12px', borderRadius:9, background:'rgba(99,102,241,0.12)', border:'1.5px solid #6366f1', fontSize:12, color:'#6366f1', fontWeight:500, cursor:'pointer' }} onClick={() => setShowCalendar(true)}>
+            📅 {new Date(customStart+'T12:00').toLocaleDateString('pt-BR')} – {new Date(customEnd+'T12:00').toLocaleDateString('pt-BR')}
+          </div>
+        )}
       </div>
 
       {/* KPIs */}
@@ -301,7 +461,7 @@ export default function ReportsPage() {
       <div className="grid-charts">
         <div style={{ background:c.surface, borderRadius:16, border:`1px solid ${c.border}`, padding:'20px', boxShadow:c.shadow }}>
           <p style={{ margin:'0 0 4px', fontWeight:600, fontSize:15, color:c.textSecondary }}>Evolução Mensal</p>
-          <p style={{ margin:'0 0 16px', fontSize:12, color:c.textFaint }}>{months} meses</p>
+          <p style={{ margin:'0 0 16px', fontSize:12, color:c.textFaint }}>{periodLabel}</p>
           {data.chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={data.chartData} margin={{ top:4, right:4, left:10, bottom:0 }}>
@@ -329,7 +489,7 @@ export default function ReportsPage() {
         <div style={{ background:c.surface, borderRadius:16, border:`1px solid ${c.border}`, padding:'20px', boxShadow:c.shadow }}>
           <p style={{ margin:'0 0 16px', fontWeight:600, fontSize:15, color:c.textSecondary }}>Gastos por Categoria</p>
           {data.categories.length === 0
-            ? <p style={{ textAlign:'center', color:c.textFaint, padding:20, fontSize:13 }}>Sem despesas este mês</p>
+            ? <p style={{ textAlign:'center', color:c.textFaint, padding:20, fontSize:13 }}>Sem despesas no período</p>
             : data.categories.map((cat:any) => {
               const pct = m.expense > 0 ? cat.total/m.expense*100 : 0;
               const over = cat.budget_limit && cat.total > cat.budget_limit;
@@ -351,9 +511,18 @@ export default function ReportsPage() {
 
       {showImport && <ImportModal onClose={() => setShowImport(false)} onSuccess={load}/>}
 
+      {showCalendar && (
+        <CalendarPicker
+          start={customStart}
+          end={customEnd}
+          onApply={(s, e) => { setCustomStart(s); setCustomEnd(e); setShowCalendar(false); }}
+          onClose={() => { setShowCalendar(false); if (!customStart) setPreset('6m'); }}
+        />
+      )}
+
       {/* Bills due */}
       {data.billsDueThisWeek.length > 0 && (
-        <div style={{ background:c.surface, borderRadius:16, border:'1px solid #fde68a', boxShadow:c.shadow, overflow:'hidden' }}>
+        <div style={{ background:c.surface, borderRadius:16, border:'1px solid #fde68a', boxShadow:c.shadow, overflow:'hidden', marginTop:24 }}>
           <div style={{ padding:'16px 20px', borderBottom:'1px solid #fef3c7', background:'#fffbeb' }}>
             <p style={{ margin:0, fontWeight:600, fontSize:15, color:'#92400e' }}>⏰ Contas a Vencer Esta Semana</p>
           </div>
