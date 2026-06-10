@@ -242,13 +242,13 @@ export default function AdminPage() {
   });
 
   const inputStyle: React.CSSProperties = { padding: '10px 14px', borderRadius: 10, border: `1.5px solid ${c.border}`, fontSize: 14, color: c.text, background: c.input, outline: 'none', boxSizing: 'border-box' as const };
-  const TABS: { id: Tab; label: string; icon: any }[] = [
-    { id: 'overview',    label: 'Visão Geral',  icon: BarChart2 },
-    { id: 'revenue',     label: 'Receita',      icon: DollarSign },
-    { id: 'users',       label: 'Usuários',     icon: Users },
-    { id: 'broadcast',   label: 'Avisos',       icon: Bell },
-    { id: 'maintenance', label: 'Manutenção',   icon: Wrench },
-    { id: 'pricing',     label: 'Preços',       icon: Tag },
+  const TABS: { id: Tab; label: string; short: string; icon: any }[] = [
+    { id: 'overview',    label: 'Visão Geral',  short: 'Geral',    icon: BarChart2 },
+    { id: 'revenue',     label: 'Receita',      short: 'Receita',  icon: DollarSign },
+    { id: 'users',       label: 'Usuários',     short: 'Users',    icon: Users },
+    { id: 'broadcast',   label: 'Avisos',       short: 'Avisos',   icon: Bell },
+    { id: 'maintenance', label: 'Manutenção',   short: 'Manut.',   icon: Wrench },
+    { id: 'pricing',     label: 'Preços',       short: 'Preços',   icon: Tag },
   ];
 
   // Revenue computed from users list
@@ -277,14 +277,27 @@ export default function AdminPage() {
       </div>
 
       {/* Tabs */}
-      <div style={{ overflowX: 'auto', marginBottom: 28, WebkitOverflowScrolling: 'touch' as any }}>
-        <div style={{ display: 'flex', gap: 4, background: c.inputBg, borderRadius: 12, padding: 4, width: 'max-content', minWidth: '100%' }}>
+      <style>{`
+        @media (max-width: 767px) {
+          .admin-tabs { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; width: 100% !important; }
+          .admin-tab-label-full { display: none !important; }
+          .admin-tab-label-short { display: inline !important; }
+        }
+        @media (min-width: 768px) {
+          .admin-tab-label-short { display: none !important; }
+        }
+        .admin-stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+      `}</style>
+      <div style={{ marginBottom: 28 }}>
+        <div className="admin-tabs" style={{ display: 'flex', gap: 4, background: c.inputBg, borderRadius: 12, padding: 4 }}>
           {TABS.map(t => {
             const Icon = t.icon;
             const active = tab === t.id;
             return (
-              <button key={t.id} onClick={() => setTab(t.id)} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 14px', borderRadius: 9, border: 'none', background: active ? c.surface : 'transparent', color: active ? c.text : c.textFaint, fontSize: 13, fontWeight: active ? 600 : 400, cursor: 'pointer', boxShadow: active ? c.shadow : 'none', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
-                <Icon size={15}/>{t.label}
+              <button key={t.id} onClick={() => setTab(t.id)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '9px 10px', borderRadius: 9, border: 'none', background: active ? c.surface : 'transparent', color: active ? c.text : c.textFaint, fontSize: 12, fontWeight: active ? 600 : 400, cursor: 'pointer', boxShadow: active ? c.shadow : 'none', transition: 'all 0.15s', whiteSpace: 'nowrap', flex: 1 }}>
+                <Icon size={14}/>
+                <span className="admin-tab-label-full">{t.label}</span>
+                <span className="admin-tab-label-short">{t.short}</span>
               </button>
             );
           })}
