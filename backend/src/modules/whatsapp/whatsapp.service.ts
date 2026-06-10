@@ -205,12 +205,7 @@ export class WhatsappService {
         default:
           await this.sendMessage(
             normalizedPhone,
-            `🤔 Não entendi sua mensagem.\n\n` +
-            `Você pode:\n` +
-            `• Registrar gastos: _"Gastei R$ 50 no mercado"_\n` +
-            `• Registrar receitas: _"Recebi R$ 3.500 de salário"_\n` +
-            `• Consultar: _"Quanto gastei este mês?"_\n` +
-            `• Ver resumo: _"Resumo do dia"_`,
+            `Hmm, não entendi muito bem o que você quis dizer. Lembre-se que eu sou um assistente financeiro e posso te ajudar a registrar seus gastos, consultar parcelas e ver seus relatórios. Como posso te ajudar com isso? 😊`,
           );
       }
     } catch (error) {
