@@ -75,6 +75,7 @@ export class BudgetAlertsService {
         const remaining = totalBudget - totalSpent;
 
         const key100 = `${userId}-${month}-total-100`;
+        const key80  = `${userId}-${month}-total-80`;
         const key50  = `${userId}-${month}-total-50`;
 
         if (pct > 100 && !(await this.alreadySent(key100))) {
@@ -87,7 +88,17 @@ export class BudgetAlertsService {
             `Revise seus gastos no dashboard:\n👉 *https://meufinora.com.br/dashboard*`,
           );
           this.logger.log(`Sent total 100% alert`);
-        } else if (pct >= 50 && pct <= 100 && !(await this.alreadySent(key50))) {
+        } else if (pct >= 80 && pct <= 100 && !(await this.alreadySent(key80))) {
+          await this.markSent(key80);
+          await this.whatsapp.sendMessage(phone.replace(/\D/g, ''),
+            `⚠️ *Você usou ${roundPct}% do seu orçamento mensal!*\n\n` +
+            `💸 Gasto: *R$ ${fmt(totalSpent)}*\n` +
+            `🎯 Orçamento: *R$ ${fmt(totalBudget)}*\n` +
+            `✅ Restante: *R$ ${fmt(remaining)}*\n\n` +
+            `Fique de olho para não ultrapassar o limite! 👀`,
+          );
+          this.logger.log(`Sent total 80% alert`);
+        } else if (pct >= 50 && pct < 80 && !(await this.alreadySent(key50))) {
           await this.markSent(key50);
           await this.whatsapp.sendMessage(phone.replace(/\D/g, ''),
             `📊 *Você já usou metade do seu orçamento mensal (${roundPct}%)!*\n\n` +
@@ -111,6 +122,7 @@ export class BudgetAlertsService {
         const icon     = cat.icon || '📦';
 
         const key100 = `${userId}-${month}-cat-${cat.id}-100`;
+        const key80  = `${userId}-${month}-cat-${cat.id}-80`;
         const key50  = `${userId}-${month}-cat-${cat.id}-50`;
 
         if (pct > 100 && !(await this.alreadySent(key100))) {
@@ -122,7 +134,16 @@ export class BudgetAlertsService {
             `📈 Excedido em: *R$ ${fmt(spent - budget)}*`,
           );
           this.logger.log(`Sent cat 100% alert for ${cat.name}`);
-        } else if (pct >= 50 && pct <= 100 && !(await this.alreadySent(key50))) {
+        } else if (pct >= 80 && pct <= 100 && !(await this.alreadySent(key80))) {
+          await this.markSent(key80);
+          await this.whatsapp.sendMessage(phone.replace(/\D/g, ''),
+            `⚠️ *${icon} ${cat.name}: ${roundPct}% do orçamento usado!*\n\n` +
+            `💸 Gasto: *R$ ${fmt(spent)}*\n` +
+            `🎯 Limite: *R$ ${fmt(budget)}*\n` +
+            `✅ Restante: *R$ ${fmt(budget - spent)}*`,
+          );
+          this.logger.log(`Sent cat 80% alert for ${cat.name}`);
+        } else if (pct >= 50 && pct < 80 && !(await this.alreadySent(key50))) {
           await this.markSent(key50);
           await this.whatsapp.sendMessage(phone.replace(/\D/g, ''),
             `📊 *${icon} ${cat.name}: metade do orçamento usada (${roundPct}%)!*\n\n` +
