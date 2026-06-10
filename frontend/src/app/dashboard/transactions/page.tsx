@@ -108,20 +108,22 @@ export default function TransactionsPage() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ margin: '0 0 3px', fontWeight: 500, fontSize: 14, color: c.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.description}</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 12, color: c.textFaint }}>{(tx.categories as any)?.name||'Sem categoria'}</span>
                     <span style={{ color: c.border }}>·</span>
                     <span style={{ fontSize: 12, color: c.textFaint }}>{new Date(tx.date+'T12:00').toLocaleDateString('pt-BR')}</span>
-                    {tx.source==='whatsapp' && <span style={{ fontSize: 10, background: '#dcfce7', color: '#15803d', fontWeight: 600, padding: '1px 7px', borderRadius: 99 }}>💬 WhatsApp</span>}
+                    {tx.source==='whatsapp' && <span style={{ fontSize: 10, background: '#dcfce7', color: '#15803d', fontWeight: 600, padding: '1px 6px', borderRadius: 99, whiteSpace: 'nowrap' }}>💬 WA</span>}
                   </div>
                 </div>
-                <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: tx.type==='income'?'#16a34a':'#dc2626', flexShrink: 0 }}>
-                  {tx.type==='income'?'+':'-'} {fmt(Number(tx.amount))}
-                </p>
-                <button onClick={() => setEditTx(tx)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.textFaint, fontSize: 13, padding: '0 4px' }}>✏️</button>
-                <button onClick={() => { setConfirmDeleteId(tx.id); setConfirmDeleteTx(tx); }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.borderLight, fontSize: 16, padding: '0 4px' }}>✕</button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                  <p style={{ margin: 0, fontWeight: 700, fontSize: 14, color: tx.type==='income'?'#16a34a':'#dc2626' }}>
+                    {tx.type==='income'?'+':'-'} {fmt(Number(tx.amount))}
+                  </p>
+                  <button onClick={() => setEditTx(tx)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.textFaint, fontSize: 13, padding: '0 2px' }}>✏️</button>
+                  <button onClick={() => { setConfirmDeleteId(tx.id); setConfirmDeleteTx(tx); }}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.borderLight, fontSize: 16, padding: '0 2px' }}>✕</button>
+                </div>
               </div>
             ))}
           </div>

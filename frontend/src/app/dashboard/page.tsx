@@ -433,11 +433,13 @@ function TxList({ txs, onRefresh }: { txs: any[]; onRefresh: () => void }) {
               {tx.source==='whatsapp' && <span style={{ fontSize:10, background:'#dcfce7', color:'#15803d', fontWeight:600, padding:'1px 6px', borderRadius:99 }}>💬</span>}
             </div>
           </div>
-          <p style={{ margin:0, fontWeight:700, fontSize:15, color:tx.type==='income'?'#16a34a':'#dc2626', flexShrink:0 }}>
-            {tx.type==='income'?'+':'-'} {fmt(Number(tx.amount))}
-          </p>
-          <button onClick={() => setEditTx(tx)} style={{ background:'none', border:'none', cursor:'pointer', color:c.textFaint, padding:4, fontSize:13 }}>✏️</button>
-          <button onClick={() => setConfirmId(tx.id)} style={{ background:'none', border:'none', cursor:'pointer', color:c.border, padding:4 }}>✕</button>
+          <div style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
+            <p style={{ margin:0, fontWeight:700, fontSize:14, color:tx.type==='income'?'#16a34a':'#dc2626' }}>
+              {tx.type==='income'?'+':'-'} {fmt(Number(tx.amount))}
+            </p>
+            <button onClick={() => setEditTx(tx)} style={{ background:'none', border:'none', cursor:'pointer', color:c.textFaint, padding:'0 2px', fontSize:13 }}>✏️</button>
+            <button onClick={() => setConfirmId(tx.id)} style={{ background:'none', border:'none', cursor:'pointer', color:c.border, padding:'0 2px' }}>✕</button>
+          </div>
         </div>
       ))}
     </div>
