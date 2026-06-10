@@ -66,7 +66,7 @@ export class BudgetAlertsService {
         const key80  = `${userId}-${month}-total-80`;
         const key50  = `${userId}-${month}-total-50`;
 
-        if (pct >= 100 && !this.sentAlerts.has(key100)) {
+        if (pct > 100 && !this.sentAlerts.has(key100)) {
           this.sentAlerts.add(key100);
           await this.whatsapp.sendMessage(phone.replace(/\D/g, ''),
             `🚨 *Orçamento do mês ultrapassado!*\n\n` +
@@ -76,7 +76,7 @@ export class BudgetAlertsService {
             `Revise seus gastos no dashboard:\n👉 *https://meufinora.com.br/dashboard*`,
           );
           this.logger.log(`Sent total 100% alert`);
-        } else if (pct >= 80 && pct < 100 && !this.sentAlerts.has(key80)) {
+        } else if (pct >= 80 && pct <= 100 && !this.sentAlerts.has(key80)) {
           this.sentAlerts.add(key80);
           await this.whatsapp.sendMessage(phone.replace(/\D/g, ''),
             `⚠️ *Você usou ${roundPct}% do seu orçamento mensal!*\n\n` +
@@ -113,7 +113,7 @@ export class BudgetAlertsService {
         const key80  = `${userId}-${month}-cat-${cat.id}-80`;
         const key50  = `${userId}-${month}-cat-${cat.id}-50`;
 
-        if (pct >= 100 && !this.sentAlerts.has(key100)) {
+        if (pct > 100 && !this.sentAlerts.has(key100)) {
           this.sentAlerts.add(key100);
           await this.whatsapp.sendMessage(phone.replace(/\D/g, ''),
             `🚨 *${icon} ${cat.name}: orçamento ultrapassado!*\n\n` +
@@ -122,7 +122,7 @@ export class BudgetAlertsService {
             `📈 Excedido em: *R$ ${fmt(spent - budget)}*`,
           );
           this.logger.log(`Sent cat 100% alert for ${cat.name}`);
-        } else if (pct >= 80 && pct < 100 && !this.sentAlerts.has(key80)) {
+        } else if (pct >= 80 && pct <= 100 && !this.sentAlerts.has(key80)) {
           this.sentAlerts.add(key80);
           await this.whatsapp.sendMessage(phone.replace(/\D/g, ''),
             `⚠️ *${icon} ${cat.name}: ${roundPct}% do orçamento usado!*\n\n` +
