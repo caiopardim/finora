@@ -202,40 +202,43 @@ export default function TransactionsPage() {
         ))}
       </div>
 
-      <div style={{ background: c.surface, borderRadius: 14, border: `1px solid ${c.border}`, padding: '14px 18px', marginBottom: periodPreset === 'custom' && filters.start_date && filters.end_date ? 8 : 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ background: c.surface, borderRadius: 14, border: `1px solid ${c.border}`, marginBottom: 20, overflow: 'hidden' }}>
         {/* Tipo */}
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ display: 'flex', gap: 6, padding: '14px 18px 10px' }}>
           {[['', 'Todos'], ['income', '💰 Receitas'], ['expense', '💸 Despesas']].map(([v, l]) => (
             <button key={v} onClick={() => { setPage(0); setFilters({ ...filters, type: v }); }} style={{ padding: '7px 16px', borderRadius: 8, border: filters.type === v ? '1.5px solid #6366f1' : `1.5px solid ${c.border}`, cursor: 'pointer', fontSize: 13, fontWeight: 600, background: filters.type === v ? '#6366f115' : 'transparent', color: filters.type === v ? '#6366f1' : c.textMuted }}>{l}</button>
           ))}
         </div>
-      </div>
 
-      {/* Pills de período — fora do card para scroll sem corte */}
-      <div style={{ display: 'flex', gap: 6, overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none', paddingBottom: 2, marginBottom: 8 } as any}>
-        {[
-          { id: 'hoje',   label: 'Hoje',         fn: () => { const t = new Date().toISOString().split('T')[0]; setFilters(f => ({ ...f, start_date: t, end_date: t })); } },
-          { id: '7d',     label: '7 dias',        fn: () => { const n = new Date(); setFilters(f => ({ ...f, start_date: new Date(n.getTime()-6*86400000).toISOString().split('T')[0], end_date: n.toISOString().split('T')[0] })); } },
-          { id: '30d',    label: '30 dias',       fn: () => { const n = new Date(); setFilters(f => ({ ...f, start_date: new Date(n.getTime()-29*86400000).toISOString().split('T')[0], end_date: n.toISOString().split('T')[0] })); } },
-          { id: 'mes',    label: 'Este mês',      fn: () => { const n = new Date(); setFilters(f => ({ ...f, start_date: `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-01`, end_date: new Date(n.getFullYear(), n.getMonth()+1, 0).toISOString().split('T')[0] })); } },
-          { id: 'custom', label: 'Personalizado', fn: () => setShowCalendar(true) },
-        ].map(({ id, label, fn }) => {
-          const active = periodPreset === id;
-          return (
-            <button key={id} onClick={() => { setPeriodPreset(id); setPage(0); fn(); }} style={{ padding: '6px 16px', borderRadius: 99, border: active ? '1.5px solid #22c55e' : `1.5px solid ${c.border}`, cursor: 'pointer', fontSize: 13, fontWeight: active ? 600 : 400, background: active ? '#22c55e18' : 'transparent', color: active ? '#22c55e' : c.textMuted, transition: 'all 0.15s', flexShrink: 0, whiteSpace: 'nowrap' }}>{label}</button>
-          );
-        })}
-      </div>
+        {/* Divisor */}
+        <div style={{ height: 1, background: c.border, margin: '0 18px' }}/>
 
-      {/* Período personalizado selecionado */}
-      {periodPreset === 'custom' && filters.start_date && filters.end_date && (
-        <button onClick={() => setShowCalendar(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, background: c.surface, border: `1.5px solid #22c55e`, borderRadius: 10, padding: '10px 14px', cursor: 'pointer', width: '100%', marginBottom: 12 }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <span style={{ fontSize: 14, fontWeight: 500, color: c.text }}>
-            {new Date(filters.start_date+'T12:00').toLocaleDateString('pt-BR')} → {new Date(filters.end_date+'T12:00').toLocaleDateString('pt-BR')}
-          </span>
-        </button>
-      )}
+        {/* Pills de período com scroll nativo */}
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none', padding: '10px 18px 14px' } as any}>
+          {[
+            { id: 'hoje',   label: 'Hoje',         fn: () => { const t = new Date().toISOString().split('T')[0]; setFilters(f => ({ ...f, start_date: t, end_date: t })); } },
+            { id: '7d',     label: '7 dias',        fn: () => { const n = new Date(); setFilters(f => ({ ...f, start_date: new Date(n.getTime()-6*86400000).toISOString().split('T')[0], end_date: n.toISOString().split('T')[0] })); } },
+            { id: '30d',    label: '30 dias',       fn: () => { const n = new Date(); setFilters(f => ({ ...f, start_date: new Date(n.getTime()-29*86400000).toISOString().split('T')[0], end_date: n.toISOString().split('T')[0] })); } },
+            { id: 'mes',    label: 'Este mês',      fn: () => { const n = new Date(); setFilters(f => ({ ...f, start_date: `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-01`, end_date: new Date(n.getFullYear(), n.getMonth()+1, 0).toISOString().split('T')[0] })); } },
+            { id: 'custom', label: 'Personalizado', fn: () => setShowCalendar(true) },
+          ].map(({ id, label, fn }) => {
+            const active = periodPreset === id;
+            return (
+              <button key={id} onClick={() => { setPeriodPreset(id); setPage(0); fn(); }} style={{ padding: '6px 16px', borderRadius: 99, border: active ? '1.5px solid #22c55e' : `1.5px solid ${c.border}`, cursor: 'pointer', fontSize: 13, fontWeight: active ? 600 : 400, background: active ? '#22c55e18' : 'transparent', color: active ? '#22c55e' : c.textMuted, transition: 'all 0.15s', flexShrink: 0, whiteSpace: 'nowrap' }}>{label}</button>
+            );
+          })}
+        </div>
+
+        {/* Período personalizado selecionado */}
+        {periodPreset === 'custom' && filters.start_date && filters.end_date && (
+          <button onClick={() => setShowCalendar(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#22c55e10', border: 'none', borderTop: `1px solid #22c55e33`, padding: '10px 18px', cursor: 'pointer', width: '100%' }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span style={{ fontSize: 13, fontWeight: 500, color: '#22c55e' }}>
+              {new Date(filters.start_date+'T12:00').toLocaleDateString('pt-BR')} → {new Date(filters.end_date+'T12:00').toLocaleDateString('pt-BR')}
+            </span>
+          </button>
+        )}
+      </div>
 
       <div style={{ background: c.surface, borderRadius: 16, border: `1px solid ${c.border}`, boxShadow: c.shadow, overflow: 'hidden' }}>
         {loading ? (
