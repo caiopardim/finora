@@ -44,7 +44,7 @@ export default function DashboardPage() {
     const dayOfMonth  = now.date();
     const daysInMonth = now.daysInMonth();
 
-    const [txMonth, txLast, txToday, txWeek, txHistory, txRecent, catTx, bills, profileRes] = await Promise.all([
+    const [txMonth, txLast, txToday, txWeek, txHistory, txRecent, catTx, bills, profileRes, categoriesRes] = await Promise.all([
       supabase.from('transactions').select('type,amount,recurring_template_id').eq('user_id', uid).gte('date', monthStart).lte('date', monthEnd),
       supabase.from('transactions').select('type,amount').eq('user_id', uid).gte('date', lastStart).lte('date', lastEnd),
       supabase.from('transactions').select('id,type,amount').eq('user_id', uid).eq('date', today),
@@ -54,6 +54,7 @@ export default function DashboardPage() {
       supabase.from('transactions').select('category_id,amount,categories(id,name,icon,color,budget_limit)').eq('user_id', uid).eq('type', 'expense').gte('date', monthStart).lte('date', monthEnd),
       supabase.from('bills').select('*').eq('user_id', uid).eq('paid', false).lte('due_date', weekEnd7).order('due_date', { ascending: true }),
       supabase.from('profiles').select('budget_mode,budget_pct,budget_fixed,name').eq('id', uid).maybeSingle(),
+      supabase.from('categories').select('id,budget_limit').eq('user_id', uid).not('budget_limit', 'is', null),
     ]);
 
     const income  = (txMonth.data||[]).filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
@@ -65,14 +66,8 @@ export default function DashboardPage() {
     const weekIncome  = (txWeek.data||[]).filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
     const weekExpense = (txWeek.data||[]).filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0);
 
-    // Month forecast: prefer sum of category budgets; fallback to pace extrapolation
-    const budgetSum = (catTx.data||[]).reduce((acc: Record<string,number>, t: any) => {
-      const bl = (t as any).categories?.budget_limit;
-      const key = t.category_id || 'none';
-      if (bl && !acc[key]) acc[key] = Number(bl);
-      return acc;
-    }, {} as Record<string,number>);
-    const totalBudget = Object.values(budgetSum).reduce((s: number, v: number) => s + v, 0);
+    // Month forecast: sum of all category budgets (fetched directly, independent of transactions)
+    const totalBudget = (categoriesRes.data||[]).reduce((s: number, c: any) => s + Number(c.budget_limit||0), 0);
 
     const recurringExpense = (txMonth.data||[]).filter(t=>t.type==='expense' && t.recurring_template_id).reduce((s,t)=>s+Number(t.amount),0);
     const variableExpense  = expense - recurringExpense;
