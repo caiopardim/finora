@@ -217,35 +217,31 @@ export default function DashboardPage() {
         <div style={{ background:c.surface, borderRadius:16, border:`1px solid ${c.border}`, padding:'18px 20px', boxShadow:c.shadow }}>
           <p style={{ margin:'0 0 14px', fontWeight:700, fontSize:14, color:c.textSecondary }}>🔮 Previsão de Gastos</p>
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-            {/* Orçamento */}
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-              <span style={{ fontSize:13, color:c.textFaint }}>🎯 Orçamento</span>
-              <span style={{ fontSize:13, fontWeight:600, color:c.text }}>{fmt(data.forecast)}</span>
-            </div>
-            {/* Receita */}
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-              <span style={{ fontSize:13, color:c.textFaint }}>💰 Receita</span>
-              <span style={{ fontSize:13, fontWeight:600, color:'#22c55e' }}>{fmt(data.income)}</span>
-            </div>
-            {/* Gasto */}
-            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-              <span style={{ fontSize:13, color:c.textFaint }}>💸 Gasto</span>
-              <span style={{ fontSize:13, fontWeight:600, color:'#ef4444' }}>{fmt(data.expense)}</span>
-            </div>
-            {/* Divider */}
-            <div style={{ borderTop:`1px solid ${c.borderLight}`, margin:'2px 0' }}/>
-            {/* Resumo */}
+            {[
+              { label:'Orçamento', value: fmt(data.forecast),  color: c.text },
+              { label:'Receita',   value: fmt(data.income),    color: '#22c55e' },
+              { label:'Gasto',     value: fmt(data.expense),   color: '#ef4444' },
+            ].map(({ label, value, color }, i, arr) => (
+              <div key={label}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                  <p style={{ margin:0, fontSize:12, color:c.textFaint, fontWeight:600, textTransform:'uppercase', letterSpacing:'0.05em' }}>{label}</p>
+                  <p style={{ margin:0, fontSize:16, fontWeight:700, color }}>{value}</p>
+                </div>
+                {i < arr.length - 1 && <div style={{ height:1, background:c.borderLight, marginTop:10 }}/>}
+              </div>
+            ))}
+            <div style={{ height:1, background:c.borderLight }}/>
             {(() => {
               const diff = data.forecast - data.expense;
               const over = diff < 0;
               return (
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                  <span style={{ fontSize:13, fontWeight:600, color:over?'#ef4444':'#22c55e' }}>
-                    {over ? '⚠️ Passou do orçamento' : '✅ Dentro do orçamento'}
-                  </span>
-                  <span style={{ fontSize:13, fontWeight:700, color:over?'#ef4444':'#22c55e' }}>
-                    {over ? `+${fmt(Math.abs(diff))}` : `economizou ${fmt(diff)}`}
-                  </span>
+                  <p style={{ margin:0, fontSize:12, color:over?'#ef4444':'#22c55e', fontWeight:600, textTransform:'uppercase', letterSpacing:'0.05em' }}>
+                    {over ? 'Passou do orçamento' : 'Economizado'}
+                  </p>
+                  <p style={{ margin:0, fontSize:16, fontWeight:700, color:over?'#ef4444':'#22c55e' }}>
+                    {over ? `+${fmt(Math.abs(diff))}` : fmt(diff)}
+                  </p>
                 </div>
               );
             })()}
