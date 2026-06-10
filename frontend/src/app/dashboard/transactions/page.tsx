@@ -5,10 +5,110 @@ import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
 import AddTransactionModal from '@/components/ui/AddTransactionModal';
 import ConfirmModal from '@/components/ui/ConfirmModal';
-import { Plus, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 
 function fmt(v: number) { return formatCurrency(v); }
+
+function CalendarPicker({ onApply, onClose, initialStart, initialEnd, c, isDark }: {
+  onApply: (start: string, end: string) => void;
+  onClose: () => void;
+  initialStart: string;
+  initialEnd: string;
+  c: any;
+  isDark: boolean;
+}) {
+  const today = new Date();
+  const [viewDate, setViewDate] = useState(() => {
+    const d = initialStart ? new Date(initialStart + 'T12:00') : today;
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  });
+  const [start, setStart] = useState(initialStart);
+  const [end, setEnd]     = useState(initialEnd);
+  const [hovered, setHovered] = useState('');
+
+  const year = viewDate.getFullYear();
+  const month = viewDate.getMonth();
+  const monthNames = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+  function toYMD(d: Date) { return d.toISOString().split('T')[0]; }
+  function fromYMD(s: string) { return new Date(s + 'T12:00'); }
+
+  function handleDay(day: number) {
+    const d = toYMD(new Date(year, month, day));
+    if (!start || (start && end)) { setStart(d); setEnd(''); }
+    else if (d < start) { setEnd(start); setStart(d); }
+    else { setEnd(d); }
+  }
+
+  function isStart(d: string) { return d === start; }
+  function isEnd(d: string) { return d === end; }
+  function isInRange(d: string) {
+    const s = start, e = end || hovered;
+    if (!s || !e) return false;
+    const [lo, hi] = s <= e ? [s, e] : [e, s];
+    return d > lo && d < hi;
+  }
+
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let i = 1; i <= daysInMonth; i++) cells.push(i);
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
+      <div style={{ background: isDark ? '#0f172a' : '#fff', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 480, padding: '24px 20px 32px', boxShadow: '0 -8px 40px rgba(0,0,0,0.3)' }} onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: c.text }}>Selecione o período</h3>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.textFaint }}><X size={22}/></button>
+        </div>
+
+        {/* Month nav */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <button onClick={() => setViewDate(new Date(year, month - 1, 1))} style={{ background: isDark ? '#1e293b' : '#f1f5f9', border: 'none', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.text }}><ChevronLeft size={18}/></button>
+          <span style={{ fontWeight: 600, fontSize: 16, color: c.text }}>{monthNames[month]} {year}</span>
+          <button onClick={() => setViewDate(new Date(year, month + 1, 1))} style={{ background: isDark ? '#1e293b' : '#f1f5f9', border: 'none', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.text }}><ChevronRight size={18}/></button>
+        </div>
+
+        {/* Day headers */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 6 }}>
+          {['dom','seg','ter','qua','qui','sex','sab'].map(d => (
+            <div key={d} style={{ textAlign: 'center', fontSize: 12, fontWeight: 600, color: c.textFaint, padding: '4px 0' }}>{d}</div>
+          ))}
+        </div>
+
+        {/* Days */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px 0' }}>
+          {cells.map((day, i) => {
+            if (!day) return <div key={i}/>;
+            const d = toYMD(new Date(year, month, day));
+            const sel = isStart(d) || isEnd(d);
+            const inRange = isInRange(d);
+            const isToday = d === toYMD(today);
+            return (
+              <div key={i} onClick={() => handleDay(day)}
+                onMouseEnter={() => { if (start && !end) setHovered(d); }}
+                onMouseLeave={() => setHovered('')}
+                style={{ textAlign: 'center', padding: '7px 0', cursor: 'pointer', borderRadius: sel ? 99 : 0, background: sel ? '#22c55e' : inRange ? '#22c55e22' : 'transparent', color: sel ? '#fff' : isToday ? '#22c55e' : c.text, fontWeight: sel ? 700 : isToday ? 600 : 400, fontSize: 15, transition: 'background 0.1s' }}>
+                {day}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Apply */}
+        <button
+          disabled={!start || !end}
+          onClick={() => { if (start && end) onApply(start, end); }}
+          style={{ marginTop: 24, width: '100%', padding: '14px', borderRadius: 12, border: 'none', cursor: start && end ? 'pointer' : 'default', fontSize: 16, fontWeight: 700, background: start && end ? '#22c55e' : isDark ? '#1e293b' : '#e2e8f0', color: start && end ? '#fff' : c.textFaint, transition: 'all 0.15s' }}>
+          Aplicar filtro
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function TransactionsPage() {
   const { c, isDark } = useTheme();
@@ -23,6 +123,7 @@ export default function TransactionsPage() {
   const [page, setPage] = useState(0);
   const [monthStats, setMonthStats] = useState({ income: 0, expense: 0 });
   const [periodPreset, setPeriodPreset] = useState('mes');
+  const [showCalendar, setShowCalendar] = useState(false);
   const limit = 20;
 
   async function load() {
@@ -102,7 +203,7 @@ export default function TransactionsPage() {
             { id: '7d',     label: '7 dias',        fn: () => { const n = new Date(); setFilters(f => ({ ...f, start_date: new Date(n.getTime()-6*86400000).toISOString().split('T')[0], end_date: n.toISOString().split('T')[0] })); } },
             { id: '30d',    label: '30 dias',       fn: () => { const n = new Date(); setFilters(f => ({ ...f, start_date: new Date(n.getTime()-29*86400000).toISOString().split('T')[0], end_date: n.toISOString().split('T')[0] })); } },
             { id: 'mes',    label: 'Este mês',      fn: () => { const n = new Date(); setFilters(f => ({ ...f, start_date: `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-01`, end_date: new Date(n.getFullYear(), n.getMonth()+1, 0).toISOString().split('T')[0] })); } },
-            { id: 'custom', label: 'Personalizado', fn: () => {} },
+            { id: 'custom', label: 'Personalizado', fn: () => setShowCalendar(true) },
           ].map(({ id, label, fn }) => {
             const active = periodPreset === id;
             return (
@@ -111,27 +212,14 @@ export default function TransactionsPage() {
           })}
         </div>
 
-        {/* Date range — dois cards separados */}
-        {periodPreset === 'custom' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: 120, background: c.inputBg, borderRadius: 10, border: `1px solid ${c.border}`, padding: '8px 14px', colorScheme: isDark ? 'dark' : 'light' } as any}>
-              <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>De</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                <input type="date" value={filters.start_date} onChange={e => { setPage(0); setFilters({ ...filters, start_date: e.target.value }); }}
-                  style={{ flex: 1, minWidth: 0, border: 'none', background: 'transparent', fontSize: 14, fontWeight: 500, color: c.text, outline: 'none', cursor: 'pointer', colorScheme: 'inherit' } as any}/>
-              </div>
-            </div>
-            <span style={{ color: c.textFaint, fontSize: 18, flexShrink: 0 }}>→</span>
-            <div style={{ flex: 1, minWidth: 120, background: c.inputBg, borderRadius: 10, border: `1px solid ${c.border}`, padding: '8px 14px', colorScheme: isDark ? 'dark' : 'light' } as any}>
-              <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Até</p>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                <input type="date" value={filters.end_date} onChange={e => { setPage(0); setFilters({ ...filters, end_date: e.target.value }); }}
-                  style={{ flex: 1, minWidth: 0, border: 'none', background: 'transparent', fontSize: 14, fontWeight: 500, color: c.text, outline: 'none', cursor: 'pointer', colorScheme: 'inherit' } as any}/>
-              </div>
-            </div>
-          </div>
+        {/* Período selecionado */}
+        {periodPreset === 'custom' && filters.start_date && filters.end_date && (
+          <button onClick={() => setShowCalendar(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, background: c.inputBg, border: `1.5px solid #22c55e`, borderRadius: 10, padding: '10px 14px', cursor: 'pointer', width: '100%' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span style={{ fontSize: 14, fontWeight: 500, color: c.text }}>
+              {new Date(filters.start_date+'T12:00').toLocaleDateString('pt-BR')} → {new Date(filters.end_date+'T12:00').toLocaleDateString('pt-BR')}
+            </span>
+          </button>
         )}
       </div>
 
@@ -178,6 +266,16 @@ export default function TransactionsPage() {
           </div>
         )}
       </div>
+
+      {showCalendar && (
+        <CalendarPicker
+          c={c} isDark={isDark}
+          initialStart={filters.start_date}
+          initialEnd={filters.end_date}
+          onClose={() => setShowCalendar(false)}
+          onApply={(start, end) => { setFilters(f => ({ ...f, start_date: start, end_date: end })); setPage(0); setShowCalendar(false); }}
+        />
+      )}
 
       {confirmDeleteId && confirmDeleteTx && (
         confirmDeleteTx.recurring_template_id ? (
