@@ -265,10 +265,10 @@ export default function Home() {
         {/* Glow */}
         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 600, height: 200, background: 'radial-gradient(ellipse,rgba(34,197,94,0.07) 0%,transparent 70%)', pointerEvents: 'none' }}/>
 
-        <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 32, flexWrap: 'wrap', position: 'relative' }}>
+        <div className="trust-banner" style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 32, position: 'relative' }}>
 
           {/* Left: avatares + texto */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <div className="trust-left" style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
             {/* Avatares empilhados */}
             <div style={{ display: 'flex', position: 'relative' }}>
               {[
@@ -304,7 +304,7 @@ export default function Home() {
           <div style={{ width: 1, height: 48, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} className="trust-divider"/>
 
           {/* Right: selos */}
-          <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="trust-badges" style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
             {[
               { icon: '🔒', label: 'Dados seguros' },
               { icon: '🛡️', label: '7 dias de garantia' },
@@ -322,6 +322,9 @@ export default function Home() {
       <style>{`
         @media (max-width: 768px) {
           .trust-divider { display: none !important; }
+          .trust-banner  { flex-direction: column !important; align-items: center !important; text-align: center !important; gap: 20px !important; }
+          .trust-badges  { justify-content: center !important; }
+          .trust-left    { flex-direction: column !important; align-items: center !important; gap: 12px !important; }
         }
       `}</style>
 
