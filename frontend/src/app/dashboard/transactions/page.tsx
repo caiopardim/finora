@@ -56,43 +56,57 @@ function CalendarPicker({ onApply, onClose, initialStart, initialEnd, c, isDark 
   for (let i = 0; i < firstDay; i++) cells.push(null);
   for (let i = 1; i <= daysInMonth; i++) cells.push(i);
 
+  const CELL = 44;
+
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', background: 'rgba(0,0,0,0.5)' }} onClick={onClose}>
-      <div style={{ background: isDark ? '#0f172a' : '#fff', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 480, padding: '24px 20px 32px', boxShadow: '0 -8px 40px rgba(0,0,0,0.3)' }} onClick={e => e.stopPropagation()}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.55)', padding: 16 }} onClick={onClose}>
+      <div style={{ background: isDark ? '#0f172a' : '#fff', borderRadius: 20, width: '100%', maxWidth: 400, padding: '24px 24px 28px', boxShadow: '0 20px 60px rgba(0,0,0,0.4)' }} onClick={e => e.stopPropagation()}>
+
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-          <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: c.text }}>Selecione o período</h3>
-          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.textFaint }}><X size={22}/></button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 22 }}>
+          <h3 style={{ margin: 0, fontSize: 17, fontWeight: 700, color: c.text }}>Selecione o período</h3>
+          <button onClick={onClose} style={{ background: isDark ? '#1e293b' : '#f1f5f9', border: 'none', borderRadius: 8, width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.textFaint }}><X size={16}/></button>
         </div>
 
         {/* Month nav */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <button onClick={() => setViewDate(new Date(year, month - 1, 1))} style={{ background: isDark ? '#1e293b' : '#f1f5f9', border: 'none', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.text }}><ChevronLeft size={18}/></button>
-          <span style={{ fontWeight: 600, fontSize: 16, color: c.text }}>{monthNames[month]} {year}</span>
-          <button onClick={() => setViewDate(new Date(year, month + 1, 1))} style={{ background: isDark ? '#1e293b' : '#f1f5f9', border: 'none', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.text }}><ChevronRight size={18}/></button>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
+          <button onClick={() => setViewDate(new Date(year, month - 1, 1))} style={{ background: isDark ? '#1e293b' : '#f1f5f9', border: 'none', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.text }}><ChevronLeft size={17}/></button>
+          <span style={{ fontWeight: 700, fontSize: 15, color: c.text, textTransform: 'capitalize' }}>{monthNames[month]} {year}</span>
+          <button onClick={() => setViewDate(new Date(year, month + 1, 1))} style={{ background: isDark ? '#1e293b' : '#f1f5f9', border: 'none', borderRadius: 8, width: 34, height: 34, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: c.text }}><ChevronRight size={17}/></button>
         </div>
 
         {/* Day headers */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: 6 }}>
-          {['dom','seg','ter','qua','qui','sex','sab'].map(d => (
-            <div key={d} style={{ textAlign: 'center', fontSize: 12, fontWeight: 600, color: c.textFaint, padding: '4px 0' }}>{d}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(7, ${CELL}px)`, justifyContent: 'center', marginBottom: 4 }}>
+          {['D','S','T','Q','Q','S','S'].map((d, i) => (
+            <div key={i} style={{ textAlign: 'center', fontSize: 11, fontWeight: 600, color: c.textFaint, height: 32, lineHeight: '32px' }}>{d}</div>
           ))}
         </div>
 
         {/* Days */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '4px 0' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(7, ${CELL}px)`, justifyContent: 'center' }}>
           {cells.map((day, i) => {
-            if (!day) return <div key={i}/>;
+            if (!day) return <div key={i} style={{ height: CELL }}/>;
             const d = toYMD(new Date(year, month, day));
-            const sel = isStart(d) || isEnd(d);
+            const isS = isStart(d);
+            const isE = isEnd(d);
+            const sel = isS || isE;
             const inRange = isInRange(d);
             const isToday = d === toYMD(today);
+            const col = i % 7;
+            const isFirstCol = col === 0;
+            const isLastCol = col === 6;
             return (
-              <div key={i} onClick={() => handleDay(day)}
+              <div key={i}
+                onClick={() => handleDay(day)}
                 onMouseEnter={() => { if (start && !end) setHovered(d); }}
                 onMouseLeave={() => setHovered('')}
-                style={{ textAlign: 'center', padding: '7px 0', cursor: 'pointer', borderRadius: sel ? 99 : 0, background: sel ? '#22c55e' : inRange ? '#22c55e22' : 'transparent', color: sel ? '#fff' : isToday ? '#22c55e' : c.text, fontWeight: sel ? 700 : isToday ? 600 : 400, fontSize: 15, transition: 'background 0.1s' }}>
-                {day}
+                style={{ height: CELL, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', position: 'relative',
+                  background: inRange ? '#22c55e22' : 'transparent',
+                  borderRadius: (isS && !isE) ? '99px 0 0 99px' : (!isS && isE) ? '0 99px 99px 0' : (isS && isE) ? 99 : (inRange && isFirstCol) ? '99px 0 0 99px' : (inRange && isLastCol) ? '0 99px 99px 0' : 0,
+                }}>
+                <div style={{ width: 36, height: 36, borderRadius: 99, display: 'flex', alignItems: 'center', justifyContent: 'center', background: sel ? '#22c55e' : 'transparent', color: sel ? '#fff' : isToday ? '#22c55e' : c.text, fontWeight: sel ? 700 : isToday ? 600 : 400, fontSize: 14, transition: 'background 0.1s' }}>
+                  {day}
+                </div>
               </div>
             );
           })}
@@ -102,7 +116,7 @@ function CalendarPicker({ onApply, onClose, initialStart, initialEnd, c, isDark 
         <button
           disabled={!start || !end}
           onClick={() => { if (start && end) onApply(start, end); }}
-          style={{ marginTop: 24, width: '100%', padding: '14px', borderRadius: 12, border: 'none', cursor: start && end ? 'pointer' : 'default', fontSize: 16, fontWeight: 700, background: start && end ? '#22c55e' : isDark ? '#1e293b' : '#e2e8f0', color: start && end ? '#fff' : c.textFaint, transition: 'all 0.15s' }}>
+          style={{ marginTop: 22, width: '100%', padding: '14px', borderRadius: 12, border: 'none', cursor: start && end ? 'pointer' : 'default', fontSize: 15, fontWeight: 700, background: start && end ? '#22c55e' : isDark ? '#1e293b' : '#e2e8f0', color: start && end ? '#fff' : c.textFaint, transition: 'all 0.2s' }}>
           Aplicar filtro
         </button>
       </div>
