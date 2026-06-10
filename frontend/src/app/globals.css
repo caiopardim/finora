@@ -73,3 +73,21 @@
 @media (max-width: 480px) {
   .grid-stats   { grid-template-columns: 1fr; }
 }
+
+/* Date input — fix dark mode visibility */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(0.6);
+  cursor: pointer;
+}
+input[type="date"]::-webkit-datetime-edit {
+  color: inherit;
+}
+input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+  color: inherit;
+}
+input[type="date"]::-webkit-datetime-edit-text,
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field {
+  color: inherit;
+}
