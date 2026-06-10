@@ -316,7 +316,7 @@ export default function AdminPage() {
       {/* Tabs */}
       <style>{`
         @media (max-width: 767px) {
-          .admin-tabs { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; width: 100% !important; }
+          .admin-tabs { display: grid !important; grid-template-columns: repeat(4, 1fr) !important; width: 100% !important; }
           .admin-tab-label-full { display: none !important; }
           .admin-tab-label-short { display: inline !important; }
         }
