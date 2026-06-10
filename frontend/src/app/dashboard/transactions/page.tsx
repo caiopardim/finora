@@ -163,7 +163,7 @@ export default function TransactionsPage() {
                   <button onClick={() => setEditTx(tx)}
                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.textFaint, fontSize: 13, padding: '0 2px' }}>✏️</button>
                   <button onClick={() => { setConfirmDeleteId(tx.id); setConfirmDeleteTx(tx); }}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.borderLight, fontSize: 16, padding: '0 2px' }}>✕</button>
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', fontSize: 14, padding: '0 2px', opacity: 0.7 }}>✕</button>
                 </div>
               </div>
             ))}
