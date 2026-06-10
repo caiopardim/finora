@@ -78,8 +78,8 @@ export default function DashboardPage() {
     const variableExpense  = expense - recurringExpense;
     const dailyRate        = dayOfMonth > 0 ? variableExpense / dayOfMonth : 0;
     const paceForecast     = recurringExpense + (dailyRate * daysInMonth);
-    // If user has budgets set, use budget total; otherwise use pace
-    const forecast         = totalBudget > 0 ? totalBudget : paceForecast;
+    // Use pace as base; cap at budget total if budgets exist (prevents inflation from early-month spikes)
+    const forecast         = totalBudget > 0 ? Math.min(paceForecast, totalBudget) : paceForecast;
     const forecastPct      = income > 0 ? Math.round(forecast / income * 100) : 0;
 
     // Budget usage by category
