@@ -45,7 +45,7 @@ export default function DashboardPage() {
     const daysInMonth = now.daysInMonth();
 
     const [txMonth, txLast, txToday, txWeek, txHistory, txRecent, catTx, bills, profileRes] = await Promise.all([
-      supabase.from('transactions').select('type,amount').eq('user_id', uid).gte('date', monthStart).lte('date', monthEnd),
+      supabase.from('transactions').select('type,amount,recurring_template_id').eq('user_id', uid).gte('date', monthStart).lte('date', monthEnd),
       supabase.from('transactions').select('type,amount').eq('user_id', uid).gte('date', lastStart).lte('date', lastEnd),
       supabase.from('transactions').select('id,type,amount').eq('user_id', uid).eq('date', today),
       supabase.from('transactions').select('type,amount,date').eq('user_id', uid).gte('date', weekStart).lte('date', today),
@@ -65,10 +65,12 @@ export default function DashboardPage() {
     const weekIncome  = (txWeek.data||[]).filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
     const weekExpense = (txWeek.data||[]).filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0);
 
-    // Month forecast (linear projection)
-    const dailyRate   = expense / dayOfMonth;
-    const forecast    = dailyRate * daysInMonth;
-    const forecastPct = income > 0 ? Math.round(forecast / income * 100) : 0;
+    // Month forecast: recurring (fixed) + variable projection
+    const recurringExpense = (txMonth.data||[]).filter(t=>t.type==='expense' && t.recurring_template_id).reduce((s,t)=>s+Number(t.amount),0);
+    const variableExpense  = expense - recurringExpense;
+    const dailyRate        = dayOfMonth > 0 ? variableExpense / dayOfMonth : 0;
+    const forecast         = recurringExpense + (dailyRate * daysInMonth);
+    const forecastPct      = income > 0 ? Math.round(forecast / income * 100) : 0;
 
     // Budget usage by category
     const catMap: Record<string, any> = {};
