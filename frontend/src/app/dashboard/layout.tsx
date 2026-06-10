@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import {
   LayoutDashboard, ArrowLeftRight, Tag, Target,
-  BarChart2, Settings, LogOut, ChevronRight, Bell, Receipt, AlertTriangle, Clock, Sun, Moon, CalendarDays, Wallet, LandmarkIcon, RefreshCw, Shield, CreditCard,
+  BarChart2, Settings, LogOut, ChevronRight, Bell, Receipt, AlertTriangle, Clock, Sun, Moon, CalendarDays, Wallet, LandmarkIcon, RefreshCw, Shield, CreditCard, MoreHorizontal, X,
 } from 'lucide-react';
 import GlobalSearch from '@/components/ui/GlobalSearch';
 import PaywallGuard from '@/components/PaywallGuard';
@@ -29,13 +29,11 @@ const NAV = [
   { href: '/dashboard/plano',        label: 'Meu Plano',    icon: CreditCard       },
 ];
 
-const NAV_MOBILE = [
-  { href: '/dashboard',              label: 'Início',       icon: LayoutDashboard },
-  { href: '/dashboard/transactions', label: 'Transações',   icon: ArrowLeftRight   },
-  { href: '/dashboard/wallets',      label: 'Contas',       icon: Wallet           },
-  { href: '/dashboard/bills',        label: 'Faturas',      icon: Receipt          },
-  { href: '/dashboard/budget',       label: 'Orçamento',    icon: LandmarkIcon     },
-  { href: '/dashboard/settings',     label: 'Config.',      icon: Settings         },
+const NAV_MOBILE_MAIN = [
+  { href: '/dashboard',              label: 'Início',     icon: LayoutDashboard },
+  { href: '/dashboard/transactions', label: 'Transações', icon: ArrowLeftRight   },
+  { href: '/dashboard/wallets',      label: 'Contas',     icon: Wallet           },
+  { href: '/dashboard/bills',        label: 'Faturas',    icon: Receipt          },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -49,6 +47,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const alertRef = useRef<HTMLDivElement>(null);
   const [broadcast, setBroadcast] = useState<{ message: string; type: string } | null>(null);
   const [maintenance, setMaintenance] = useState<{ message: string } | null>(null);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768);
@@ -294,7 +293,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           display: 'flex', zIndex: 50,
           paddingBottom: 'env(safe-area-inset-bottom)',
         }}>
-          {NAV_MOBILE.map(({ href, label, icon: Icon }) => {
+          {NAV_MOBILE_MAIN.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
             return (
               <Link key={href} href={href} style={{
@@ -308,7 +307,73 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Link>
             );
           })}
+          {/* Mais button */}
+          <button onClick={() => setShowMoreMenu(true)} style={{
+            flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+            padding: '10px 4px 8px', gap: 3, border: 'none', background: 'none', cursor: 'pointer',
+            color: c.textFaint, borderTop: '2px solid transparent',
+          }}>
+            <MoreHorizontal size={19}/>
+            <span style={{ fontSize: 9 }}>Mais</span>
+          </button>
         </nav>
+
+        {/* More menu drawer */}
+        {showMoreMenu && (
+          <>
+            <div onClick={() => setShowMoreMenu(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100 }}/>
+            <div style={{
+              position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 101,
+              background: c.surface, borderRadius: '20px 20px 0 0',
+              padding: '0 0 env(safe-area-inset-bottom)',
+              boxShadow: '0 -8px 32px rgba(0,0,0,0.3)',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${c.borderLight}` }}>
+                <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: c.text }}>Menu</p>
+                <button onClick={() => setShowMoreMenu(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.textFaint }}>
+                  <X size={20}/>
+                </button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0, padding: '8px 0 16px' }}>
+                {NAV.slice(4).map(({ href, label, icon: Icon }) => {
+                  const active = pathname === href;
+                  return (
+                    <Link key={href} href={href} onClick={() => setShowMoreMenu(false)} style={{
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                      padding: '16px 8px', textDecoration: 'none',
+                      color: active ? '#22c55e' : c.textSecondary,
+                    }}>
+                      <div style={{ width: 44, height: 44, borderRadius: 14, background: active ? 'rgba(34,197,94,0.15)' : c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Icon size={20} color={active ? '#22c55e' : c.textMuted}/>
+                      </div>
+                      <span style={{ fontSize: 11, fontWeight: active ? 600 : 400, textAlign: 'center' }}>{label}</span>
+                    </Link>
+                  );
+                })}
+                {user?.isAdmin && (
+                  <Link href="/admin" onClick={() => setShowMoreMenu(false)} style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                    padding: '16px 8px', textDecoration: 'none', color: '#818cf8',
+                  }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Shield size={20} color="#818cf8"/>
+                    </div>
+                    <span style={{ fontSize: 11, fontWeight: 600, textAlign: 'center' }}>Admin</span>
+                  </Link>
+                )}
+              </div>
+              <div style={{ padding: '0 20px 16px', display: 'flex', gap: 10 }}>
+                <button onClick={() => { toggleTheme(); setShowMoreMenu(false); }} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 12, border: `1px solid ${c.border}`, background: c.bg, color: c.textMuted, fontSize: 13, cursor: 'pointer' }}>
+                  {isDark ? <Sun size={15} color="#fbbf24"/> : <Moon size={15}/>}
+                  {isDark ? 'Modo Claro' : 'Modo Escuro'}
+                </button>
+                <button onClick={() => { handleLogout(); setShowMoreMenu(false); }} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '10px', borderRadius: 12, border: `1px solid ${c.border}`, background: c.bg, color: '#ef4444', fontSize: 13, cursor: 'pointer' }}>
+                  <LogOut size={15}/> Sair
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     );
   }
