@@ -211,7 +211,7 @@ export default function TransactionsPage() {
         </div>
 
         {/* Período */}
-        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none', paddingBottom: 2, paddingRight: 18, marginRight: -18 } as any}>
+        <div style={{ display: 'flex', gap: 6, overflowX: 'auto', WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none', msOverflowStyle: 'none', paddingBottom: 2, paddingRight: 32, marginLeft: -18, marginRight: -18, paddingLeft: 18 } as any}>
           {[
             { id: 'hoje',   label: 'Hoje',         fn: () => { const t = new Date().toISOString().split('T')[0]; setFilters(f => ({ ...f, start_date: t, end_date: t })); } },
             { id: '7d',     label: '7 dias',        fn: () => { const n = new Date(); setFilters(f => ({ ...f, start_date: new Date(n.getTime()-6*86400000).toISOString().split('T')[0], end_date: n.toISOString().split('T')[0] })); } },
