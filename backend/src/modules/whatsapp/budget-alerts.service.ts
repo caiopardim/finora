@@ -3,17 +3,9 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CLIENT } from '../../config/supabase.module';
 import { WhatsappService } from './whatsapp.service';
 
-/**
- * Checks monthly spending vs budget after each transaction and sends
- * WhatsApp alerts at 80% (warning) and 100%+ (exceeded) thresholds.
- *
- * Uses an in-memory Set keyed by "userId-YYYY-MM-threshold" to avoid
- * duplicate messages within the same server session.
- */
 @Injectable()
 export class BudgetAlertsService {
   private readonly logger = new Logger(BudgetAlertsService.name);
-  // Key: `${userId}-${YYYY-MM}-${threshold}` e.g. "abc-2026-06-80" | "abc-2026-06-100"
   private readonly sentAlerts = new Set<string>();
 
   constructor(
@@ -24,102 +16,131 @@ export class BudgetAlertsService {
   async checkAndNotify(userId: string): Promise<void> {
     try {
       const now = new Date();
-      const month = now.toISOString().slice(0, 7); // "YYYY-MM"
+      const month = now.toISOString().slice(0, 7);
       const monthStart = `${month}-01`;
-      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-        .toISOString()
-        .split('T')[0];
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0];
 
-      // Fetch total budgets and current month expenses in parallel
-      const [budgetRes, spendingRes, profileRes] = await Promise.all([
+      const [categoriesRes, spendingRes, profileRes] = await Promise.all([
         this.supabase
           .from('categories')
-          .select('budget_limit')
+          .select('id,name,budget_limit,icon')
           .eq('user_id', userId)
           .eq('type', 'expense')
           .not('budget_limit', 'is', null),
         this.supabase
           .from('transactions')
-          .select('amount')
+          .select('amount,category_id')
           .eq('user_id', userId)
           .eq('type', 'expense')
           .gte('date', monthStart)
           .lte('date', monthEnd),
-        this.supabase
-          .from('profiles')
-          .select('phone')
-          .eq('id', userId)
-          .single(),
+        this.supabase.from('profiles').select('phone').eq('id', userId).single(),
       ]);
 
-      const totalBudget = (budgetRes.data || []).reduce(
-        (s, c) => s + Number(c.budget_limit || 0),
-        0,
-      );
-      const totalSpent = (spendingRes.data || []).reduce(
-        (s, t) => s + Number(t.amount || 0),
-        0,
-      );
       const phone = profileRes.data?.phone;
-
-      if (!totalBudget || !phone) return;
-
-      const pct = (totalSpent / totalBudget) * 100;
-      this.logger.log(
-        `Budget check for ${userId}: spent R$${totalSpent.toFixed(2)} / R$${totalBudget.toFixed(2)} (${pct.toFixed(1)}%)`,
-      );
+      if (!phone) return;
 
       const fmt = (v: number) =>
         v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-      const remaining = totalBudget - totalSpent;
-      const roundPct  = Math.round(pct);
+      const categories = categoriesRes.data || [];
+      const txs = spendingRes.data || [];
 
-      // 100% — ultrapassou
-      const key100 = `${userId}-${month}-100`;
-      if (pct >= 100 && !this.sentAlerts.has(key100)) {
-        this.sentAlerts.add(key100);
-        await this.whatsapp.sendMessage(
-          phone.replace(/\D/g, ''),
-          `🚨 *Orçamento do mês ultrapassado!*\n\n` +
-          `💸 Gasto: *R$ ${fmt(totalSpent)}*\n` +
-          `🎯 Orçamento: *R$ ${fmt(totalBudget)}*\n` +
-          `📈 Excedido em: *R$ ${fmt(totalSpent - totalBudget)}*\n\n` +
-          `Revise seus gastos no dashboard:\n👉 *https://meufinora.com.br/dashboard*`,
-        );
-        this.logger.log(`Sent 100% budget alert to ${phone}`);
-        return;
+      // ── Gasto por categoria ──────────────────────────────────────────────
+      const spendByCat: Record<string, number> = {};
+      for (const t of txs) {
+        const k = t.category_id || 'none';
+        spendByCat[k] = (spendByCat[k] || 0) + Number(t.amount);
       }
 
-      // 80% — alerta
-      const key80 = `${userId}-${month}-80`;
-      if (pct >= 80 && pct < 100 && !this.sentAlerts.has(key80)) {
-        this.sentAlerts.add(key80);
-        await this.whatsapp.sendMessage(
-          phone.replace(/\D/g, ''),
-          `⚠️ *Você usou ${roundPct}% do seu orçamento mensal!*\n\n` +
-          `💸 Gasto: *R$ ${fmt(totalSpent)}*\n` +
-          `🎯 Orçamento: *R$ ${fmt(totalBudget)}*\n` +
-          `✅ Restante: *R$ ${fmt(remaining)}*\n\n` +
-          `Fique de olho para não ultrapassar o limite! 👀`,
-        );
-        this.logger.log(`Sent 80% budget alert to ${phone}`);
-        return;
+      // ── Total geral ──────────────────────────────────────────────────────
+      const totalBudget = categories.reduce((s, c) => s + Number(c.budget_limit), 0);
+      const totalSpent  = Object.values(spendByCat).reduce((s, v) => s + v, 0);
+
+      if (totalBudget > 0) {
+        const pct      = (totalSpent / totalBudget) * 100;
+        const roundPct = Math.round(pct);
+        const remaining = totalBudget - totalSpent;
+
+        const key100 = `${userId}-${month}-total-100`;
+        const key80  = `${userId}-${month}-total-80`;
+        const key50  = `${userId}-${month}-total-50`;
+
+        if (pct >= 100 && !this.sentAlerts.has(key100)) {
+          this.sentAlerts.add(key100);
+          await this.whatsapp.sendMessage(phone.replace(/\D/g, ''),
+            `🚨 *Orçamento do mês ultrapassado!*\n\n` +
+            `💸 Gasto: *R$ ${fmt(totalSpent)}*\n` +
+            `🎯 Orçamento: *R$ ${fmt(totalBudget)}*\n` +
+            `📈 Excedido em: *R$ ${fmt(totalSpent - totalBudget)}*\n\n` +
+            `Revise seus gastos no dashboard:\n👉 *https://meufinora.com.br/dashboard*`,
+          );
+          this.logger.log(`Sent total 100% alert`);
+        } else if (pct >= 80 && pct < 100 && !this.sentAlerts.has(key80)) {
+          this.sentAlerts.add(key80);
+          await this.whatsapp.sendMessage(phone.replace(/\D/g, ''),
+            `⚠️ *Você usou ${roundPct}% do seu orçamento mensal!*\n\n` +
+            `💸 Gasto: *R$ ${fmt(totalSpent)}*\n` +
+            `🎯 Orçamento: *R$ ${fmt(totalBudget)}*\n` +
+            `✅ Restante: *R$ ${fmt(remaining)}*\n\n` +
+            `Fique de olho para não ultrapassar o limite! 👀`,
+          );
+          this.logger.log(`Sent total 80% alert`);
+        } else if (pct >= 50 && pct < 80 && !this.sentAlerts.has(key50)) {
+          this.sentAlerts.add(key50);
+          await this.whatsapp.sendMessage(phone.replace(/\D/g, ''),
+            `📊 *Você já usou metade do seu orçamento mensal (${roundPct}%)!*\n\n` +
+            `💸 Gasto: *R$ ${fmt(totalSpent)}*\n` +
+            `🎯 Orçamento: *R$ ${fmt(totalBudget)}*\n` +
+            `✅ Restante: *R$ ${fmt(remaining)}*\n\n` +
+            `Ainda há ${new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate() - now.getDate()} dias no mês — você está no caminho certo! 💪`,
+          );
+          this.logger.log(`Sent total 50% alert`);
+        }
       }
 
-      // 50% — informativo
-      const key50 = `${userId}-${month}-50`;
-      if (pct >= 50 && pct < 80 && !this.sentAlerts.has(key50)) {
-        this.sentAlerts.add(key50);
-        await this.whatsapp.sendMessage(
-          phone.replace(/\D/g, ''),
-          `📊 *Você já usou metade do seu orçamento mensal (${roundPct}%)!*\n\n` +
-          `💸 Gasto: *R$ ${fmt(totalSpent)}*\n` +
-          `🎯 Orçamento: *R$ ${fmt(totalBudget)}*\n` +
-          `✅ Restante: *R$ ${fmt(remaining)}*\n\n` +
-          `Ainda há ${30 - new Date().getDate()} dias no mês — você está no caminho certo! 💪`,
-        );
-        this.logger.log(`Sent 50% budget alert to ${phone}`);
+      // ── Alertas por categoria ─────────────────────────────────────────────
+      for (const cat of categories) {
+        const spent  = spendByCat[cat.id] || 0;
+        const budget = Number(cat.budget_limit);
+        if (!budget || !spent) continue;
+
+        const pct      = (spent / budget) * 100;
+        const roundPct = Math.round(pct);
+        const icon     = cat.icon || '📦';
+
+        const key100 = `${userId}-${month}-cat-${cat.id}-100`;
+        const key80  = `${userId}-${month}-cat-${cat.id}-80`;
+        const key50  = `${userId}-${month}-cat-${cat.id}-50`;
+
+        if (pct >= 100 && !this.sentAlerts.has(key100)) {
+          this.sentAlerts.add(key100);
+          await this.whatsapp.sendMessage(phone.replace(/\D/g, ''),
+            `🚨 *${icon} ${cat.name}: orçamento ultrapassado!*\n\n` +
+            `💸 Gasto: *R$ ${fmt(spent)}*\n` +
+            `🎯 Limite: *R$ ${fmt(budget)}*\n` +
+            `📈 Excedido em: *R$ ${fmt(spent - budget)}*`,
+          );
+          this.logger.log(`Sent cat 100% alert for ${cat.name}`);
+        } else if (pct >= 80 && pct < 100 && !this.sentAlerts.has(key80)) {
+          this.sentAlerts.add(key80);
+          await this.whatsapp.sendMessage(phone.replace(/\D/g, ''),
+            `⚠️ *${icon} ${cat.name}: ${roundPct}% do orçamento usado!*\n\n` +
+            `💸 Gasto: *R$ ${fmt(spent)}*\n` +
+            `🎯 Limite: *R$ ${fmt(budget)}*\n` +
+            `✅ Restante: *R$ ${fmt(budget - spent)}*`,
+          );
+          this.logger.log(`Sent cat 80% alert for ${cat.name}`);
+        } else if (pct >= 50 && pct < 80 && !this.sentAlerts.has(key50)) {
+          this.sentAlerts.add(key50);
+          await this.whatsapp.sendMessage(phone.replace(/\D/g, ''),
+            `📊 *${icon} ${cat.name}: metade do orçamento usada (${roundPct}%)!*\n\n` +
+            `💸 Gasto: *R$ ${fmt(spent)}*\n` +
+            `🎯 Limite: *R$ ${fmt(budget)}*\n` +
+            `✅ Restante: *R$ ${fmt(budget - spent)}*`,
+          );
+          this.logger.log(`Sent cat 50% alert for ${cat.name}`);
+        }
       }
     } catch (err) {
       this.logger.error(`Budget alert check failed for ${userId}: ${err.message}`);
