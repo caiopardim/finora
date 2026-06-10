@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'nodejs';
+export const maxDuration = 60; // 60s timeout for Vercel Pro
 
 function getAdmin() {
   return createClient(
@@ -23,36 +24,25 @@ async function refreshToken(userId: string, rt: string) {
   });
   const data = await res.json();
   if (!data.access_token) throw new Error('Failed to refresh token');
-
   await getAdmin().from('user_google_tokens').update({
     access_token: data.access_token,
     expires_at:   new Date(Date.now() + data.expires_in * 1000).toISOString(),
   }).eq('user_id', userId);
-
   return data.access_token as string;
 }
 
 async function getAccessToken(userId: string): Promise<string> {
   const { data } = await getAdmin()
-    .from('user_google_tokens')
-    .select('*')
-    .eq('user_id', userId)
-    .single();
-
+    .from('user_google_tokens').select('*').eq('user_id', userId).single();
   if (!data) throw new Error('Not connected to Google');
-
   const expired = new Date(data.expires_at) <= new Date(Date.now() + 60_000);
-  if (expired && data.refresh_token) {
-    return refreshToken(userId, data.refresh_token);
-  }
+  if (expired && data.refresh_token) return refreshToken(userId, data.refresh_token);
   return data.access_token;
 }
 
-/** Convert Finora appointment to Google Calendar event */
 function toGoogleEvent(appt: any) {
   const scheduledAt = new Date(appt.scheduled_at);
-  const endAt = new Date(scheduledAt.getTime() + 60 * 60 * 1000); // +1h default
-
+  const endAt = new Date(scheduledAt.getTime() + 60 * 60 * 1000);
   return {
     summary:     appt.title,
     description: appt.description || '',
@@ -62,12 +52,19 @@ function toGoogleEvent(appt: any) {
   };
 }
 
-/** Import Google Calendar events into Finora appointments */
-async function importFromGoogle(userId: string, accessToken: string, syncedMap: Record<string, string>) {
-  // Fetch upcoming events from Google Calendar (with pagination)
-  const timeMin = new Date().toISOString();
-  const timeMax = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(); // next 90 days
+function toLocalBrazil(d: Date) {
+  const utcH = d.getUTCHours();
+  const localH = utcH < 3 ? utcH + 21 : utcH - 3;
+  return {
+    date: d.toISOString().split('T')[0],
+    time: `${String(localH).padStart(2,'0')}:${String(d.getUTCMinutes()).padStart(2,'0')}`,
+  };
+}
 
+async function importFromGoogle(userId: string, accessToken: string, syncedMap: Record<string, string>) {
+  // Fetch all events with pagination
+  const timeMin = new Date().toISOString();
+  const timeMax = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
   const events: any[] = [];
   let pageToken: string | undefined;
 
@@ -85,63 +82,51 @@ async function importFromGoogle(userId: string, accessToken: string, syncedMap: 
     if (data.error) { console.error('[google-sync] API error:', data.error); break; }
     events.push(...(data.items || []));
     pageToken = data.nextPageToken;
-    console.log(`[google-sync] fetched page: ${data.items?.length} events, total so far: ${events.length}, hasMore: ${!!pageToken}`);
+    console.log(`[google-sync] page fetched: ${data.items?.length}, total: ${events.length}, more: ${!!pageToken}`);
   } while (pageToken);
 
-  // Get existing Finora appointments to avoid duplicates
+  // Get already-imported google_event_ids
   const { data: existingAppts } = await getAdmin()
-    .from('appointments')
-    .select('id, title, scheduled_at, google_event_id')
-    .eq('user_id', userId);
-
+    .from('appointments').select('google_event_id').eq('user_id', userId);
   const existingGoogleIds = new Set((existingAppts || []).map((a: any) => a.google_event_id).filter(Boolean));
-  // Also check synced map values (Finora→Google events)
   const finoraExportedIds = new Set(Object.values(syncedMap));
 
-  let imported = 0;
-  console.log('[google-sync] finoraExportedIds:', JSON.stringify(Array.from(finoraExportedIds)));
-  console.log('[google-sync] existingGoogleIds:', JSON.stringify(Array.from(existingGoogleIds)));
+  // Build rows
+  const toInsert: any[] = [];
   for (const event of events) {
-    // Skip events already exported from Finora to Google
-    if (finoraExportedIds.has(event.id)) { console.log('[google-sync] skip (finora exported):', event.id); continue; }
-    // Skip already imported events
-    if (existingGoogleIds.has(event.id)) { console.log('[google-sync] skip (already imported):', event.id); continue; }
-    // Handle both timed and all-day events
+    if (finoraExportedIds.has(event.id)) continue;
+    if (existingGoogleIds.has(event.id)) continue;
+
     let scheduledAt: string;
     if (event.start?.dateTime) {
       scheduledAt = new Date(event.start.dateTime).toISOString();
     } else if (event.start?.date) {
-      // All-day event: set to 9am Brazil time
       scheduledAt = new Date(`${event.start.date}T09:00:00-03:00`).toISOString();
-    } else {
-      continue;
-    }
+    } else continue;
 
-    const scheduledDate = new Date(scheduledAt);
-    const dateStr = scheduledDate.toISOString().split('T')[0]; // YYYY-MM-DD
-    // Extract local time in Brazil (UTC-3)
-    const localHour   = String(scheduledDate.getUTCHours() < 3 ? scheduledDate.getUTCHours() + 21 : scheduledDate.getUTCHours() - 3).padStart(2, '0');
-    const localMinute = String(scheduledDate.getUTCMinutes()).padStart(2, '0');
-    const timeStr = event.start?.dateTime ? `${localHour}:${localMinute}` : null;
-
-    console.log('[google-sync] inserting event:', event.id, event.summary, scheduledAt);
-    const { error: insertError } = await getAdmin().from('appointments').insert({
+    const { date, time } = toLocalBrazil(new Date(scheduledAt));
+    toInsert.push({
       user_id:         userId,
       title:           event.summary || 'Compromisso',
       description:     event.description || null,
       scheduled_at:    scheduledAt,
-      date:            dateStr,
-      time:            timeStr,
+      date,
+      time:            event.start?.dateTime ? time : null,
       color:           '#4285f4',
       icon:            '📅',
       done:            false,
       google_event_id: event.id,
     });
-    if (insertError) {
-      console.error('[google-sync] INSERT error:', JSON.stringify(insertError));
-    } else {
-      imported++;
-    }
+  }
+
+  console.log(`[google-sync] inserting ${toInsert.length} new events`);
+
+  // Batch insert in chunks of 100
+  let imported = 0;
+  for (let i = 0; i < toInsert.length; i += 100) {
+    const { error } = await getAdmin().from('appointments').insert(toInsert.slice(i, i + 100));
+    if (error) console.error('[google-sync] insert error:', JSON.stringify(error));
+    else imported += Math.min(100, toInsert.length - i);
   }
 
   return imported;
@@ -153,33 +138,22 @@ export async function POST(req: NextRequest) {
     if (!userId) return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
 
     const accessToken = await getAccessToken(userId);
-
-    // Get existing synced map
     const { data: tokenRow } = await getAdmin()
-      .from('user_google_tokens')
-      .select('synced_events')
-      .eq('user_id', userId)
-      .single();
-
+      .from('user_google_tokens').select('synced_events').eq('user_id', userId).single();
     const syncedMap: Record<string, string> = tokenRow?.synced_events || {};
 
-    // 1. Import Google Calendar → Finora
+    // 1. Import Google → Finora
     const imported = await importFromGoogle(userId, accessToken, syncedMap);
 
-    // 2. Push Finora appointments → Google Calendar
+    // 2. Push Finora → Google (only non-Google-imported appointments)
     const { data: appts } = await getAdmin()
-      .from('appointments')
-      .select('*')
-      .eq('user_id', userId)
+      .from('appointments').select('*').eq('user_id', userId)
       .gte('scheduled_at', new Date().toISOString());
 
     let synced = 0;
     for (const appt of appts || []) {
-      // Skip events that came from Google (avoid loop)
-      if (appt.google_event_id) continue;
-
+      if (appt.google_event_id) continue; // skip Google-imported ones
       const event = toGoogleEvent(appt);
-
       if (syncedMap[appt.id]) {
         await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${syncedMap[appt.id]}`, {
           method: 'PUT',
@@ -187,22 +161,18 @@ export async function POST(req: NextRequest) {
           body: JSON.stringify(event),
         });
       } else {
-        const res  = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+        const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
           method: 'POST',
           headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
           body: JSON.stringify(event),
         });
         const data = await res.json();
-        if (data.id) {
-          syncedMap[appt.id] = data.id;
-        }
+        if (data.id) syncedMap[appt.id] = data.id;
       }
       synced++;
     }
 
-    // Save updated map
     await getAdmin().from('user_google_tokens').update({ synced_events: syncedMap }).eq('user_id', userId);
-
     return NextResponse.json({ synced, imported });
   } catch (e: any) {
     console.error('Google sync error:', e);
