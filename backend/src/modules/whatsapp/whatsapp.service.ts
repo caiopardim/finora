@@ -2,6 +2,7 @@ import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { AiService } from './ai.service';
+import { BudgetAlertsService } from './budget-alerts.service';
 import { TransactionsService } from '../transactions/transactions.service';
 import { UsersService } from '../users/users.service';
 import { ReportsService } from '../reports/reports.service';
@@ -24,6 +25,7 @@ export class WhatsappService {
   constructor(
     private config: ConfigService,
     private ai: AiService,
+    private budgetAlerts: BudgetAlertsService,
     private transactions: TransactionsService,
     private users: UsersService,
     private reports: ReportsService,
@@ -129,6 +131,10 @@ export class WhatsappService {
           this.logger.log(`[6] Sending message to ${normalizedPhone}`);
           await this.sendMessage(normalizedPhone, text);
           this.logger.log(`[7] Done`);
+          // Check budget thresholds after registering an expense
+          if (transaction.type === 'expense') {
+            this.budgetAlerts.checkAndNotify(user.id).catch(() => {});
+          }
           break;
         }
 
