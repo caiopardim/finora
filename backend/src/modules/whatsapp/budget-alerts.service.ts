@@ -6,12 +6,24 @@ import { WhatsappService } from './whatsapp.service';
 @Injectable()
 export class BudgetAlertsService {
   private readonly logger = new Logger(BudgetAlertsService.name);
-  private readonly sentAlerts = new Set<string>();
 
   constructor(
     @Inject(SUPABASE_CLIENT) private supabase: SupabaseClient,
     @Inject(forwardRef(() => WhatsappService)) private whatsapp: WhatsappService,
   ) {}
+
+  private async alreadySent(key: string): Promise<boolean> {
+    const { data } = await this.supabase
+      .from('budget_alert_logs')
+      .select('id')
+      .eq('alert_key', key)
+      .maybeSingle();
+    return !!data;
+  }
+
+  private async markSent(key: string): Promise<void> {
+    await this.supabase.from('budget_alert_logs').insert({ alert_key: key });
+  }
 
   async checkAndNotify(userId: string): Promise<void> {
     try {
@@ -65,8 +77,8 @@ export class BudgetAlertsService {
         const key100 = `${userId}-${month}-total-100`;
         const key50  = `${userId}-${month}-total-50`;
 
-        if (pct > 100 && !this.sentAlerts.has(key100)) {
-          this.sentAlerts.add(key100);
+        if (pct > 100 && !(await this.alreadySent(key100))) {
+          await this.markSent(key100);
           await this.whatsapp.sendMessage(phone.replace(/\D/g, ''),
             `🚨 *Orçamento do mês ultrapassado!*\n\n` +
             `💸 Gasto: *R$ ${fmt(totalSpent)}*\n` +
@@ -75,8 +87,8 @@ export class BudgetAlertsService {
             `Revise seus gastos no dashboard:\n👉 *https://meufinora.com.br/dashboard*`,
           );
           this.logger.log(`Sent total 100% alert`);
-        } else if (pct >= 50 && pct <= 100 && !this.sentAlerts.has(key50)) {
-          this.sentAlerts.add(key50);
+        } else if (pct >= 50 && pct <= 100 && !(await this.alreadySent(key50))) {
+          await this.markSent(key50);
           await this.whatsapp.sendMessage(phone.replace(/\D/g, ''),
             `📊 *Você já usou metade do seu orçamento mensal (${roundPct}%)!*\n\n` +
             `💸 Gasto: *R$ ${fmt(totalSpent)}*\n` +
@@ -101,8 +113,8 @@ export class BudgetAlertsService {
         const key100 = `${userId}-${month}-cat-${cat.id}-100`;
         const key50  = `${userId}-${month}-cat-${cat.id}-50`;
 
-        if (pct > 100 && !this.sentAlerts.has(key100)) {
-          this.sentAlerts.add(key100);
+        if (pct > 100 && !(await this.alreadySent(key100))) {
+          await this.markSent(key100);
           await this.whatsapp.sendMessage(phone.replace(/\D/g, ''),
             `🚨 *${icon} ${cat.name}: orçamento ultrapassado!*\n\n` +
             `💸 Gasto: *R$ ${fmt(spent)}*\n` +
@@ -110,8 +122,8 @@ export class BudgetAlertsService {
             `📈 Excedido em: *R$ ${fmt(spent - budget)}*`,
           );
           this.logger.log(`Sent cat 100% alert for ${cat.name}`);
-        } else if (pct >= 50 && pct <= 100 && !this.sentAlerts.has(key50)) {
-          this.sentAlerts.add(key50);
+        } else if (pct >= 50 && pct <= 100 && !(await this.alreadySent(key50))) {
+          await this.markSent(key50);
           await this.whatsapp.sendMessage(phone.replace(/\D/g, ''),
             `📊 *${icon} ${cat.name}: metade do orçamento usada (${roundPct}%)!*\n\n` +
             `💸 Gasto: *R$ ${fmt(spent)}*\n` +
