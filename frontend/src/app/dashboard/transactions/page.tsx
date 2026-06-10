@@ -108,11 +108,11 @@ export default function TransactionsPage() {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <p style={{ margin: '0 0 3px', fontWeight: 500, fontSize: 14, color: c.textSecondary, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.description}</p>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ fontSize: 12, color: c.textFaint }}>{(tx.categories as any)?.name||'Sem categoria'}</span>
                     <span style={{ color: c.border }}>·</span>
                     <span style={{ fontSize: 12, color: c.textFaint }}>{new Date(tx.date+'T12:00').toLocaleDateString('pt-BR')}</span>
-                    {tx.source==='whatsapp' && <span style={{ fontSize: 10, background: '#dcfce7', color: '#15803d', fontWeight: 600, padding: '1px 6px', borderRadius: 99, whiteSpace: 'nowrap' }}>💬 WA</span>}
+                    {tx.source==='whatsapp' && <span style={{ fontSize: 11 }}>💬</span>}
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>

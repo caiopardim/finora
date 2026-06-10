@@ -430,7 +430,7 @@ function TxList({ txs, onRefresh }: { txs: any[]; onRefresh: () => void }) {
               <span style={{ fontSize:12, color:c.textFaint }}>{(tx.categories as any)?.name||'Sem categoria'}</span>
               <span style={{ fontSize:11, color:c.border }}>·</span>
               <span style={{ fontSize:12, color:c.textFaint }}>{new Date(tx.date+'T12:00').toLocaleDateString('pt-BR')}</span>
-              {tx.source==='whatsapp' && <span style={{ fontSize:10, background:'#dcfce7', color:'#15803d', fontWeight:600, padding:'1px 6px', borderRadius:99 }}>💬</span>}
+              {tx.source==='whatsapp' && <span style={{ fontSize:11 }}>💬</span>}
             </div>
           </div>
           <div style={{ display:'flex', alignItems:'center', gap:4, flexShrink:0 }}>
