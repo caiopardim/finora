@@ -304,15 +304,15 @@ export default function Home() {
           <div style={{ width: 1, height: 48, background: 'rgba(255,255,255,0.08)', flexShrink: 0 }} className="trust-divider"/>
 
           {/* Right: selos */}
-          <div style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'nowrap' }}>
+          <div style={{ display: 'flex', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
             {[
               { icon: '🔒', label: 'Dados seguros' },
               { icon: '🛡️', label: '7 dias de garantia' },
               { icon: '🇧🇷', label: 'Feito no Brasil' },
             ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, whiteSpace: 'nowrap' }}>
-                <span style={{ fontSize: 16 }}>{item.icon}</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8' }}>{item.label}</span>
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 15 }}>{item.icon}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: '#94a3b8' }}>{item.label}</span>
               </div>
             ))}
           </div>
