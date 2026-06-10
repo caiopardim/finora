@@ -218,7 +218,6 @@ export default function TransactionsPage() {
           {[
             { id: 'hoje',   label: 'Hoje',         fn: () => { const t = new Date().toISOString().split('T')[0]; setFilters(f => ({ ...f, start_date: t, end_date: t })); } },
             { id: '7d',     label: '7 dias',        fn: () => { const n = new Date(); setFilters(f => ({ ...f, start_date: new Date(n.getTime()-6*86400000).toISOString().split('T')[0], end_date: n.toISOString().split('T')[0] })); } },
-            { id: '30d',    label: '30 dias',       fn: () => { const n = new Date(); setFilters(f => ({ ...f, start_date: new Date(n.getTime()-29*86400000).toISOString().split('T')[0], end_date: n.toISOString().split('T')[0] })); } },
             { id: 'mes',    label: 'Este mês',      fn: () => { const n = new Date(); setFilters(f => ({ ...f, start_date: `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-01`, end_date: new Date(n.getFullYear(), n.getMonth()+1, 0).toISOString().split('T')[0] })); } },
             { id: 'custom', label: 'Personalizado', fn: () => setShowCalendar(true) },
           ].map(({ id, label, fn }) => {
