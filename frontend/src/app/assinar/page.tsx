@@ -172,7 +172,13 @@ function AssinaturaContent() {
                   'Content-Type': 'application/json',
                   ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
                 },
-                body: JSON.stringify({ plan_type: plan, card_token: formData.token }),
+                body: JSON.stringify({
+                  plan_type: plan,
+                  card_token: formData.token,
+                  issuer_id: formData.issuer_id,
+                  payment_method_id: formData.payment_method_id,
+                  installments: formData.installments || 1,
+                }),
               });
               clearTimeout(timeout);
 

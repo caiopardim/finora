@@ -27,23 +27,58 @@ export async function POST(req: NextRequest) {
 
     const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
 
-    const { plan_type, card_token } = await req.json();
+    const { plan_type, card_token, issuer_id, payment_method_id, installments } = await req.json();
     if (!card_token) return NextResponse.json({ error: 'Token do cartão ausente' }, { status: 400 });
 
     const PLANS = await getPlans(admin);
     const plan = PLANS[plan_type as keyof typeof PLANS];
     if (!plan) return NextResponse.json({ error: 'Plano inválido' }, { status: 400 });
 
-    const autoRecurring: Record<string, any> = {
-      frequency: plan.frequency,
-      frequency_type: plan.frequency_type,
+    // ── PASSO 1: Cobrar imediatamente o primeiro pagamento ───────────────────
+    console.log('[card] charging first payment for user', user.id, 'plan', plan_type);
+
+    const paymentBody = {
       transaction_amount: plan.transaction_amount,
-      currency_id: 'BRL',
+      token: card_token,
+      description: plan.reason,
+      installments: installments || 1,
+      payment_method_id,
+      issuer_id,
+      payer: { email: user.email },
+      external_reference: `${user.id}|${plan_type}|first`,
     };
 
-    const body = {
+    const payRes = await fetch('https://api.mercadopago.com/v1/payments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${MP_TOKEN}` },
+      body: JSON.stringify(paymentBody),
+    });
+
+    const payData = await payRes.json();
+    console.log('[card] payment status:', payData.status, 'detail:', payData.status_detail);
+
+    if (!payRes.ok || payData.status === 'rejected') {
+      const msg = payData.status_detail === 'cc_rejected_insufficient_amount'
+        ? 'Saldo insuficiente no cartão.'
+        : payData.status_detail === 'cc_rejected_bad_filled_security_code'
+        ? 'Código de segurança inválido.'
+        : payData.status_detail === 'cc_rejected_card_disabled'
+        ? 'Cartão bloqueado. Entre em contato com o banco.'
+        : 'Pagamento recusado. Verifique os dados do cartão.';
+      return NextResponse.json({ error: msg }, { status: 400 });
+    }
+
+    // ── PASSO 2: Criar assinatura para cobranças futuras ─────────────────────
+    console.log('[card] creating subscription for user', user.id);
+
+    const subBody = {
       reason: plan.reason,
-      auto_recurring: autoRecurring,
+      auto_recurring: {
+        frequency: plan.frequency,
+        frequency_type: plan.frequency_type,
+        transaction_amount: plan.transaction_amount,
+        currency_id: 'BRL',
+      },
       back_url: `${APP_URL}/dashboard`,
       payer_email: user.email,
       card_token_id: card_token,
@@ -51,29 +86,29 @@ export async function POST(req: NextRequest) {
       status: 'authorized',
     };
 
-    console.log('[card] calling MP preapproval for user', user.id, 'plan', plan_type);
-
-    const mpRes = await fetch('https://api.mercadopago.com/preapproval', {
+    const subRes = await fetch('https://api.mercadopago.com/preapproval', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${MP_TOKEN}` },
-      body: JSON.stringify(body),
+      body: JSON.stringify(subBody),
     });
 
-    const mpData = await mpRes.json();
-    console.log('[card] MP response status:', mpRes.status, 'id:', mpData.id, 'error:', mpData.message);
+    const subData = await subRes.json();
+    console.log('[card] subscription id:', subData.id, 'error:', subData.message);
 
-    if (!mpRes.ok) {
-      return NextResponse.json({ error: mpData.message || 'Erro no Mercado Pago' }, { status: 500 });
+    if (!subRes.ok) {
+      // First payment went through — still activate user even if subscription setup fails
+      console.error('[card] subscription creation failed:', subData.message);
     }
 
+    // ── PASSO 3: Ativar usuário ───────────────────────────────────────────────
     await admin.from('profiles').update({
-      mp_subscription_id: mpData.id,
+      mp_subscription_id: subData.id || null,
       plan_type,
       plan_status: 'active',
       paid: true,
     }).eq('id', user.id);
 
-    return NextResponse.json({ ok: true, subscription_id: mpData.id });
+    return NextResponse.json({ ok: true, payment_id: payData.id, subscription_id: subData.id });
   } catch (err: any) {
     console.error('[card] unexpected error:', err.message);
     return NextResponse.json({ error: 'Erro interno. Tente novamente.' }, { status: 500 });
