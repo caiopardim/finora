@@ -1,11 +1,15 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Check, ArrowRight, ArrowLeft, Copy, CheckCircle, CreditCard, Loader2, Eye, EyeOff } from 'lucide-react';
 import { getSettings } from '@/lib/settings';
+
+declare global {
+  interface Window { MercadoPago: any; }
+}
 
 function AssinaturaContent() {
   const router = useRouter();
@@ -22,8 +26,9 @@ function AssinaturaContent() {
   const params = useSearchParams();
 
   const [plan, setPlan]     = useState<'monthly' | 'annual'>(params.get('plan') === 'monthly' ? 'monthly' : 'annual');
-  const [step, setStep]     = useState<'plan' | 'register' | 'payment' | 'pix' | 'done'>('plan');
+  const [step, setStep]     = useState<'plan' | 'register' | 'payment' | 'pix' | 'card' | 'done'>('plan');
   const [method, setMethod] = useState<'card' | 'pix' | null>(null);
+  const brickControllerRef  = useRef<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError]   = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -70,23 +75,9 @@ function AssinaturaContent() {
     setStep('payment');
   }
 
-  async function handleCard() {
-    setLoading(true); setError('');
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/payments/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}) },
-        body: JSON.stringify({ plan_type: plan, email }),
-      });
-      const data = await res.json();
-      if (data.init_point) window.location.href = data.init_point;
-      else setError(data.error || 'Erro ao iniciar pagamento');
-    } catch {
-      setError('Erro de conexão. Tente novamente.');
-    } finally {
-      setLoading(false);
-    }
+  function handleCard() {
+    setMethod('card');
+    setStep('card');
   }
 
   async function handlePix() {
@@ -113,6 +104,97 @@ function AssinaturaContent() {
       setLoading(false);
     }
   }
+
+  // Load MP Bricks when entering card step
+  useEffect(() => {
+    if (step !== 'card') return;
+
+    const publicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY || '';
+
+    async function initBrick() {
+      // Load MP SDK if not loaded yet
+      if (!window.MercadoPago) {
+        await new Promise<void>((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://sdk.mercadopago.com/js/v2';
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('Failed to load MP SDK'));
+          document.head.appendChild(script);
+        });
+      }
+
+      // Destroy previous instance if any
+      if (brickControllerRef.current) {
+        await brickControllerRef.current.unmount();
+        brickControllerRef.current = null;
+      }
+
+      const mp = new window.MercadoPago(publicKey, { locale: 'pt-BR' });
+      const bricksBuilder = mp.bricks();
+
+      const { data: { session } } = await supabase.auth.getSession();
+
+      brickControllerRef.current = await bricksBuilder.create('cardPayment', 'mp-card-brick', {
+        initialization: {
+          amount: PLANS[plan].price,
+          payer: { email: email || session?.user?.email || '' },
+        },
+        customization: {
+          visual: {
+            style: {
+              theme: 'dark',
+              customVariables: {
+                baseColor: '#22c55e',
+                borderRadiusFull: '8px',
+              },
+            },
+          },
+          paymentMethods: { maxInstallments: 1 },
+        },
+        callbacks: {
+          onReady: () => {},
+          onError: (err: any) => {
+            console.error('Brick error:', err);
+            setError('Erro ao carregar formulário de cartão.');
+          },
+          onSubmit: async (formData: any) => {
+            setLoading(true); setError('');
+            try {
+              const { data: { session } } = await supabase.auth.getSession();
+              const res = await fetch('/api/payments/card', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+                },
+                body: JSON.stringify({ plan_type: plan, card_token: formData.token }),
+              });
+              const data = await res.json();
+              if (data.ok) {
+                setStep('done');
+              } else {
+                setError(data.error || 'Erro ao processar pagamento. Verifique os dados do cartão.');
+              }
+            } catch {
+              setError('Erro de conexão. Tente novamente.');
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      });
+    }
+
+    initBrick().catch(err => {
+      console.error(err);
+      setError('Erro ao carregar formulário de cartão.');
+    });
+
+    return () => {
+      brickControllerRef.current?.unmount().catch(() => {});
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
 
   useEffect(() => {
     if (step !== 'pix' || !paymentId) return;
@@ -299,6 +381,35 @@ function AssinaturaContent() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* CARTÃO — MP Brick */}
+        {step === 'card' && (
+          <div>
+            <button onClick={() => { setStep('payment'); setMethod(null); }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#64748b', fontSize: 13, cursor: 'pointer', padding: '0 0 16px', fontWeight: 500 }}>
+              <ArrowLeft size={14}/> Voltar
+            </button>
+            <h1 style={{ color: '#fff', fontSize: 20, fontWeight: 800, margin: '0 0 4px', textAlign: 'center' }}>Dados do cartão</h1>
+            <p style={{ color: '#64748b', fontSize: 13, textAlign: 'center', margin: '0 0 20px' }}>Pagamento seguro via Mercado Pago</p>
+
+            <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 12, padding: '12px 16px', marginBottom: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <p style={{ margin: 0, fontWeight: 700, color: '#fff', fontSize: 14 }}>Plano {p.label}</p>
+                <p style={{ margin: 0, fontSize: 12, color: '#4ade80' }}>{p.desc}</p>
+              </div>
+              <span style={{ fontSize: 18, fontWeight: 800, color: '#fff', flexShrink: 0 }}>R$ {Number(p.price).toFixed(2).replace('.',',')}</span>
+            </div>
+
+            {/* MP Card Brick container */}
+            <div id="mp-card-brick" style={{ minHeight: 320 }}/>
+
+            {error && <p style={{ color: '#f87171', fontSize: 13, margin: '12px 0 0', textAlign: 'center' }}>{error}</p>}
+            {loading && (
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
+                <Loader2 size={20} color="#22c55e" style={{ animation: 'spin 1s linear infinite' }}/>
+              </div>
+            )}
           </div>
         )}
 
