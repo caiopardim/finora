@@ -161,17 +161,23 @@ function AssinaturaContent() {
             setLoading(true); setError('');
             try {
               const { data: { session } } = await supabase.auth.getSession();
+
+              const controller = new AbortController();
+              const timeout = setTimeout(() => controller.abort(), 30000);
+
               const res = await fetch('/api/payments/card', {
                 method: 'POST',
+                signal: controller.signal,
                 headers: {
                   'Content-Type': 'application/json',
                   ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
                 },
                 body: JSON.stringify({ plan_type: plan, card_token: formData.token }),
               });
+              clearTimeout(timeout);
+
               const data = await res.json();
               if (data.ok) {
-                // Unmount brick before changing step to avoid conflict
                 if (brickControllerRef.current) {
                   try { await brickControllerRef.current.unmount(); } catch {}
                   brickControllerRef.current = null;
@@ -180,8 +186,12 @@ function AssinaturaContent() {
               } else {
                 setError(data.error || 'Erro ao processar pagamento. Verifique os dados do cartão.');
               }
-            } catch {
-              setError('Erro de conexão. Tente novamente.');
+            } catch (err: any) {
+              if (err?.name === 'AbortError') {
+                setError('Tempo limite excedido. Tente novamente.');
+              } else {
+                setError('Erro de conexão. Tente novamente.');
+              }
             } finally {
               setLoading(false);
             }

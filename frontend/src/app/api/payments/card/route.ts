@@ -17,58 +17,65 @@ async function getPlans(admin: any) {
 }
 
 export async function POST(req: NextRequest) {
-  const token = req.headers.get('authorization')?.replace('Bearer ', '');
-  if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  try {
+    const token = req.headers.get('authorization')?.replace('Bearer ', '');
+    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
-  const { data: { user } } = await anon.auth.getUser(token);
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+    const { data: { user } } = await anon.auth.getUser(token);
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+    const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
 
-  const { plan_type, card_token } = await req.json();
-  if (!card_token) return NextResponse.json({ error: 'Token do cartão ausente' }, { status: 400 });
+    const { plan_type, card_token } = await req.json();
+    if (!card_token) return NextResponse.json({ error: 'Token do cartão ausente' }, { status: 400 });
 
-  const PLANS = await getPlans(admin);
-  const plan = PLANS[plan_type as keyof typeof PLANS];
-  if (!plan) return NextResponse.json({ error: 'Plano inválido' }, { status: 400 });
+    const PLANS = await getPlans(admin);
+    const plan = PLANS[plan_type as keyof typeof PLANS];
+    if (!plan) return NextResponse.json({ error: 'Plano inválido' }, { status: 400 });
 
-  const autoRecurring: Record<string, any> = {
-    frequency: plan.frequency,
-    frequency_type: plan.frequency_type,
-    transaction_amount: plan.transaction_amount,
-    currency_id: 'BRL',
-  };
+    const autoRecurring: Record<string, any> = {
+      frequency: plan.frequency,
+      frequency_type: plan.frequency_type,
+      transaction_amount: plan.transaction_amount,
+      currency_id: 'BRL',
+    };
 
-  const body = {
-    reason: plan.reason,
-    auto_recurring: autoRecurring,
-    back_url: `${APP_URL}/dashboard`,
-    payer_email: user.email,
-    card_token_id: card_token,
-    external_reference: `${user.id}|${plan_type}`,
-    status: 'authorized',
-  };
+    const body = {
+      reason: plan.reason,
+      auto_recurring: autoRecurring,
+      back_url: `${APP_URL}/dashboard`,
+      payer_email: user.email,
+      card_token_id: card_token,
+      external_reference: `${user.id}|${plan_type}`,
+      status: 'authorized',
+    };
 
-  const mpRes = await fetch('https://api.mercadopago.com/preapproval', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${MP_TOKEN}` },
-    body: JSON.stringify(body),
-  });
+    console.log('[card] calling MP preapproval for user', user.id, 'plan', plan_type);
 
-  const mpData = await mpRes.json();
-  if (!mpRes.ok) {
-    console.error('MP error:', mpData);
-    return NextResponse.json({ error: mpData.message || 'Erro no Mercado Pago' }, { status: 500 });
+    const mpRes = await fetch('https://api.mercadopago.com/preapproval', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${MP_TOKEN}` },
+      body: JSON.stringify(body),
+    });
+
+    const mpData = await mpRes.json();
+    console.log('[card] MP response status:', mpRes.status, 'id:', mpData.id, 'error:', mpData.message);
+
+    if (!mpRes.ok) {
+      return NextResponse.json({ error: mpData.message || 'Erro no Mercado Pago' }, { status: 500 });
+    }
+
+    await admin.from('profiles').update({
+      mp_subscription_id: mpData.id,
+      plan_type,
+      plan_status: 'active',
+      paid: true,
+    }).eq('id', user.id);
+
+    return NextResponse.json({ ok: true, subscription_id: mpData.id });
+  } catch (err: any) {
+    console.error('[card] unexpected error:', err.message);
+    return NextResponse.json({ error: 'Erro interno. Tente novamente.' }, { status: 500 });
   }
-
-  // Activate user
-  await admin.from('profiles').update({
-    mp_subscription_id: mpData.id,
-    plan_type,
-    plan_status: 'active',
-    paid: true,
-  }).eq('id', user.id);
-
-  return NextResponse.json({ ok: true, subscription_id: mpData.id });
 }
