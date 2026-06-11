@@ -76,7 +76,7 @@ function AssinaturaContent() {
   }
 
   function handleCard() {
-    setMethod('card');
+    setError('');
     setStep('card');
   }
 
@@ -185,14 +185,19 @@ function AssinaturaContent() {
       });
     }
 
-    initBrick().catch(err => {
-      console.error(err);
-      setError('Erro ao carregar formulário de cartão.');
-    });
+    // Wait one tick so the DOM renders the brick container
+    const timer = setTimeout(() => {
+      initBrick().catch(err => {
+        console.error(err);
+        setError('Erro ao carregar formulário de cartão.');
+      });
+    }, 100);
 
     return () => {
+      clearTimeout(timer);
       brickControllerRef.current?.unmount().catch(() => {});
     };
+
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
