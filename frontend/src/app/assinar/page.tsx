@@ -171,6 +171,11 @@ function AssinaturaContent() {
               });
               const data = await res.json();
               if (data.ok) {
+                // Unmount brick before changing step to avoid conflict
+                if (brickControllerRef.current) {
+                  try { await brickControllerRef.current.unmount(); } catch {}
+                  brickControllerRef.current = null;
+                }
                 setStep('done');
               } else {
                 setError(data.error || 'Erro ao processar pagamento. Verifique os dados do cartão.');
@@ -195,7 +200,10 @@ function AssinaturaContent() {
 
     return () => {
       clearTimeout(timer);
-      brickControllerRef.current?.unmount().catch(() => {});
+      if (brickControllerRef.current) {
+        brickControllerRef.current.unmount().catch(() => {});
+        brickControllerRef.current = null;
+      }
     };
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
