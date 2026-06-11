@@ -208,7 +208,7 @@ function AssinaturaContent() {
   }, [step, paymentId]);
 
   const p = PLANS[plan];
-  const stepIndex = { plan: 0, register: 1, payment: 2, pix: 2, done: 3 }[step];
+  const stepIndex = { plan: 0, register: 1, payment: 2, pix: 2, card: 2, done: 3 }[step];
 
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(160deg,#0f172a,#1e293b)', fontFamily: 'Inter, system-ui, sans-serif', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '32px 16px 48px' }}>
@@ -348,7 +348,7 @@ function AssinaturaContent() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <button onClick={() => { setMethod('card'); handleCard(); }} disabled={loading} style={{ padding: '16px 14px', borderRadius: 14, border: `2px solid ${method === 'card' ? '#22c55e' : 'rgba(255,255,255,0.1)'}`, background: method === 'card' ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.04)', cursor: loading ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 14, transition: 'all 0.2s', textAlign: 'left', width: '100%' }}>
+              <button onClick={handleCard} disabled={loading} style={{ padding: '16px 14px', borderRadius: 14, border: `2px solid ${method === 'card' ? '#22c55e' : 'rgba(255,255,255,0.1)'}`, background: method === 'card' ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.04)', cursor: loading ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', gap: 14, transition: 'all 0.2s', textAlign: 'left', width: '100%' }}>
                 <div style={{ width: 42, height: 42, borderRadius: 10, background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <CreditCard size={20} color="#818cf8"/>
                 </div>
