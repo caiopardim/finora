@@ -55,16 +55,23 @@ export async function POST(req: NextRequest) {
     });
 
     const payData = await payRes.json();
-    console.log('[card] payment status:', payData.status, 'detail:', payData.status_detail);
+    console.log('[card] payment status:', payData.status, 'detail:', payData.status_detail, 'http:', payRes.status);
 
-    if (!payRes.ok || payData.status === 'rejected') {
-      const msg = payData.status_detail === 'cc_rejected_insufficient_amount'
+    const paymentApproved = ['approved', 'in_process', 'pending'].includes(payData.status);
+
+    if (!paymentApproved) {
+      const detail = payData.status_detail || '';
+      const msg = detail === 'cc_rejected_insufficient_amount'
         ? 'Saldo insuficiente no cartão.'
-        : payData.status_detail === 'cc_rejected_bad_filled_security_code'
+        : detail === 'cc_rejected_bad_filled_security_code'
         ? 'Código de segurança inválido.'
-        : payData.status_detail === 'cc_rejected_card_disabled'
+        : detail === 'cc_rejected_card_disabled'
         ? 'Cartão bloqueado. Entre em contato com o banco.'
-        : 'Pagamento recusado. Verifique os dados do cartão.';
+        : detail === 'cc_rejected_bad_filled_date'
+        ? 'Data de vencimento inválida.'
+        : detail === 'cc_rejected_bad_filled_card_number'
+        ? 'Número do cartão inválido.'
+        : payData.message || 'Pagamento recusado. Verifique os dados do cartão.';
       return NextResponse.json({ error: msg }, { status: 400 });
     }
 
