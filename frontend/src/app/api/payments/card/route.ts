@@ -48,9 +48,15 @@ export async function POST(req: NextRequest) {
       external_reference: `${user.id}|${plan_type}|first`,
     };
 
+    const idempotencyKey = `${user.id}-${plan_type}-${Date.now()}`;
+
     const payRes = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${MP_TOKEN}` },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${MP_TOKEN}`,
+        'X-Idempotency-Key': idempotencyKey,
+      },
       body: JSON.stringify(paymentBody),
     });
 
