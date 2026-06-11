@@ -100,18 +100,6 @@ export default function PlanoPage() {
               </div>
             </div>
 
-            {info.in_trial && (
-              <div style={{ background: '#fef3c715', border: '1px solid #f59e0b30', borderRadius: 12, padding: 16, marginBottom: 16 }}>
-                <p style={{ margin: 0, fontSize: 14, color: '#fbbf24', fontWeight: 600 }}>
-                  🎉 Você tem {info.trial_days_left} dia{info.trial_days_left !== 1 ? 's' : ''} grátis restante{info.trial_days_left !== 1 ? 's' : ''}
-                </p>
-                {info.trial_ends_at && (
-                  <p style={{ margin: '4px 0 0', fontSize: 13, color: c.textMuted }}>
-                    Garantia expira em {fmtDate(info.trial_ends_at)}
-                  </p>
-                )}
-              </div>
-            )}
 
             {info.plan_type && (
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
