@@ -163,14 +163,28 @@ export async function POST(req: NextRequest) {
     normalizedPhone = raw.startsWith('55') ? raw : '55' + raw;
   }
 
-  // Create profile
+  // Create profile — mark as active/paid immediately
   await admin.from('profiles').upsert({
     id: userId,
     name: name || null,
     phone: normalizedPhone,
     role: role || 'user',
     onboarded: true,
+    paid: true,
+    plan_status: 'active',
+    plan_type: 'monthly',
   });
+
+  // Send WhatsApp welcome message if phone provided
+  if (normalizedPhone) {
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3001';
+    const adminSecret = process.env.WEBHOOK_SECRET || '';
+    fetch(`${backendUrl}/webhook/welcome`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-secret': adminSecret },
+      body: JSON.stringify({ phone: normalizedPhone, name: name || '' }),
+    }).catch(err => console.error('Failed to send welcome message:', err));
+  }
 
   return NextResponse.json({ ok: true, user: data.user });
 }

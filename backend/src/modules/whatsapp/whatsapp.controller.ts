@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Headers, UnauthorizedException, Logger } from '@nestjs/common';
+import { Controller, Post, Body, Headers, UnauthorizedException, Logger, HttpCode } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { WhatsappService } from './whatsapp.service';
 import { AiService } from './ai.service';
@@ -12,6 +12,34 @@ export class WhatsappController {
     private readonly config: ConfigService,
     private readonly ai: AiService,
   ) {}
+
+  @Post('welcome')
+  @HttpCode(200)
+  async sendWelcome(
+    @Body() body: { phone: string; name: string },
+    @Headers('x-admin-secret') secret: string,
+  ): Promise<{ ok: boolean }> {
+    const adminSecret = this.config.get('ADMIN_WEBHOOK_SECRET') || this.config.get('WEBHOOK_SECRET');
+    if (adminSecret && secret !== adminSecret) throw new UnauthorizedException();
+
+    const phone = body.phone?.replace(/\D/g, '');
+    if (!phone) return { ok: false };
+
+    const name = body.name || 'por lá';
+    await this.whatsapp.sendMessage(phone,
+      `🐷 *Olá, ${name}! Bem-vindo ao Finora!*\n\n` +
+      `Sua conta foi ativada e você já pode começar a controlar suas finanças direto aqui pelo WhatsApp.\n\n` +
+      `Você pode:\n` +
+      `💸 Registrar gastos — _"Gastei R$ 50 no mercado"_\n` +
+      `💰 Registrar receitas — _"Recebi R$ 2.000 de salário"_\n` +
+      `📊 Ver relatórios — _"Como estão meus gastos?"_\n` +
+      `📅 Agendar compromissos — _"Dentista sexta às 10h"_\n\n` +
+      `Acesse seu dashboard:\n👉 *https://meufinora.com.br/dashboard*\n\n` +
+      `Qualquer dúvida é só me chamar! 😊`,
+    );
+
+    return { ok: true };
+  }
 
   @Post('whatsapp')
   async handleWebhook(
