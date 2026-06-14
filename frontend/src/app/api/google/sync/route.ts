@@ -41,13 +41,23 @@ async function getAccessToken(userId: string): Promise<string> {
 }
 
 function toGoogleEvent(appt: any) {
-  const scheduledAt = new Date(appt.scheduled_at);
-  const endAt = new Date(scheduledAt.getTime() + 60 * 60 * 1000);
+  // Build a dateTime from either scheduled_at or date+time fields
+  let startISO: string;
+  if (appt.scheduled_at) {
+    startISO = new Date(appt.scheduled_at).toISOString();
+  } else if (appt.date && appt.time) {
+    startISO = new Date(`${appt.date}T${appt.time}:00-03:00`).toISOString();
+  } else if (appt.date) {
+    startISO = new Date(`${appt.date}T09:00:00-03:00`).toISOString();
+  } else {
+    startISO = new Date().toISOString();
+  }
+  const endISO = new Date(new Date(startISO).getTime() + 60 * 60 * 1000).toISOString();
   return {
     summary:     appt.title,
     description: appt.description || '',
-    start: { dateTime: scheduledAt.toISOString(), timeZone: 'America/Sao_Paulo' },
-    end:   { dateTime: endAt.toISOString(),       timeZone: 'America/Sao_Paulo' },
+    start: { dateTime: startISO, timeZone: 'America/Sao_Paulo' },
+    end:   { dateTime: endISO,   timeZone: 'America/Sao_Paulo' },
     extendedProperties: { private: { finoraId: appt.id } },
   };
 }
@@ -157,9 +167,10 @@ export async function POST(req: NextRequest) {
     const imported = await importFromGoogle(userId, accessToken, syncedMap);
 
     // 2. Push Finora → Google (only non-Google-imported appointments)
+    const today = new Date().toISOString().slice(0, 10);
     const { data: appts } = await getAdmin()
       .from('appointments').select('*').eq('user_id', userId)
-      .gte('scheduled_at', new Date().toISOString());
+      .gte('date', today);
 
     let synced = 0;
     for (const appt of appts || []) {

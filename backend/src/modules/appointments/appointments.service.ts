@@ -10,13 +10,29 @@ export class AppointmentsService {
   constructor(@Inject(SUPABASE_CLIENT) private supabase: SupabaseClient) {}
 
   async create(userId: string, data: { title: string; description?: string; scheduledAt: string }) {
+    // AI returns scheduledAt as "YYYY-MM-DDTHH:mm:00" in Brasília local time (no timezone)
+    // Normalize to ISO with -03:00 so Postgres stores the correct UTC value
+    let iso = data.scheduledAt;
+    if (iso && !iso.endsWith('Z') && !iso.includes('+') && !iso.match(/-\d{2}:\d{2}$/)) {
+      iso = iso + '-03:00';
+    }
+
+    // Extract date (YYYY-MM-DD) and time (HH:mm) from the original local string
+    const [datePart, timePart] = data.scheduledAt.split('T');
+    const timeStr = timePart ? timePart.slice(0, 5) : null; // "HH:mm"
+
     const { data: appt, error } = await this.supabase
       .from('appointments')
       .insert({
         user_id: userId,
         title: data.title,
-        description: data.description,
-        scheduled_at: data.scheduledAt,
+        description: data.description || null,
+        scheduled_at: iso,
+        date: datePart || null,
+        time: timeStr,
+        color: '#22c55e',
+        icon: '📅',
+        done: false,
       })
       .select()
       .single();
