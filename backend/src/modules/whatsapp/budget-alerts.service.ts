@@ -7,22 +7,49 @@ import { WhatsappService } from './whatsapp.service';
 export class BudgetAlertsService {
   private readonly logger = new Logger(BudgetAlertsService.name);
 
+  // In-memory cache as second layer of protection (survives across calls within the same process lifetime)
+  private readonly sentCache = new Set<string>();
+
   constructor(
     @Inject(SUPABASE_CLIENT) private supabase: SupabaseClient,
     @Inject(forwardRef(() => WhatsappService)) private whatsapp: WhatsappService,
   ) {}
 
   private async alreadySent(key: string): Promise<boolean> {
-    const { data } = await this.supabase
+    // Fast path: check in-memory cache first
+    if (this.sentCache.has(key)) return true;
+
+    // Slow path: check DB
+    const { data, error } = await this.supabase
       .from('budget_alert_logs')
       .select('id')
       .eq('alert_key', key)
       .maybeSingle();
-    return !!data;
+
+    if (error) {
+      this.logger.warn(`[budget-alert] alreadySent DB error for key=${key}: ${error.message}`);
+    }
+
+    if (data) {
+      // Sync back to cache
+      this.sentCache.add(key);
+      return true;
+    }
+    return false;
   }
 
   private async markSent(key: string): Promise<void> {
-    await this.supabase.from('budget_alert_logs').insert({ alert_key: key });
+    // Mark in memory immediately
+    this.sentCache.add(key);
+
+    // Persist to DB (upsert to avoid unique constraint errors)
+    const { error } = await this.supabase
+      .from('budget_alert_logs')
+      .upsert({ alert_key: key }, { onConflict: 'alert_key', ignoreDuplicates: true });
+
+    if (error) {
+      this.logger.error(`[budget-alert] markSent DB error for key=${key}: ${error.message}`);
+    }
   }
 
   async checkAndNotify(userId: string): Promise<void> {
