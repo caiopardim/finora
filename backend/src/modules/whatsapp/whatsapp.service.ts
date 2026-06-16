@@ -8,6 +8,8 @@ import { UsersService } from '../users/users.service';
 import { ReportsService } from '../reports/reports.service';
 import { AppointmentsService } from '../appointments/appointments.service';
 import { CategoriesService } from '../categories/categories.service';
+import { GoalsService } from '../goals/goals.service';
+import { BillsService } from '../bills/bills.service';
 import * as dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 dayjs.locale('pt-br');
@@ -33,6 +35,8 @@ export class WhatsappService {
     private reports: ReportsService,
     private categories: CategoriesService,
     @Inject(forwardRef(() => AppointmentsService)) private appointments: AppointmentsService,
+    private goals: GoalsService,
+    private bills: BillsService,
   ) {
     this.evolutionUrl = config.get('EVOLUTION_API_URL');
     this.evolutionKey = config.get('EVOLUTION_API_KEY');
@@ -274,6 +278,177 @@ export class WhatsappService {
           await this.sendMessage(
             normalizedPhone,
             `📅 *Seus próximos compromissos:*\n\n${lines.join('\n\n')}`,
+          );
+          break;
+        }
+
+        // ── METAS ───────────────────────────────────────────────────────────
+        case 'create_goal': {
+          const { goal } = intent;
+          if (!goal?.name || !goal?.target_amount) {
+            await this.sendMessage(normalizedPhone, `🎯 Para criar uma meta preciso saber:\n• *Nome* da meta\n• *Valor* que quer juntar\n\nEx: _"Meta de 5000 reais para viagem até dezembro"_`);
+            break;
+          }
+          await this.goals.create(user.id, {
+            name: goal.name,
+            target_amount: goal.target_amount,
+            deadline: goal.deadline,
+            icon: goal.icon,
+          });
+          const fmtTarget = goal.target_amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const deadlineStr = goal.deadline ? `\n📅 *Prazo:* ${new Date(goal.deadline + 'T12:00:00').toLocaleDateString('pt-BR')}` : '';
+          await this.sendMessage(normalizedPhone,
+            `🎯 *Meta criada com sucesso!*\n\n` +
+            `${goal.icon || '🎯'} *${goal.name}*\n` +
+            `💰 *Objetivo:* R$ ${fmtTarget}${deadlineStr}\n\n` +
+            `Para adicionar progresso, diga:\n_"Guardei 500 reais para ${goal.name}"_\n\n` +
+            `📊 Acompanhe no dashboard:\n👉 *${this.dashboardUrl}/dashboard/metas*`,
+          );
+          break;
+        }
+
+        case 'list_goals': {
+          const allGoals = await this.goals.findAll(user.id);
+          if (!allGoals || allGoals.length === 0) {
+            await this.sendMessage(normalizedPhone,
+              `🎯 Você ainda não tem metas criadas.\n\nPara criar uma, diga:\n_"Quero juntar 5000 reais para viagem"_`,
+            );
+            break;
+          }
+          const goalLines = allGoals.map((g: any) => {
+            const current = Number(g.current_amount || 0);
+            const target = Number(g.target_amount);
+            const pct = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
+            const bar = '█'.repeat(Math.floor(pct / 10)) + '░'.repeat(10 - Math.floor(pct / 10));
+            const fmtCurrent = current.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const fmtTarget = target.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const deadline = g.deadline ? `\n   📅 Prazo: ${new Date(g.deadline + 'T12:00:00').toLocaleDateString('pt-BR')}` : '';
+            return `${g.icon || '🎯'} *${g.name}*\n   ${bar} ${pct}%\n   R$ ${fmtCurrent} / R$ ${fmtTarget}${deadline}`;
+          });
+          await this.sendMessage(normalizedPhone,
+            `🎯 *Suas Metas Financeiras:*\n\n${goalLines.join('\n\n')}\n\n` +
+            `📊 Veja detalhes: *${this.dashboardUrl}/dashboard/metas*`,
+          );
+          break;
+        }
+
+        case 'add_goal_progress': {
+          const { goal_progress } = intent;
+          if (!goal_progress?.name || !goal_progress?.amount) {
+            await this.sendMessage(normalizedPhone, `🎯 Me diga:\n• *Nome* da meta\n• *Valor* que guardou\n\nEx: _"Guardei 500 para viagem"_`);
+            break;
+          }
+          const allGoals = await this.goals.findAll(user.id);
+          const matched = allGoals?.find((g: any) =>
+            g.name.toLowerCase().includes(goal_progress.name.toLowerCase()) ||
+            goal_progress.name.toLowerCase().includes(g.name.toLowerCase().split(' ')[0]),
+          );
+          if (!matched) {
+            await this.sendMessage(normalizedPhone,
+              `❌ Não encontrei meta com o nome *"${goal_progress.name}"*.\n\nSuas metas:\n${allGoals?.map((g: any) => `• ${g.icon || '🎯'} ${g.name}`).join('\n') || 'Nenhuma meta cadastrada'}`,
+            );
+            break;
+          }
+          const updated = await this.goals.addProgress(user.id, matched.id, goal_progress.amount);
+          const current = Number(updated.current_amount || 0);
+          const target = Number(updated.target_amount);
+          const pct = target > 0 ? Math.min(100, Math.round((current / target) * 100)) : 0;
+          const fmtAmount = goal_progress.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const fmtCurrent = current.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const fmtTarget = target.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const congrats = pct >= 100 ? `\n\n🏆 *Parabéns! Meta atingida!* 🎉` : pct >= 75 ? `\n\n🔥 Quase lá! Você está a ${100 - pct}% de atingir a meta!` : '';
+          await this.sendMessage(normalizedPhone,
+            `✅ *Progresso adicionado!*\n\n` +
+            `${matched.icon || '🎯'} *${matched.name}*\n` +
+            `💰 +R$ ${fmtAmount}\n` +
+            `📈 R$ ${fmtCurrent} de R$ ${fmtTarget} (${pct}%)${congrats}`,
+          );
+          break;
+        }
+
+        // ── CONTAS / RECORRÊNCIAS ────────────────────────────────────────────
+        case 'create_bill': {
+          const { bill } = intent;
+          if (!bill?.description || !bill?.amount || !bill?.due_date) {
+            await this.sendMessage(normalizedPhone,
+              `📋 Para cadastrar uma conta preciso saber:\n• *Nome* da conta\n• *Valor*\n• *Vencimento*\n\nEx: _"Cadastra aluguel 1500 vence dia 5 todo mês"_`,
+            );
+            break;
+          }
+          await this.bills.create(user.id, {
+            description: bill.description,
+            amount: bill.amount,
+            due_date: bill.due_date,
+            is_recurring: bill.is_recurring ?? false,
+            recurrence_interval: bill.recurrence_interval,
+          });
+          const fmtAmt = bill.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const dueStr = new Date(bill.due_date + 'T12:00:00').toLocaleDateString('pt-BR');
+          const recurStr = bill.is_recurring
+            ? `\n🔄 *Recorrência:* ${bill.recurrence_interval === 'weekly' ? 'Semanal' : bill.recurrence_interval === 'yearly' ? 'Anual' : 'Mensal'}`
+            : '';
+          await this.sendMessage(normalizedPhone,
+            `📋 *Conta cadastrada!*\n\n` +
+            `📝 *${bill.description}*\n` +
+            `💸 *Valor:* R$ ${fmtAmt}\n` +
+            `📅 *Vencimento:* ${dueStr}${recurStr}\n\n` +
+            `Te avisarei próximo ao vencimento! ✅\n` +
+            `📊 Veja suas contas: *${this.dashboardUrl}/dashboard/contas*`,
+          );
+          break;
+        }
+
+        case 'list_bills': {
+          const pendingBills = await this.bills.findAll(user.id, { paid: false, upcoming: false });
+          if (!pendingBills || pendingBills.length === 0) {
+            await this.sendMessage(normalizedPhone,
+              `📋 Você não tem contas pendentes! 🎉\n\nPara cadastrar, diga:\n_"Cadastra conta de luz 120 reais vence dia 10 todo mês"_`,
+            );
+            break;
+          }
+          const today2 = dayjs();
+          const billLines = pendingBills.slice(0, 10).map((b: any) => {
+            const due = dayjs(b.due_date);
+            const diff = due.diff(today2, 'day');
+            const dueBadge = diff < 0 ? '🔴 Vencida' : diff === 0 ? '🟡 Vence hoje' : diff <= 3 ? `🟡 Vence em ${diff}d` : `📅 ${due.format('DD/MM')}`;
+            const fmtB = Number(b.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            const recur = b.is_recurring ? ' 🔄' : '';
+            return `• *${b.description}*${recur} — R$ ${fmtB}\n  ${dueBadge}`;
+          });
+          const total = pendingBills.reduce((s: number, b: any) => s + Number(b.amount), 0);
+          const fmtTotal = total.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          await this.sendMessage(normalizedPhone,
+            `📋 *Contas Pendentes:*\n\n${billLines.join('\n\n')}\n\n` +
+            `💸 *Total:* R$ ${fmtTotal}\n\n` +
+            `Para marcar como paga: _"Paguei a conta de luz"_`,
+          );
+          break;
+        }
+
+        case 'mark_bill_paid': {
+          const billName = intent.bill_name;
+          if (!billName) {
+            await this.sendMessage(normalizedPhone, `📋 Qual conta você pagou? Ex: _"Paguei a conta de luz"_`);
+            break;
+          }
+          const allBills = await this.bills.findAll(user.id, { paid: false });
+          const matchedBill = allBills?.find((b: any) =>
+            b.description.toLowerCase().includes(billName.toLowerCase()) ||
+            billName.toLowerCase().includes(b.description.toLowerCase().split(' ')[0]),
+          );
+          if (!matchedBill) {
+            await this.sendMessage(normalizedPhone,
+              `❌ Não encontrei a conta *"${billName}"* em aberto.\n\nSuas contas pendentes:\n${allBills?.slice(0, 5).map((b: any) => `• ${b.description}`).join('\n') || 'Nenhuma conta pendente'}`,
+            );
+            break;
+          }
+          await this.bills.markPaid(user.id, matchedBill.id);
+          const fmtPaid = Number(matchedBill.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const recurMsg = matchedBill.is_recurring ? `\n🔄 Próximo vencimento já foi gerado automaticamente!` : '';
+          await this.sendMessage(normalizedPhone,
+            `✅ *Conta quitada!*\n\n` +
+            `📝 *${matchedBill.description}*\n` +
+            `💸 R$ ${fmtPaid}${recurMsg}`,
           );
           break;
         }

@@ -12,11 +12,27 @@ export interface ParsedTransaction {
 }
 
 export interface MessageIntent {
-  action: 'register_transaction' | 'query_report' | 'create_appointment' | 'list_appointments' | 'delete_transaction' | 'list_bills' | 'set_goal' | 'unknown';
+  action:
+    | 'register_transaction'
+    | 'query_report'
+    | 'create_appointment'
+    | 'list_appointments'
+    | 'delete_transaction'
+    | 'create_goal'
+    | 'list_goals'
+    | 'add_goal_progress'
+    | 'create_bill'
+    | 'list_bills'
+    | 'mark_bill_paid'
+    | 'unknown';
   transaction?: ParsedTransaction;
   query?: string;
   appointment?: { title: string; description?: string; scheduledAt: string };
   delete?: { description?: string; amount?: number; date?: string };
+  goal?: { name: string; target_amount: number; deadline?: string; icon?: string };
+  goal_progress?: { name: string; amount: number };
+  bill?: { description: string; amount: number; due_date: string; is_recurring: boolean; recurrence_interval?: 'weekly' | 'monthly' | 'yearly' };
+  bill_name?: string;
 }
 
 @Injectable()
@@ -45,88 +61,132 @@ export class AiService {
       messages: [
         {
           role: 'system',
-          content: `Você é um assistente financeiro pessoal. Hoje é ${today}.
+          content: `Você é a Finora, assistente financeira pessoal. Hoje é ${today}.
 
-Analise a mensagem do usuário e retorne um JSON com a seguinte estrutura:
+Analise a mensagem e retorne um JSON com UMA das ações abaixo:
 
-Para registro de transação:
+━━━ TRANSAÇÕES ━━━
 {
   "action": "register_transaction",
   "transaction": {
     "type": "income" | "expense",
     "amount": number,
-    "category": string (use EXATAMENTE uma das categorias do usuário: ${categoryList}),
-    "description": string (descrição curta e clara),
+    "category": string (EXATAMENTE uma de: ${categoryList}),
+    "description": string,
     "date": "YYYY-MM-DD"
   }
 }
+Use para: "gastei", "paguei", "comprei", "recebi", "ganhei", "entrou".
 
-IMPORTANTE: Sempre use o nome exato de uma das categorias da lista acima. Escolha a mais adequada. Nunca invente categorias fora dessa lista.
-
-Para consulta de relatório ou pergunta sobre finanças:
-{
-  "action": "query_report",
-  "query": string (o que o usuário quer saber, em português)
-}
-
-Considere query_report quando o usuário perguntar sobre:
-- Quanto gastou (hoje, semana, mês, ano)
-- Onde gastou mais / maior gasto / categoria
-- Se está positivo ou negativo / saldo
-- Resumo, relatório, balanço, extrato
-- Comparação com mês anterior
-- Contas a pagar / vencimentos
-- Receitas do mês
-- Qualquer pergunta sobre situação financeira
-
-Para criar agendamento/compromisso:
-{
-  "action": "create_appointment",
-  "appointment": {
-    "title": string (nome do compromisso, ex: "Dentista", "Reunião com cliente"),
-    "description": string (detalhes opcionais),
-    "scheduledAt": "YYYY-MM-DDTHH:mm:00" (data e hora completa)
-  }
-}
-
-Para listar agendamentos:
-{
-  "action": "list_appointments"
-}
-
-Para cancelar/excluir uma transação:
 {
   "action": "delete_transaction",
   "delete": {
-    "description": string (descrição ou nome do gasto/receita que o usuário quer excluir),
-    "amount": number (valor, se mencionado),
-    "date": "YYYY-MM-DD" (data, se mencionada)
+    "description": string,
+    "amount": number (se mencionado),
+    "date": "YYYY-MM-DD" (se mencionado)
   }
 }
+Use para: "cancela", "apaga", "exclui", "desfaz", "errei", "lancei errado".
 
-Considere delete_transaction quando o usuário usar palavras como: cancelar, excluir, apagar, deletar, remover, desfazer, não quero, errei, lancei errado, foi errado.
-Exemplos: "cancela o mercado", "apaga o gasto de 50 reais", "excluir a transação do almoço", "errei o lançamento do salário".
+━━━ RELATÓRIOS / CONSULTAS ━━━
+{
+  "action": "query_report",
+  "query": string
+}
+Use para: quanto gastei, saldo, resumo, relatório, balanço, onde gastei mais, receitas, extrato.
 
-Para outros casos:
+━━━ AGENDA / COMPROMISSOS ━━━
+{
+  "action": "create_appointment",
+  "appointment": {
+    "title": string,
+    "description": string (opcional),
+    "scheduledAt": "YYYY-MM-DDTHH:mm:00"
+  }
+}
+Use para: agendar, compromisso, reunião, consulta, dentista, médico, lembrete, marcar evento.
+
+{
+  "action": "list_appointments"
+}
+Use para: "meus compromissos", "agenda", "o que tenho marcado", "próximos eventos".
+
+━━━ METAS FINANCEIRAS ━━━
+{
+  "action": "create_goal",
+  "goal": {
+    "name": string (nome da meta, ex: "Viagem para Europa", "Reserva de emergência"),
+    "target_amount": number (valor total a atingir),
+    "deadline": "YYYY-MM-DD" (prazo, se mencionado),
+    "icon": string (emoji representativo, ex: "✈️", "🏠", "🚗", "💍", "🎓", "🏖️")
+  }
+}
+Use para: "quero guardar", "meta de", "objetivo de", "juntar dinheiro para", "poupar para", "criar meta".
+
+{
+  "action": "list_goals"
+}
+Use para: "minhas metas", "como estão minhas metas", "objetivos financeiros", "quanto já juntei".
+
+{
+  "action": "add_goal_progress",
+  "goal_progress": {
+    "name": string (nome ou parte do nome da meta),
+    "amount": number (valor a acrescentar)
+  }
+}
+Use para: "guardei X para", "adicionei X na meta de", "coloca X na meta de", "contribuí X para".
+
+━━━ CONTAS / RECORRÊNCIAS ━━━
+{
+  "action": "create_bill",
+  "bill": {
+    "description": string (nome da conta, ex: "Aluguel", "Conta de luz", "Netflix"),
+    "amount": number,
+    "due_date": "YYYY-MM-DD" (data de vencimento),
+    "is_recurring": boolean (true se for mensal, semanal, anual),
+    "recurrence_interval": "monthly" | "weekly" | "yearly" (só se is_recurring=true)
+  }
+}
+Use para: "adiciona conta", "cadastra boleto", "lança conta de", "todo mês pago", "mensalidade", "assinatura", "aluguel".
+
+{
+  "action": "list_bills"
+}
+Use para: "minhas contas", "contas a pagar", "o que vence", "boletos pendentes", "próximas contas".
+
+{
+  "action": "mark_bill_paid",
+  "bill_name": string (nome ou parte do nome da conta paga)
+}
+Use para: "paguei a conta de", "quitei o boleto de", "marquei como pago", "já paguei".
+ATENÇÃO: Diferença crucial:
+- "paguei a conta de luz" → mark_bill_paid (marca uma conta cadastrada como paga)
+- "paguei 150 de luz" → register_transaction (registra uma despesa nova)
+
+━━━ DESCONHECIDO ━━━
 {
   "action": "unknown"
 }
 
-Considere create_appointment quando o usuário mencionar: agenda, agendar, compromisso, reunião, consulta, dentista, médico, lembrar, lembrete, marcar, evento.
-Considere list_appointments quando perguntar sobre: "meus compromissos", "agenda", "o que tenho marcado".
+━━━ REGRAS GERAIS ━━━
+- Para datas relativas: hoje=${today}
+- "quinta às 8h" → calcule o próximo dia da semana
+- "amanhã às 14h" → ${today.slice(0,7)}-??T14:00:00 (calcule)
+- Sempre use exatamente uma das categorias para transações: ${categoryList}
 
-Para datas relativas use hoje=${today}. Exemplos de datas:
-- "quinta às 8 da manhã" → calcule o próximo dia da semana correspondente
-- "amanhã às 14h" → tomorrow T14:00:00
-- "semana que vem segunda" → próxima segunda-feira
-
-Exemplos:
-- "Gastei 45 no mercado" → expense, Alimentação, 45.00
-- "Recebi 3500 de salário" → income, Salário, 3500.00
+━━━ EXEMPLOS ━━━
+- "Gastei 45 no mercado" → register_transaction, expense, Alimentação
+- "Recebi 3500 de salário" → register_transaction, income, Salário
 - "Quanto gastei este mês?" → query_report
-- "Paguei 120 de internet" → expense, Internet/Telefone, 120.00
-- "Cancela o mercado" → delete_transaction, description: "mercado"
-- "Apaga o gasto de 50 reais" → delete_transaction, amount: 50`,
+- "Cancela o mercado" → delete_transaction
+- "Dentista sexta às 10h" → create_appointment
+- "Quero juntar 10000 para viagem em dezembro" → create_goal
+- "Guardei 500 para a viagem" → add_goal_progress
+- "Minhas metas" → list_goals
+- "Cadastra aluguel 1500 todo mês no dia 5" → create_bill, monthly
+- "Contas a pagar" → list_bills
+- "Paguei a conta de luz" → mark_bill_paid`,
         },
         {
           role: 'user',

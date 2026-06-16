@@ -8,9 +8,11 @@ import { UsersModule } from '../users/users.module';
 import { ReportsModule } from '../reports/reports.module';
 import { CategoriesModule } from '../categories/categories.module';
 import { AppointmentsModule } from '../appointments/appointments.module';
+import { GoalsModule } from '../goals/goals.module';
+import { BillsModule } from '../bills/bills.module';
 
 @Module({
-  imports: [TransactionsModule, UsersModule, ReportsModule, CategoriesModule, forwardRef(() => AppointmentsModule)],
+  imports: [TransactionsModule, UsersModule, ReportsModule, CategoriesModule, forwardRef(() => AppointmentsModule), GoalsModule, BillsModule],
   controllers: [WhatsappController],
   providers: [WhatsappService, AiService, BudgetAlertsService],
   exports: [WhatsappService, AiService, BudgetAlertsService],
