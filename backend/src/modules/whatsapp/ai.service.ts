@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import Anthropic from '@anthropic-ai/sdk';
 import OpenAI, { toFile } from 'openai';
 import * as dayjs from 'dayjs';
 
@@ -37,31 +38,31 @@ export interface MessageIntent {
 
 @Injectable()
 export class AiService {
-  private readonly openai: OpenAI | null = null;
+  private readonly anthropic: Anthropic | null = null;
+  private readonly openai: OpenAI | null = null; // kept for Whisper audio transcription
   private readonly logger = new Logger(AiService.name);
 
   constructor(private config: ConfigService) {
-    const apiKey = config.get('OPENAI_API_KEY');
-    if (apiKey) {
-      this.openai = new OpenAI({ apiKey });
+    const anthropicKey = config.get('ANTHROPIC_API_KEY');
+    if (anthropicKey) {
+      this.anthropic = new Anthropic({ apiKey: anthropicKey });
+    }
+
+    const openaiKey = config.get('OPENAI_API_KEY');
+    if (openaiKey) {
+      this.openai = new OpenAI({ apiKey: openaiKey });
     }
   }
 
   async parseMessage(message: string, userCategories?: string[]): Promise<MessageIntent> {
-    if (!this.openai) return { action: 'unknown' };
+    if (!this.anthropic) return { action: 'unknown' };
     const today = dayjs().format('YYYY-MM-DD');
 
     const categoryList = userCategories && userCategories.length > 0
       ? userCategories.join(', ')
       : 'Alimentação, Transporte, Moradia, Saúde, Lazer, Educação, Vestuário, Internet/Telefone, Serviços, Salário, Freelance, Investimentos, Outros';
 
-    const response = await this.openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      response_format: { type: 'json_object' },
-      messages: [
-        {
-          role: 'system',
-          content: `Você é a Finora, assistente financeira pessoal. Hoje é ${today}.
+    const systemPrompt = `Você é a Finora, assistente financeira pessoal. Hoje é ${today}.
 
 Analise a mensagem e retorne um JSON com UMA das ações abaixo:
 
@@ -186,19 +187,22 @@ ATENÇÃO: Diferença crucial:
 - "Minhas metas" → list_goals
 - "Cadastra aluguel 1500 todo mês no dia 5" → create_bill, monthly
 - "Contas a pagar" → list_bills
-- "Paguei a conta de luz" → mark_bill_paid`,
-        },
-        {
-          role: 'user',
-          content: message,
-        },
-      ],
+- "Paguei a conta de luz" → mark_bill_paid
+
+Responda APENAS com o JSON, sem texto adicional, sem markdown.`;
+
+    const response = await this.anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 1024,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: message }],
     });
 
     try {
-      return JSON.parse(response.choices[0].message.content) as MessageIntent;
+      const text = response.content[0].type === 'text' ? response.content[0].text : '';
+      return JSON.parse(text) as MessageIntent;
     } catch {
-      this.logger.error('Failed to parse AI response', response.choices[0].message.content);
+      this.logger.error('Failed to parse AI response', response.content);
       return { action: 'unknown' };
     }
   }
@@ -206,7 +210,6 @@ ATENÇÃO: Diferença crucial:
   async transcribeAudio(base64: string): Promise<string | null> {
     if (!this.openai) return null;
     try {
-      // Detect format: WhatsApp sends ogg/opus for PTT, mp4 for audio
       const buffer = Buffer.from(base64, 'base64');
       const file = await toFile(buffer, 'audio.ogg', { type: 'audio/ogg' });
 
@@ -224,17 +227,14 @@ ATENÇÃO: Diferença crucial:
   }
 
   async generateReportResponse(query: string, data: any): Promise<string> {
-    if (!this.openai) return 'IA não configurada.';
+    if (!this.anthropic) return 'IA não configurada.';
 
     const today = dayjs().format('DD/MM/YYYY');
-    const monthName = dayjs().format('MMMM');
 
-    const response = await this.openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [
-        {
-          role: 'system',
-          content: `Você é a Finora, uma assistente financeira pessoal simpática e direta. Hoje é ${today}.
+    const response = await this.anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 1024,
+      system: `Você é a Finora, uma assistente financeira pessoal simpática e direta. Hoje é ${today}.
 
 Responda em português brasileiro, use emojis para deixar visual e agradável.
 Formate valores em R$ com vírgula (ex: R$ 1.250,00).
@@ -261,7 +261,7 @@ Se perguntar sobre o mês geral, use os totais de "currentMonth".
 Se perguntar se está positivo, responda claramente se sim ou não e por quanto.
 Se perguntar resumo do dia, mostre só o de hoje.
 Termine sempre com uma dica ou encorajamento curto.`,
-        },
+      messages: [
         {
           role: 'user',
           content: `Pergunta do usuário: "${query}"\n\nDados financeiros:\n${JSON.stringify(data, null, 2)}`,
@@ -269,19 +269,21 @@ Termine sempre com uma dica ou encorajamento curto.`,
       ],
     });
 
-    return response.choices[0].message.content;
+    return response.content[0].type === 'text' ? response.content[0].text : '';
   }
 
-  // ── Analisa imagem/PDF de comprovante via GPT-4o Vision ─────────────────
+  // ── Analisa imagem/PDF de comprovante via Claude Vision ─────────────────
   async analyzeReceiptImage(base64: string, mimeType: string, categoryNames: string[]): Promise<ParsedTransaction[]> {
-    if (!this.openai) return [];
+    if (!this.anthropic) return [];
     const today = dayjs().format('YYYY-MM-DD');
     const categoryList = categoryNames.length
       ? categoryNames.join(', ')
       : 'Alimentação, Transporte, Moradia, Saúde, Lazer, Educação, Vestuário, Internet/Telefone, Serviços, Salário, Freelance, Investimentos, Outros';
 
-    // GPT-4o Vision only accepts image types (JPEG, PNG, WEBP, GIF)
-    const safeMime = mimeType.startsWith('image/') ? mimeType : 'image/jpeg';
+    // Claude Vision accepts JPEG, PNG, GIF, WEBP
+    const safeMime = (['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mimeType)
+      ? mimeType
+      : 'image/jpeg') as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
 
     const systemPrompt = `Você é um assistente financeiro inteligente. Analise o arquivo enviado (comprovante, recibo, extrato bancário ou nota fiscal) e extraia TODAS as transações financeiras presentes.
 
@@ -328,28 +330,30 @@ OUTRAS REGRAS:
 - Se não houver data, use hoje (${today})
 - PIX enviado/débito → "expense", PIX recebido/crédito → "income"
 - Nota fiscal → sempre "expense"
-- Extrato → cada linha vira um item separado`;
+- Extrato → cada linha vira um item separado
+
+Responda APENAS com o JSON, sem texto adicional, sem markdown.`;
 
     try {
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o',
-        response_format: { type: 'json_object' },
+      const response = await this.anthropic.messages.create({
+        model: 'claude-opus-4-8',
+        max_tokens: 2000,
+        system: systemPrompt,
         messages: [
-          { role: 'system', content: systemPrompt },
           {
             role: 'user',
             content: [
               {
-                type: 'image_url',
-                image_url: { url: `data:${safeMime};base64,${base64}`, detail: 'high' },
+                type: 'image',
+                source: { type: 'base64', media_type: safeMime, data: base64 },
               },
-            ] as any,
+            ],
           },
         ],
-        max_tokens: 2000,
       });
 
-      const parsed = JSON.parse(response.choices[0].message.content);
+      const text = response.content[0].type === 'text' ? response.content[0].text : '{}';
+      const parsed = JSON.parse(text);
       this.logger.log(`[analyzeReceiptImage] found ${parsed.transactions?.length ?? 0} transactions, summary: ${parsed.summary}`);
       return parsed.transactions || [];
     } catch (err) {
@@ -360,20 +364,17 @@ OUTRAS REGRAS:
 
   // ── Analisa texto extraído de PDF ou planilha ─────────────────────────────
   async analyzeDocumentText(text: string, filename: string, categoryNames: string[]): Promise<{ transactions: ParsedTransaction[]; summary: string }> {
-    if (!this.openai) return { transactions: [], summary: 'IA não configurada.' };
+    if (!this.anthropic) return { transactions: [], summary: 'IA não configurada.' };
     const today = dayjs().format('YYYY-MM-DD');
     const categoryList = categoryNames.length
       ? categoryNames.join(', ')
       : 'Alimentação, Transporte, Moradia, Saúde, Lazer, Educação, Vestuário, Internet/Telefone, Serviços, Salário, Freelance, Investimentos, Outros';
 
     try {
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o',
-        response_format: { type: 'json_object' },
-        messages: [
-          {
-            role: 'system',
-            content: `Você é um assistente financeiro inteligente. Analise o conteúdo do arquivo "${filename}" e extraia TODAS as transações financeiras presentes.
+      const response = await this.anthropic.messages.create({
+        model: 'claude-haiku-4-5',
+        max_tokens: 3000,
+        system: `Você é um assistente financeiro inteligente. Analise o conteúdo do arquivo "${filename}" e extraia TODAS as transações financeiras presentes.
 
 Hoje é ${today}.
 
@@ -420,17 +421,19 @@ OUTRAS REGRAS:
 - Débitos/saídas/notas fiscais → "expense"
 - Créditos/entradas/PIX recebido → "income"
 - Ignore linhas de saldo, total e cabeçalho
-- Para extratos: cada linha de transação vira um item separado`,
-          },
+- Para extratos: cada linha de transação vira um item separado
+
+Responda APENAS com o JSON, sem texto adicional, sem markdown.`,
+        messages: [
           {
             role: 'user',
-            content: `Conteúdo do arquivo:\n\n${text.slice(0, 12000)}`, // limit to avoid token overflow
+            content: `Conteúdo do arquivo:\n\n${text.slice(0, 12000)}`,
           },
         ],
-        max_tokens: 3000,
       });
 
-      const parsed = JSON.parse(response.choices[0].message.content);
+      const responseText = response.content[0].type === 'text' ? response.content[0].text : '{}';
+      const parsed = JSON.parse(responseText);
       return {
         transactions: parsed.transactions || [],
         summary: parsed.summary || '',
