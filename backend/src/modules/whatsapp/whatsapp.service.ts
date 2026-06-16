@@ -307,8 +307,7 @@ export class WhatsappService {
         // ── PDF: extrai texto com pdf-parse e envia pro GPT ───────────────
         // GPT-4o Vision NÃO aceita PDF — precisa extrair texto primeiro
         try {
-          const pdfParseModule = require('pdf-parse');
-          const pdfParse = typeof pdfParseModule === 'function' ? pdfParseModule : pdfParseModule.default;
+          const pdfParse = require('pdf-parse');
           const buffer = Buffer.from(base64, 'base64');
           const pdfData = await pdfParse(buffer);
 
