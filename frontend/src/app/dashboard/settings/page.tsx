@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Check, User, Shield, MessageSquare, Camera, Loader, Bell, BellOff, Palette } from 'lucide-react';
+import { Check, User, Shield, MessageSquare, Camera, Loader, Bell, BellOff, Palette, Eye, EyeOff } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 
 export default function SettingsPage() {
@@ -14,6 +14,11 @@ export default function SettingsPage() {
   const [user, setUser] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [notifStatus, setNotifStatus] = useState<'default'|'granted'|'denied'>('default');
+  const [pwForm, setPwForm] = useState({ current: '', newPw: '', confirm: '' });
+  const [pwError, setPwError] = useState('');
+  const [pwSuccess, setPwSuccess] = useState(false);
+  const [pwLoading, setPwLoading] = useState(false);
+  const [showPw, setShowPw] = useState({ current: false, newPw: false, confirm: false });
   const [accentColor, setAccentColor] = useState('#22c55e');
   const [accentSaved, setAccentSaved] = useState(false);
 
@@ -94,10 +99,36 @@ export default function SettingsPage() {
     setTimeout(() => setSaved(false), 2500);
   }
 
-  async function handlePasswordReset() {
-    if (!user?.email) return;
-    await supabase.auth.resetPasswordForEmail(user.email);
-    alert('E-mail de redefinição enviado!');
+  async function handlePasswordChange(e: React.FormEvent) {
+    e.preventDefault();
+    setPwError('');
+    setPwSuccess(false);
+
+    if (!pwForm.current) { setPwError('Informe a senha atual.'); return; }
+    if (pwForm.newPw.length < 6) { setPwError('A nova senha deve ter no mínimo 6 caracteres.'); return; }
+    if (pwForm.newPw !== pwForm.confirm) { setPwError('A nova senha e a confirmação não coincidem.'); return; }
+
+    setPwLoading(true);
+    try {
+      // Re-authenticate with current password first
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.email) { setPwError('Sessão inválida. Faça login novamente.'); return; }
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: session.user.email,
+        password: pwForm.current,
+      });
+      if (signInError) { setPwError('Senha atual incorreta.'); return; }
+
+      const { error: updateError } = await supabase.auth.updateUser({ password: pwForm.newPw });
+      if (updateError) { setPwError('Erro ao atualizar senha: ' + updateError.message); return; }
+
+      setPwSuccess(true);
+      setPwForm({ current: '', newPw: '', confirm: '' });
+      setTimeout(() => setPwSuccess(false), 4000);
+    } finally {
+      setPwLoading(false);
+    }
   }
 
   const displayName = profile.name || user?.email?.split('@')[0] || 'Usuário';
@@ -223,13 +254,65 @@ export default function SettingsPage() {
 
       {/* Security */}
       <Section icon={<Shield size={17}/>} title="Segurança">
-        <p style={{ margin: '0 0 12px', fontSize: 14, color: c.textMuted }}>Redefina sua senha enviando um link para o e-mail cadastrado.</p>
-        <button onClick={handlePasswordReset} style={{
-          padding: '9px 18px', borderRadius: 9, border: `1.5px solid ${c.border}`,
-          background: c.surface, color: c.textSecondary, fontSize: 13, fontWeight: 500, cursor: 'pointer',
-        }}>
-          Enviar link de redefinição
-        </button>
+        <p style={{ margin: '0 0 16px', fontSize: 14, color: c.textMuted }}>Altere sua senha de acesso ao Finora.</p>
+        <form onSubmit={handlePasswordChange} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {(['current', 'newPw', 'confirm'] as const).map((field) => {
+            const labels = { current: 'Senha atual', newPw: 'Nova senha', confirm: 'Confirmar nova senha' };
+            return (
+              <div key={field} style={{ position: 'relative' }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: c.textSecondary, marginBottom: 4 }}>
+                  {labels[field]}
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showPw[field] ? 'text' : 'password'}
+                    value={pwForm[field]}
+                    onChange={e => setPwForm(prev => ({ ...prev, [field]: e.target.value }))}
+                    placeholder={field === 'current' ? '••••••••' : 'Mínimo 6 caracteres'}
+                    style={{
+                      width: '100%', boxSizing: 'border-box',
+                      padding: '10px 40px 10px 12px', borderRadius: 9,
+                      border: `1.5px solid ${c.border}`, background: c.surface,
+                      color: c.text, fontSize: 14, outline: 'none',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw(prev => ({ ...prev, [field]: !prev[field] }))}
+                    style={{
+                      position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)',
+                      background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: c.textMuted,
+                      display: 'flex', alignItems: 'center',
+                    }}
+                  >
+                    {showPw[field] ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          {pwError && (
+            <p style={{ margin: 0, fontSize: 13, color: '#ef4444', fontWeight: 500 }}>⚠️ {pwError}</p>
+          )}
+          {pwSuccess && (
+            <p style={{ margin: 0, fontSize: 13, color: '#16a34a', fontWeight: 500 }}>✅ Senha alterada com sucesso!</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={pwLoading}
+            style={{
+              padding: '10px 20px', borderRadius: 9, border: 'none',
+              background: '#22c55e', color: '#fff', fontSize: 14, fontWeight: 600,
+              cursor: pwLoading ? 'not-allowed' : 'pointer', opacity: pwLoading ? 0.7 : 1,
+              display: 'flex', alignItems: 'center', gap: 8, alignSelf: 'flex-start',
+            }}
+          >
+            {pwLoading ? <Loader size={15} className="animate-spin" /> : <Shield size={15} />}
+            {pwLoading ? 'Alterando...' : 'Alterar senha'}
+          </button>
+        </form>
       </Section>
 
       {/* Push notifications */}
