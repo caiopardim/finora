@@ -304,38 +304,39 @@ export class WhatsappService {
           : '📷 Não encontrei transações financeiras nesta imagem.';
 
       } else if (mimeType === 'application/pdf' || fileName.endsWith('.pdf')) {
-        // ── PDF: tenta extrair texto primeiro, depois visão direta ────────
-        let usedVision = false;
+        // ── PDF: extrai texto com pdf-parse e envia pro GPT ───────────────
+        // GPT-4o Vision NÃO aceita PDF — precisa extrair texto primeiro
         try {
-          const pdfParse = require('pdf-parse');
+          const pdfParseModule = require('pdf-parse');
+          const pdfParse = typeof pdfParseModule === 'function' ? pdfParseModule : pdfParseModule.default;
           const buffer = Buffer.from(base64, 'base64');
           const pdfData = await pdfParse(buffer);
-          // Clean extracted text and check if it has useful content
+
           const rawText = pdfData.text || '';
           const text = rawText.replace(/\s+/g, ' ').trim();
           const wordCount = text.split(' ').filter((w: string) => w.length > 2).length;
-          this.logger.log(`[media] pdf text length=${text.length} words=${wordCount}`);
+          this.logger.log(`[media] pdf pages=${pdfData.numpages} text length=${text.length} words=${wordCount}`);
 
           if (wordCount >= 10) {
-            // Has useful text content
             const result = await this.ai.analyzeDocumentText(text, fileName, categoryNames);
             transactions = result.transactions;
             summary = result.summary || `📄 Encontrei *${transactions.length} transação(ões)* no PDF!`;
           } else {
-            usedVision = true;
+            // PDF é escaneado (só imagem, sem texto) — não tem como extrair automaticamente
+            await this.sendMessage(normalizedPhone,
+              '📄 Este PDF parece ser escaneado (sem texto selecionável).\n\n' +
+              'Tire uma *foto* do documento e me mande a imagem — assim consigo ler e importar as transações! 📷',
+            );
+            return;
           }
         } catch (err) {
-          this.logger.error('pdf-parse failed, falling back to vision', err.message);
-          usedVision = true;
-        }
-
-        if (usedVision) {
-          // PDF is image-based (scanned) — send directly to GPT-4o with PDF mime type
-          this.logger.log('[media] PDF has no extractable text, using GPT-4o vision with PDF mime');
-          transactions = await this.ai.analyzeReceiptImage(base64, 'application/pdf', categoryNames);
-          summary = transactions.length > 0
-            ? `📄 Encontrei *${transactions.length} transação(ões)* no PDF!`
-            : '📄 Não consegui extrair transações deste PDF. Tente enviar uma foto do comprovante.';
+          this.logger.error('pdf-parse error', err.message);
+          await this.sendMessage(normalizedPhone,
+            '❌ Não consegui ler este PDF. Tente:\n\n' +
+            '📷 Tirar uma *foto* do comprovante\n' +
+            '📊 Exportar o extrato em *CSV ou XLSX*',
+          );
+          return;
         }
 
       } else if (

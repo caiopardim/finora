@@ -220,10 +220,8 @@ Termine sempre com uma dica ou encorajamento curto.`,
       ? categoryNames.join(', ')
       : 'Alimentação, Transporte, Moradia, Saúde, Lazer, Educação, Vestuário, Internet/Telefone, Serviços, Salário, Freelance, Investimentos, Outros';
 
-    // Normalize mime type: GPT-4o accepts image/* and application/pdf
-    const safeMime = mimeType.startsWith('image/') ? mimeType
-      : mimeType === 'application/pdf' ? 'application/pdf'
-      : 'image/jpeg';
+    // GPT-4o Vision only accepts image types (JPEG, PNG, WEBP, GIF)
+    const safeMime = mimeType.startsWith('image/') ? mimeType : 'image/jpeg';
 
     const systemPrompt = `Você é um assistente financeiro. Analise o arquivo enviado (comprovante, recibo, extrato bancário ou nota fiscal) e extraia TODAS as transações financeiras presentes.
 
