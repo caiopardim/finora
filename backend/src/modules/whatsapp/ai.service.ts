@@ -223,7 +223,7 @@ Termine sempre com uma dica ou encorajamento curto.`,
     // GPT-4o Vision only accepts image types (JPEG, PNG, WEBP, GIF)
     const safeMime = mimeType.startsWith('image/') ? mimeType : 'image/jpeg';
 
-    const systemPrompt = `Você é um assistente financeiro. Analise o arquivo enviado (comprovante, recibo, extrato bancário ou nota fiscal) e extraia TODAS as transações financeiras presentes.
+    const systemPrompt = `Você é um assistente financeiro inteligente. Analise o arquivo enviado (comprovante, recibo, extrato bancário ou nota fiscal) e extraia TODAS as transações financeiras presentes.
 
 Hoje é ${today}.
 
@@ -234,20 +234,41 @@ Retorne um JSON com a seguinte estrutura:
       "type": "expense" | "income",
       "amount": number,
       "category": string (use exatamente uma da lista: ${categoryList}),
-      "description": string (nome do estabelecimento ou descrição curta),
+      "description": string,
       "date": "YYYY-MM-DD"
     }
   ],
-  "summary": string (resumo do que foi encontrado, em português)
+  "summary": string (resumo em português)
 }
 
-Regras:
+REGRAS PARA "description" (muito importante):
+- Use o nome do PRODUTO ou SERVIÇO comprado, não o nome da loja
+- Se houver vários itens, use o principal ou "Compras em [Loja]"
+- Exemplos:
+  * Nota fiscal Renner com item "Camisa" → description: "Camisa"
+  * Nota fiscal iFood → description: "Delivery iFood"
+  * PIX enviado para João → description: "PIX para João"
+  * Fatura de internet → description: "Internet"
+  * Farmácia com remédio → description: "Remédio"
+  * Posto de gasolina → description: "Combustível"
+  * Mercado → description: "Supermercado"
+
+REGRAS PARA "category":
+- Escolha com base no que foi comprado, não onde foi comprado
+- Lojas de roupa → Vestuário
+- Supermercado/feira → Alimentação
+- Farmácia → Saúde
+- Posto → Transporte
+- Restaurante/iFood → Alimentação
+- Netflix/Spotify → Lazer
+- Internet/telefone → Internet/Telefone
+
+OUTRAS REGRAS:
 - Extraia TODAS as transações visíveis
-- Se não houver data clara, use hoje (${today})
-- Para comprovantes de transferência/PIX: "expense" se for envio, "income" se for recebimento
-- Para notas fiscais: "expense"
-- Para extratos: extraia cada linha individualmente
-- Se não houver transações financeiras, retorne { "transactions": [], "summary": "Não encontrei transações financeiras." }`;
+- Se não houver data, use hoje (${today})
+- PIX enviado/débito → "expense", PIX recebido/crédito → "income"
+- Nota fiscal → sempre "expense"
+- Extrato → cada linha vira um item separado`;
 
     try {
       const response = await this.openai.chat.completions.create({
@@ -292,7 +313,7 @@ Regras:
         messages: [
           {
             role: 'system',
-            content: `Você é um assistente financeiro. Analise o conteúdo do arquivo "${filename}" e extraia TODAS as transações financeiras presentes.
+            content: `Você é um assistente financeiro inteligente. Analise o conteúdo do arquivo "${filename}" e extraia TODAS as transações financeiras presentes.
 
 Hoje é ${today}.
 
@@ -303,19 +324,43 @@ Retorne um JSON com a seguinte estrutura:
       "type": "expense" | "income",
       "amount": number,
       "category": string (use exatamente uma da lista: ${categoryList}),
-      "description": string (nome do estabelecimento ou descrição curta),
+      "description": string,
       "date": "YYYY-MM-DD"
     }
   ],
-  "summary": string (resumo do que foi encontrado, em português, ex: "Encontrei 15 transações no extrato de maio, totalizando R$ 2.340,00 em gastos e R$ 5.000,00 em receitas.")
+  "summary": string (resumo em português, ex: "Encontrei 3 transações: R$ 86,31 em Vestuário, ...")
 }
 
-Regras:
+REGRAS PARA "description" (muito importante):
+- Use o nome do PRODUTO ou SERVIÇO, não o nome da loja/empresa
+- Exemplos:
+  * Nota fiscal Renner com item "Camisa" → "Camisa"
+  * Nota fiscal com produto "Tênis Nike" → "Tênis Nike"
+  * PIX enviado para João → "PIX para João"
+  * Fatura de internet → "Internet"
+  * Farmácia com remédio → "Remédio"
+  * Combustível → "Combustível"
+  * Mercado sem detalhe de item → "Supermercado"
+  * Extrato com descrição genérica → use a descrição do extrato
+- Se houver vários itens na mesma nota, use o item principal ou "Compras em [Loja]"
+
+REGRAS PARA "category":
+- Baseie-se no que foi COMPRADO, não onde
+- Loja de roupa (Renner, Zara, Riachuelo) → Vestuário
+- Supermercado/feira/padaria → Alimentação
+- Farmácia/hospital/médico → Saúde
+- Posto de gasolina/Uber/ônibus → Transporte
+- Restaurante/bar/delivery/iFood → Alimentação
+- Streaming/cinema/jogo → Lazer
+- Internet/telefone/plano → Internet/Telefone
+- Aluguel/condomínio → Moradia
+
+OUTRAS REGRAS:
 - Extraia TODAS as transações visíveis
-- Se não houver data clara, use hoje (${today})
-- Débitos/saídas → "expense", créditos/entradas → "income"
-- Ignore linhas de saldo, total, cabeçalho
-- Para planilhas: cada linha de transação vira um item`,
+- Débitos/saídas/notas fiscais → "expense"
+- Créditos/entradas/PIX recebido → "income"
+- Ignore linhas de saldo, total e cabeçalho
+- Para extratos: cada linha de transação vira um item separado`,
           },
           {
             role: 'user',
