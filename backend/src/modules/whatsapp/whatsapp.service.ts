@@ -246,6 +246,174 @@ export class WhatsappService {
     }
   }
 
+  // ── Processa mídia: imagem de comprovante, PDF ou planilha ──────────────
+  async handleMediaMessage(phone: string, data: any): Promise<void> {
+    const normalizedPhone = phone.replace(/\D/g, '');
+    try {
+      const user = await this.users.findByPhone(normalizedPhone);
+      if (!user) {
+        await this.sendMessage(normalizedPhone, `🐷 Para usar o Finora, crie sua conta em *${this.dashboardUrl}*`);
+        return;
+      }
+      if (!user.paid) {
+        await this.sendMessage(normalizedPhone, `🔒 Sua assinatura está inativa. Reative em *${this.dashboardUrl}/dashboard/plano*`);
+        return;
+      }
+
+      await this.sendMessage(normalizedPhone, '🔍 Analisando o arquivo... aguarde um momento!');
+
+      // Detect media type
+      const imageMsg  = data?.message?.imageMessage;
+      const docMsg    = data?.message?.documentMessage;
+      const mimeType: string = imageMsg?.mimetype || docMsg?.mimetype || 'application/octet-stream';
+      const fileName: string  = docMsg?.fileName || docMsg?.title || 'documento';
+
+      // Download base64 via Evolution API
+      const mediaRes = await fetch(
+        `${this.evolutionUrl}/chat/getBase64FromMediaMessage/${this.instance}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', apikey: this.evolutionKey },
+          body: JSON.stringify({ message: { key: data?.key, message: data?.message } }),
+        },
+      );
+      if (!mediaRes.ok) {
+        await this.sendMessage(normalizedPhone, '❌ Não consegui baixar o arquivo. Tente enviar novamente.');
+        return;
+      }
+      const mediaData = await mediaRes.json() as any;
+      const base64: string = mediaData?.base64 || mediaData?.data;
+      if (!base64) {
+        await this.sendMessage(normalizedPhone, '❌ Não consegui ler o arquivo. Tente novamente.');
+        return;
+      }
+
+      const userCategories = await this.categories.findAll(user.id).catch(() => []);
+      const categoryNames  = userCategories.map((c: any) => c.name);
+
+      let transactions: any[] = [];
+      let summary = '';
+
+      if (mimeType.startsWith('image/')) {
+        // ── IMAGEM: usa GPT-4o Vision ─────────────────────────────────────
+        transactions = await this.ai.analyzeReceiptImage(base64, mimeType, categoryNames);
+        summary = transactions.length > 0
+          ? `📷 Encontrei *${transactions.length} transação(ões)* na imagem!`
+          : '📷 Não encontrei transações financeiras nesta imagem.';
+
+      } else if (mimeType === 'application/pdf') {
+        // ── PDF: extrai texto com pdf-parse e envia pro GPT ───────────────
+        try {
+          const pdfParse = require('pdf-parse');
+          const buffer = Buffer.from(base64, 'base64');
+          const pdfData = await pdfParse(buffer);
+          const text = pdfData.text?.trim();
+          if (!text || text.length < 20) {
+            // PDF provavelmente é imagem — tenta via Vision como JPEG
+            transactions = await this.ai.analyzeReceiptImage(base64, 'image/jpeg', categoryNames);
+            summary = transactions.length > 0
+              ? `📄 Encontrei *${transactions.length} transação(ões)* no PDF!`
+              : '📄 Não consegui extrair transações deste PDF.';
+          } else {
+            const result = await this.ai.analyzeDocumentText(text, fileName, categoryNames);
+            transactions = result.transactions;
+            summary = result.summary || `📄 Encontrei *${transactions.length} transação(ões)* no PDF!`;
+          }
+        } catch (err) {
+          this.logger.error('pdf-parse failed, trying vision', err);
+          transactions = await this.ai.analyzeReceiptImage(base64, 'image/jpeg', categoryNames);
+          summary = transactions.length > 0
+            ? `📄 Encontrei *${transactions.length} transação(ões)* no PDF!`
+            : '📄 Não consegui extrair transações deste PDF.';
+        }
+
+      } else if (
+        mimeType.includes('spreadsheet') ||
+        mimeType.includes('excel') ||
+        mimeType.includes('csv') ||
+        fileName.endsWith('.xlsx') ||
+        fileName.endsWith('.xls') ||
+        fileName.endsWith('.csv')
+      ) {
+        // ── PLANILHA: usa xlsx para extrair e GPT para interpretar ────────
+        try {
+          const XLSX = require('xlsx');
+          const buffer = Buffer.from(base64, 'base64');
+          const workbook = XLSX.read(buffer, { type: 'buffer' });
+          const sheetName = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[sheetName];
+          const text = XLSX.utils.sheet_to_csv(sheet);
+          const result = await this.ai.analyzeDocumentText(text, fileName, categoryNames);
+          transactions = result.transactions;
+          summary = result.summary || `📊 Encontrei *${transactions.length} transação(ões)* na planilha!`;
+        } catch (err) {
+          this.logger.error('xlsx parse failed', err);
+          await this.sendMessage(normalizedPhone, '❌ Não consegui ler a planilha. Tente enviar em formato CSV ou XLSX.');
+          return;
+        }
+
+      } else {
+        await this.sendMessage(normalizedPhone,
+          '⚠️ Formato não suportado. Você pode enviar:\n\n' +
+          '📷 *Foto* de comprovante ou recibo\n' +
+          '📄 *PDF* de extrato bancário\n' +
+          '📊 *Planilha* CSV ou XLSX',
+        );
+        return;
+      }
+
+      if (transactions.length === 0) {
+        await this.sendMessage(normalizedPhone, summary || '⚠️ Não encontrei transações financeiras no arquivo enviado.');
+        return;
+      }
+
+      // ── Cria todas as transações extraídas ────────────────────────────────
+      let created = 0;
+      const lines: string[] = [];
+      const today = new Date().toISOString().slice(0, 10);
+
+      for (const tx of transactions) {
+        try {
+          const amt = Number(tx.amount);
+          if (!amt || amt <= 0) continue;
+
+          await this.transactions.create(user.id, {
+            type: tx.type || 'expense',
+            amount: amt,
+            description: tx.description || 'Importado',
+            category_name: tx.category || 'Outros',
+            date: tx.date || today,
+            source: 'whatsapp',
+            raw_message: `[mídia: ${fileName || 'comprovante'}]`,
+          });
+
+          const fmt = amt.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const emoji = tx.type === 'income' ? '💰' : '💸';
+          lines.push(`${emoji} ${tx.description} — R$ ${fmt} (${tx.date || today})`);
+          created++;
+        } catch (err) {
+          this.logger.error('Failed to create imported transaction', err);
+        }
+      }
+
+      const preview = lines.slice(0, 10).join('\n');
+      const extra = lines.length > 10 ? `\n_...e mais ${lines.length - 10} transações_` : '';
+
+      await this.sendMessage(normalizedPhone,
+        `✅ *${created} transação(ões) importada(s)!*\n\n` +
+        `${preview}${extra}\n\n` +
+        `📊 Veja tudo no dashboard:\n👉 *${this.dashboardUrl}/dashboard*`,
+      );
+
+      // Check budget alerts after import
+      this.budgetAlerts.checkAndNotify(user.id).catch(() => {});
+
+    } catch (err) {
+      this.logger.error(`handleMediaMessage error: ${err.message}`, err.stack);
+      await this.sendMessage(normalizedPhone, '❌ Erro ao processar o arquivo. Tente novamente.');
+    }
+  }
+
   async handleButtonReply(phone: string, buttonId: string): Promise<void> {
     const normalizedPhone = phone.replace(/\D/g, '');
     this.logger.log(`Button reply from ${normalizedPhone}: ${buttonId}`);

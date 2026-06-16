@@ -211,4 +211,125 @@ Termine sempre com uma dica ou encorajamento curto.`,
 
     return response.choices[0].message.content;
   }
+
+  // ── Analisa imagem de comprovante / recibo via GPT-4o Vision ─────────────
+  async analyzeReceiptImage(base64: string, mimeType: string, categoryNames: string[]): Promise<ParsedTransaction[]> {
+    if (!this.openai) return [];
+    const today = dayjs().format('YYYY-MM-DD');
+    const categoryList = categoryNames.length
+      ? categoryNames.join(', ')
+      : 'Alimentação, Transporte, Moradia, Saúde, Lazer, Educação, Vestuário, Internet/Telefone, Serviços, Salário, Freelance, Investimentos, Outros';
+
+    try {
+      const response = await this.openai.chat.completions.create({
+        model: 'gpt-4o',
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: `Você é um assistente financeiro. Analise a imagem enviada (comprovante, recibo, extrato bancário ou nota fiscal) e extraia TODAS as transações financeiras presentes.
+
+Hoje é ${today}.
+
+Retorne um JSON com a seguinte estrutura:
+{
+  "transactions": [
+    {
+      "type": "expense" | "income",
+      "amount": number,
+      "category": string (use exatamente uma da lista: ${categoryList}),
+      "description": string (nome do estabelecimento ou descrição curta),
+      "date": "YYYY-MM-DD"
+    }
+  ],
+  "summary": string (resumo do que foi encontrado, em português)
+}
+
+Regras:
+- Extraia TODAS as transações visíveis na imagem
+- Se não houver data clara, use hoje (${today})
+- Para comprovantes de transferência/PIX: tipo "expense" se for envio, "income" se for recebimento
+- Para notas fiscais: tipo "expense"
+- Para extratos: extraia cada linha individualmente
+- Se a imagem não for um documento financeiro, retorne { "transactions": [], "summary": "Não encontrei transações financeiras nesta imagem." }`,
+          },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image_url',
+                image_url: { url: `data:${mimeType};base64,${base64}`, detail: 'high' },
+              },
+            ] as any,
+          },
+        ],
+        max_tokens: 2000,
+      });
+
+      const parsed = JSON.parse(response.choices[0].message.content);
+      return parsed.transactions || [];
+    } catch (err) {
+      this.logger.error('analyzeReceiptImage failed', err);
+      return [];
+    }
+  }
+
+  // ── Analisa texto extraído de PDF ou planilha ─────────────────────────────
+  async analyzeDocumentText(text: string, filename: string, categoryNames: string[]): Promise<{ transactions: ParsedTransaction[]; summary: string }> {
+    if (!this.openai) return { transactions: [], summary: 'IA não configurada.' };
+    const today = dayjs().format('YYYY-MM-DD');
+    const categoryList = categoryNames.length
+      ? categoryNames.join(', ')
+      : 'Alimentação, Transporte, Moradia, Saúde, Lazer, Educação, Vestuário, Internet/Telefone, Serviços, Salário, Freelance, Investimentos, Outros';
+
+    try {
+      const response = await this.openai.chat.completions.create({
+        model: 'gpt-4o',
+        response_format: { type: 'json_object' },
+        messages: [
+          {
+            role: 'system',
+            content: `Você é um assistente financeiro. Analise o conteúdo do arquivo "${filename}" e extraia TODAS as transações financeiras presentes.
+
+Hoje é ${today}.
+
+Retorne um JSON com a seguinte estrutura:
+{
+  "transactions": [
+    {
+      "type": "expense" | "income",
+      "amount": number,
+      "category": string (use exatamente uma da lista: ${categoryList}),
+      "description": string (nome do estabelecimento ou descrição curta),
+      "date": "YYYY-MM-DD"
+    }
+  ],
+  "summary": string (resumo do que foi encontrado, em português, ex: "Encontrei 15 transações no extrato de maio, totalizando R$ 2.340,00 em gastos e R$ 5.000,00 em receitas.")
+}
+
+Regras:
+- Extraia TODAS as transações visíveis
+- Se não houver data clara, use hoje (${today})
+- Débitos/saídas → "expense", créditos/entradas → "income"
+- Ignore linhas de saldo, total, cabeçalho
+- Para planilhas: cada linha de transação vira um item`,
+          },
+          {
+            role: 'user',
+            content: `Conteúdo do arquivo:\n\n${text.slice(0, 12000)}`, // limit to avoid token overflow
+          },
+        ],
+        max_tokens: 3000,
+      });
+
+      const parsed = JSON.parse(response.choices[0].message.content);
+      return {
+        transactions: parsed.transactions || [],
+        summary: parsed.summary || '',
+      };
+    } catch (err) {
+      this.logger.error('analyzeDocumentText failed', err);
+      return { transactions: [], summary: 'Erro ao analisar o documento.' };
+    }
+  }
 }

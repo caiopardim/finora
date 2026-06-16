@@ -90,6 +90,24 @@ export class WhatsappController {
       return { status: 'processing' };
     }
 
+    // Handle image (comprovante/receipt photo)
+    const imageMessage = data?.message?.imageMessage;
+    if (!message && imageMessage) {
+      this.whatsapp.handleMediaMessage(phone, data).catch((err) =>
+        this.logger.error('Error handling image message', err),
+      );
+      return { status: 'processing' };
+    }
+
+    // Handle document (PDF, XLSX, CSV)
+    const documentMessage = data?.message?.documentMessage;
+    if (!message && documentMessage) {
+      this.whatsapp.handleMediaMessage(phone, data).catch((err) =>
+        this.logger.error('Error handling document message', err),
+      );
+      return { status: 'processing' };
+    }
+
     if (!message) return { status: 'ignored' };
 
     // Handle delete command: "excluir XXXXXX"
