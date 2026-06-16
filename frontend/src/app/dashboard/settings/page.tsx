@@ -110,22 +110,43 @@ export default function SettingsPage() {
 
     setPwLoading(true);
     try {
-      // Re-authenticate with current password first
+      // Get current session
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user?.email) { setPwError('Sessão inválida. Faça login novamente.'); return; }
+      if (!session?.user?.email) {
+        setPwError('Sessão inválida. Faça login novamente.');
+        return;
+      }
 
+      // Check if user has a password-based identity
+      const identities = session.user.identities ?? [];
+      const hasEmailIdentity = identities.some((i: any) => i.provider === 'email');
+      if (!hasEmailIdentity) {
+        setPwError('Sua conta usa login social (Google, etc). Não é possível alterar senha aqui.');
+        return;
+      }
+
+      // Verify current password before changing
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: session.user.email,
         password: pwForm.current,
       });
-      if (signInError) { setPwError('Senha atual incorreta.'); return; }
+      if (signInError) {
+        setPwError('Senha atual incorreta.');
+        return;
+      }
 
+      // Update to new password
       const { error: updateError } = await supabase.auth.updateUser({ password: pwForm.newPw });
-      if (updateError) { setPwError('Erro ao atualizar senha: ' + updateError.message); return; }
+      if (updateError) {
+        setPwError('Erro ao atualizar senha: ' + updateError.message);
+        return;
+      }
 
       setPwSuccess(true);
       setPwForm({ current: '', newPw: '', confirm: '' });
       setTimeout(() => setPwSuccess(false), 4000);
+    } catch (err: any) {
+      setPwError('Erro inesperado. Tente novamente.');
     } finally {
       setPwLoading(false);
     }
