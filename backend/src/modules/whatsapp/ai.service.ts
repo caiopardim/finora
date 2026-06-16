@@ -212,7 +212,7 @@ Termine sempre com uma dica ou encorajamento curto.`,
     return response.choices[0].message.content;
   }
 
-  // ── Analisa imagem de comprovante / recibo via GPT-4o Vision ─────────────
+  // ── Analisa imagem/PDF de comprovante via GPT-4o Vision ─────────────────
   async analyzeReceiptImage(base64: string, mimeType: string, categoryNames: string[]): Promise<ParsedTransaction[]> {
     if (!this.openai) return [];
     const today = dayjs().format('YYYY-MM-DD');
@@ -220,14 +220,12 @@ Termine sempre com uma dica ou encorajamento curto.`,
       ? categoryNames.join(', ')
       : 'Alimentação, Transporte, Moradia, Saúde, Lazer, Educação, Vestuário, Internet/Telefone, Serviços, Salário, Freelance, Investimentos, Outros';
 
-    try {
-      const response = await this.openai.chat.completions.create({
-        model: 'gpt-4o',
-        response_format: { type: 'json_object' },
-        messages: [
-          {
-            role: 'system',
-            content: `Você é um assistente financeiro. Analise a imagem enviada (comprovante, recibo, extrato bancário ou nota fiscal) e extraia TODAS as transações financeiras presentes.
+    // Normalize mime type: GPT-4o accepts image/* and application/pdf
+    const safeMime = mimeType.startsWith('image/') ? mimeType
+      : mimeType === 'application/pdf' ? 'application/pdf'
+      : 'image/jpeg';
+
+    const systemPrompt = `Você é um assistente financeiro. Analise o arquivo enviado (comprovante, recibo, extrato bancário ou nota fiscal) e extraia TODAS as transações financeiras presentes.
 
 Hoje é ${today}.
 
@@ -246,19 +244,25 @@ Retorne um JSON com a seguinte estrutura:
 }
 
 Regras:
-- Extraia TODAS as transações visíveis na imagem
+- Extraia TODAS as transações visíveis
 - Se não houver data clara, use hoje (${today})
-- Para comprovantes de transferência/PIX: tipo "expense" se for envio, "income" se for recebimento
-- Para notas fiscais: tipo "expense"
+- Para comprovantes de transferência/PIX: "expense" se for envio, "income" se for recebimento
+- Para notas fiscais: "expense"
 - Para extratos: extraia cada linha individualmente
-- Se a imagem não for um documento financeiro, retorne { "transactions": [], "summary": "Não encontrei transações financeiras nesta imagem." }`,
-          },
+- Se não houver transações financeiras, retorne { "transactions": [], "summary": "Não encontrei transações financeiras." }`;
+
+    try {
+      const response = await this.openai.chat.completions.create({
+        model: 'gpt-4o',
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: systemPrompt },
           {
             role: 'user',
             content: [
               {
                 type: 'image_url',
-                image_url: { url: `data:${mimeType};base64,${base64}`, detail: 'high' },
+                image_url: { url: `data:${safeMime};base64,${base64}`, detail: 'high' },
               },
             ] as any,
           },
@@ -267,9 +271,10 @@ Regras:
       });
 
       const parsed = JSON.parse(response.choices[0].message.content);
+      this.logger.log(`[analyzeReceiptImage] found ${parsed.transactions?.length ?? 0} transactions, summary: ${parsed.summary}`);
       return parsed.transactions || [];
     } catch (err) {
-      this.logger.error('analyzeReceiptImage failed', err);
+      this.logger.error('analyzeReceiptImage failed', err?.message);
       return [];
     }
   }
