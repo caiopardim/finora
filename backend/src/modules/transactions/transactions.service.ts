@@ -137,6 +137,22 @@ export class TransactionsService {
     return data[0];
   }
 
+  // Find a duplicate transaction within the last N hours
+  async findRecentDuplicate(userId: string, type: string, amount: number, withinHours = 3): Promise<{ id: string; description: string; amount: number; created_at: string } | null> {
+    const since = new Date(Date.now() - withinHours * 60 * 60 * 1000).toISOString();
+    const { data } = await this.supabase
+      .from('transactions')
+      .select('id, description, amount, created_at')
+      .eq('user_id', userId)
+      .eq('type', type)
+      .gte('created_at', since)
+      .order('created_at', { ascending: false });
+
+    if (!data) return null;
+    // Match same amount (within 1 cent)
+    return data.find(t => Math.abs(Number(t.amount) - amount) < 0.01) ?? null;
+  }
+
   async remove(userId: string, id: string) {
     await this.findOne(userId, id);
     const { error } = await this.supabase

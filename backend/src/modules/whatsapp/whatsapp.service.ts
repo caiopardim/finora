@@ -21,6 +21,8 @@ export class WhatsappService {
   private readonly dashboardUrl: string;
   // Pending delete confirmations: phone -> { txId, description, amount, date }
   private readonly pendingDeletes = new Map<string, { txId: string; description: string; amount: number; date: string }>();
+  // Pending duplicate confirmations: phone -> pending transaction data
+  private readonly pendingDuplicates = new Map<string, { type: string; amount: number; description: string; category: string; date: string; duplicateDesc: string; duplicateAgo: string }>();
 
   constructor(
     private config: ConfigService,
@@ -72,6 +74,42 @@ export class WhatsappService {
         return;
       }
 
+      // Check if user has a pending duplicate confirmation
+      const pendingDup = this.pendingDuplicates.get(normalizedPhone);
+      if (pendingDup) {
+        const msg = message.trim().toLowerCase();
+        if (msg === 'sim' || msg === 'confirmar' || msg === 'confirma' || msg === 's') {
+          this.pendingDuplicates.delete(normalizedPhone);
+          const created = await this.transactions.create(user.id, {
+            type: pendingDup.type as any,
+            amount: pendingDup.amount,
+            description: pendingDup.description,
+            category_name: pendingDup.category,
+            date: pendingDup.date,
+            source: 'whatsapp',
+            raw_message: message,
+          });
+          const fmt = pendingDup.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const shortId = (created?.id as string)?.slice(-6) ?? '------';
+          const verb = pendingDup.type === 'expense' ? 'Gasto' : 'Receita';
+          await this.sendMessage(normalizedPhone,
+            `✅ *${verb} registrado!*\n\n` +
+            `📝 *${pendingDup.description}*\n` +
+            `🏷️ *${pendingDup.category}*\n` +
+            `💸 *R$ ${fmt}*\n` +
+            `⚙️ ID: ${shortId}`,
+          );
+          this.budgetAlerts.checkAndNotify(user.id).catch(() => {});
+          return;
+        } else if (msg === 'não' || msg === 'nao' || msg === 'n' || msg === 'cancelar' || msg === 'desistir') {
+          this.pendingDuplicates.delete(normalizedPhone);
+          await this.sendMessage(normalizedPhone, `↩️ Ok! Lançamento cancelado.`);
+          return;
+        } else {
+          this.pendingDuplicates.delete(normalizedPhone);
+        }
+      }
+
       // Check if user has a pending delete confirmation
       const pending = this.pendingDeletes.get(normalizedPhone);
       if (pending) {
@@ -102,6 +140,38 @@ export class WhatsappService {
         case 'register_transaction': {
           const { transaction } = intent;
           this.logger.log(`[4] Creating transaction for user ${user.id}`);
+
+          // ── Duplicate detection: check for same amount+type in last 3h ──
+          const duplicate = await this.transactions.findRecentDuplicate(user.id, transaction.type, transaction.amount, 3);
+          if (duplicate) {
+            const ago = (() => {
+              const diffMs = Date.now() - new Date(duplicate.created_at).getTime();
+              const mins = Math.round(diffMs / 60000);
+              if (mins < 60) return `${mins} minuto${mins !== 1 ? 's' : ''} atrás`;
+              const hrs = Math.round(diffMs / 3600000);
+              return `${hrs} hora${hrs !== 1 ? 's' : ''} atrás`;
+            })();
+            const fmt = transaction.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            this.pendingDuplicates.set(normalizedPhone, {
+              type: transaction.type,
+              amount: transaction.amount,
+              description: transaction.description,
+              category: transaction.category,
+              date: transaction.date,
+              duplicateDesc: duplicate.description,
+              duplicateAgo: ago,
+            });
+            await this.sendMessage(normalizedPhone,
+              `⚠️ *Possível lançamento duplicado!*\n\n` +
+              `${ago} você registrou:\n` +
+              `📝 *${duplicate.description}* — R$ ${fmt}\n\n` +
+              `Quer registrar novamente?\n\n` +
+              `✅ Responda *SIM* para confirmar\n` +
+              `❌ Responda *NÃO* para cancelar`,
+            );
+            return;
+          }
+
           const created = await this.transactions.create(user.id, {
             type: transaction.type,
             amount: transaction.amount,
