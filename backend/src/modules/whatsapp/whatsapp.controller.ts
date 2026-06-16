@@ -90,18 +90,26 @@ export class WhatsappController {
       return { status: 'processing' };
     }
 
-    // Handle image (comprovante/receipt photo)
-    const imageMessage = data?.message?.imageMessage;
-    if (!message && imageMessage) {
+    // Handle image (comprovante/receipt photo) — with or without caption
+    const imageMessage =
+      data?.message?.imageMessage ||
+      data?.message?.imageWithCaptionMessage;
+    if (imageMessage) {
+      // Inject imageMessage into data.message so handleMediaMessage can find it
+      if (!data.message.imageMessage) data.message.imageMessage = imageMessage;
       this.whatsapp.handleMediaMessage(phone, data).catch((err) =>
         this.logger.error('Error handling image message', err),
       );
       return { status: 'processing' };
     }
 
-    // Handle document (PDF, XLSX, CSV)
-    const documentMessage = data?.message?.documentMessage;
-    if (!message && documentMessage) {
+    // Handle document (PDF, XLSX, CSV) — with or without caption
+    const documentMessage =
+      data?.message?.documentMessage ||
+      data?.message?.documentWithCaptionMessage?.message?.documentMessage;
+    if (documentMessage) {
+      // Inject documentMessage into data.message so handleMediaMessage can find it
+      if (!data.message.documentMessage) data.message.documentMessage = documentMessage;
       this.whatsapp.handleMediaMessage(phone, data).catch((err) =>
         this.logger.error('Error handling document message', err),
       );

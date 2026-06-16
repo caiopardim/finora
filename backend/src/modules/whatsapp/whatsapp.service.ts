@@ -268,6 +268,8 @@ export class WhatsappService {
       const mimeType: string = imageMsg?.mimetype || docMsg?.mimetype || 'application/octet-stream';
       const fileName: string  = docMsg?.fileName || docMsg?.title || 'documento';
 
+      this.logger.log(`[media] user=${user.id} mimeType=${mimeType} fileName=${fileName} hasImage=${!!imageMsg} hasDoc=${!!docMsg}`);
+
       // Download base64 via Evolution API
       const mediaRes = await fetch(
         `${this.evolutionUrl}/chat/getBase64FromMediaMessage/${this.instance}`,
