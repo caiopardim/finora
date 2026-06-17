@@ -100,7 +100,7 @@ export class UsersService {
     return data;
   }
 
-  async update(id: string, data: { name?: string; currency?: string; timezone?: string }) {
+  async update(id: string, data: { name?: string; currency?: string; timezone?: string; monthly_income?: number; budget_plan?: any }) {
     const { data: updated, error } = await this.supabase
       .from('profiles')
       .update(data)

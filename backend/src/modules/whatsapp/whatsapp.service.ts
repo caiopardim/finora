@@ -121,44 +121,55 @@ export class WhatsappService {
             return;
           }
           case 'main_goal': {
-            const state = { ...onboarding, debts: onboarding.debts };
+            const state = { ...onboarding };
             this.pendingOnboarding.delete(normalizedPhone);
 
-            await this.sendMessage(normalizedPhone, `⏳ Analisando sua situação financeira...`);
+            await this.sendMessage(normalizedPhone, `⏳ Montando seu plano financeiro personalizado...`);
 
-            // Build advisor plan based on collected data
             const income = state.income || 0;
-            const hasDebts = state.debts && !['não', 'nao', 'nenhuma', 'nenhum', 'sem', 'zero'].some(w => state.debts!.toLowerCase().includes(w));
-            const savingsCapacity = income * 0.2; // suggest 20% savings rule
+            const fixedExpenses = state.fixedExpenses || 'não informado';
+            const debts = state.debts || 'nenhuma';
+            const mainGoal = input;
+            const hasDebts = !['não', 'nao', 'nenhuma', 'nenhum', 'sem dívida', 'zero', 'nada'].some(w =>
+              debts.toLowerCase().includes(w),
+            );
 
-            let plan = `🎯 *Seu Plano Financeiro Personalizado*\n\n`;
-            plan += `💰 *Renda mensal:* R$ ${income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
-            plan += `📋 *Gastos fixos:* ${state.fixedExpenses}\n`;
-            if (hasDebts) plan += `⚠️ *Dívidas:* ${state.debts}\n`;
-            plan += `🎯 *Objetivo:* ${input}\n\n`;
-            plan += `━━━━━━━━━━━━━━━\n\n`;
-            plan += `📌 *Recomendações:*\n\n`;
+            // Gera plano com IA
+            const { text: planText, plan: budgetPlan } = await this.ai.generateBudgetPlan(
+              income, fixedExpenses, debts, mainGoal,
+            );
 
-            if (hasDebts) {
-              plan += `1️⃣ *Prioridade: quitar dívidas*\n   Dívidas cobram juros maiores do que qualquer investimento rende. Foque nisso primeiro.\n\n`;
-            } else {
-              plan += `1️⃣ *Reserve 20% da renda* (R$ ${savingsCapacity.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})\n   Pague você primeiro — transfira para poupança/investimento no dia do salário.\n\n`;
-            }
+            // Salva renda e plano no perfil
+            await this.users.update(user.id, {
+              monthly_income: income,
+              budget_plan: budgetPlan,
+            }).catch(() => {});
 
-            plan += `2️⃣ *Reserva de emergência*\n   Ideal: 3-6 meses de gastos guardados. Isso te protege de imprevistos sem endividar.\n\n`;
-            plan += `3️⃣ *Registre tudo aqui*\n   Me mande seus gastos pelo WhatsApp — em 30 dias você vai enxergar exatamente onde seu dinheiro vai.\n\n`;
-            plan += `━━━━━━━━━━━━━━━\n\n`;
-            plan += `Quer que eu crie uma meta de *Reserva de Emergência* para você começar? Responda *sim* ou me diga seu próximo objetivo! 💪`;
+            await this.sendMessage(normalizedPhone, planText);
 
-            await this.sendMessage(normalizedPhone, plan);
+            // Mensagem de próximos passos
+            await this.sendMessage(normalizedPhone,
+              `━━━━━━━━━━━━━━━\n\n` +
+              `📌 *Próximos passos:*\n\n` +
+              `1️⃣ Registre todos os seus gastos aqui — basta me mandar uma mensagem\n` +
+              `2️⃣ Eu vou comparar com o plano e te avisar quando desviar\n` +
+              `3️⃣ Use *"como estou no orçamento?"* a qualquer momento\n\n` +
+              `Seu plano está salvo! 🎯 Bora começar? 💪`,
+            );
 
-            // Auto-create emergency fund goal if no debts
-            if (!hasDebts) {
-              const emergencyTarget = income * 3;
+            // Cria metas automáticas
+            const emergencyTarget = income * 3;
+            await this.goals.create(user.id, {
+              name: 'Reserva de Emergência',
+              target_amount: emergencyTarget,
+              icon: '🛡️',
+            }).catch(() => {});
+
+            if (mainGoal.length > 3 && !mainGoal.toLowerCase().includes('reserva')) {
               await this.goals.create(user.id, {
-                name: 'Reserva de Emergência',
-                target_amount: emergencyTarget,
-                icon: '🛡️',
+                name: mainGoal.length > 40 ? mainGoal.slice(0, 40) : mainGoal,
+                target_amount: income * 6,
+                icon: '🎯',
               }).catch(() => {});
             }
             return;
@@ -550,8 +561,32 @@ export class WhatsappService {
             this.goals.findAll(user.id).catch(() => []),
             this.bills.findAll(user.id, { paid: false }).catch(() => []),
           ]);
-          const advice = await this.ai.generateAdvisorResponse(intent.query || 'Como estou financeiramente?', reportData, allGoals || [], pendingBillsList || []);
-          await this.sendMessage(normalizedPhone, advice);
+
+          // Se tem plano orçamentário salvo, mostra comparação vs plano
+          const query = intent.query || 'Como estou financeiramente?';
+          const hasBudgetQuery = /orçamento|plano|meta mensal|como estou no|distribuição|quanto devo/i.test(query);
+
+          if (user.budget_plan && user.monthly_income && hasBudgetQuery) {
+            const comparison = await this.ai.generateBudgetComparison(
+              reportData,
+              user.budget_plan,
+              user.monthly_income,
+            );
+            await this.sendMessage(normalizedPhone, comparison);
+          } else {
+            const advice = await this.ai.generateAdvisorResponse(query, reportData, allGoals || [], pendingBillsList || []);
+            await this.sendMessage(normalizedPhone, advice);
+
+            // Se tem plano, adiciona comparação rápida ao final
+            if (user.budget_plan && user.monthly_income) {
+              const comparison = await this.ai.generateBudgetComparison(
+                reportData,
+                user.budget_plan,
+                user.monthly_income,
+              );
+              await this.sendMessage(normalizedPhone, `📊 *Comparativo com seu plano:*\n\n${comparison}`);
+            }
+          }
           break;
         }
 

@@ -288,6 +288,132 @@ Termine sempre com uma dica ou encorajamento curto.`,
     return response.content[0].type === 'text' ? response.content[0].text : '';
   }
 
+  // ── Gera plano de orçamento personalizado (50/30/20 adaptado) ────────────
+  async generateBudgetPlan(
+    income: number,
+    fixedExpenses: string,
+    debts: string,
+    mainGoal: string,
+  ): Promise<{ text: string; plan: Record<string, number> }> {
+    if (!this.anthropic) return { text: 'IA não configurada.', plan: {} };
+
+    const hasDebts = !['não', 'nao', 'nenhuma', 'nenhum', 'sem dívida', 'zero', 'nada'].some(w =>
+      debts.toLowerCase().includes(w),
+    );
+
+    const response = await this.anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 800,
+      system: `Você é a Finora, consultora financeira. Crie um plano de orçamento mensal personalizado.
+
+Retorne APENAS um JSON válido com esta estrutura:
+{
+  "percentages": {
+    "necessidades": number,
+    "dividas": number,
+    "qualidade_vida": number,
+    "futuro": number
+  },
+  "breakdown": {
+    "moradia": number,
+    "alimentacao": number,
+    "transporte": number,
+    "saude": number,
+    "dividas": number,
+    "lazer": number,
+    "roupas": number,
+    "reserva": number,
+    "investimentos": number
+  },
+  "message": string (plano formatado em texto com emojis, WhatsApp markdown, máx 30 linhas)
+}
+
+REGRAS:
+- Se tem dívidas: aumente "futuro" para pagar dívidas (40-50%), reduza lazer para 10-15%
+- Sem dívidas: regra 50/30/20 clássica adaptada aos gastos fixos informados
+- Os valores em "breakdown" devem somar exatamente a renda informada
+- Use *texto* para negrito no WhatsApp
+- Formate valores em R$ com vírgula
+- Seja específico com os valores da pessoa, não genérico`,
+      messages: [{
+        role: 'user',
+        content: `Renda mensal líquida: R$ ${income.toFixed(2)}
+Gastos fixos declarados: ${fixedExpenses}
+Dívidas: ${debts}
+Objetivo principal: ${mainGoal}
+Tem dívidas: ${hasDebts ? 'Sim' : 'Não'}`,
+      }],
+    });
+
+    try {
+      const raw = response.content[0].type === 'text' ? response.content[0].text : '{}';
+      const text = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+      const parsed = JSON.parse(text);
+      return {
+        text: parsed.message || '',
+        plan: parsed.breakdown || {},
+      };
+    } catch {
+      // Fallback plan simples
+      const necessidades = income * 0.5;
+      const futuro = income * 0.2;
+      const qualidade = income * 0.3;
+      const text =
+        `💰 *Seu Plano Mensal — R$ ${income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n\n` +
+        `🏠 *Necessidades (50%) — R$ ${necessidades.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n` +
+        `├ Moradia, alimentação, transporte, saúde\n\n` +
+        `🎯 *Futuro (20%) — R$ ${futuro.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n` +
+        `├ Reserva de emergência e investimentos\n\n` +
+        `🎉 *Qualidade de vida (30%) — R$ ${qualidade.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n` +
+        `└ Lazer, roupas, restaurantes`;
+      return { text, plan: { reserva: futuro, lazer: qualidade } };
+    }
+  }
+
+  // ── Compara gastos reais com o plano orçamentário ─────────────────────────
+  async generateBudgetComparison(
+    reportData: any,
+    budgetPlan: Record<string, number>,
+    income: number,
+  ): Promise<string> {
+    if (!this.anthropic) return 'IA não configurada.';
+
+    const categoryMap: Record<string, string> = {
+      'Alimentação': 'alimentacao',
+      'Transporte': 'transporte',
+      'Moradia': 'moradia',
+      'Saúde': 'saude',
+      'Lazer': 'lazer',
+      'Vestuário': 'roupas',
+    };
+
+    const realSpending = reportData.currentMonth?.topCategories || [];
+    const spendingLines = realSpending.map((c: any) => {
+      const planKey = categoryMap[c.name];
+      const planned = planKey ? (budgetPlan[planKey] || 0) : 0;
+      const diff = c.total - planned;
+      const status = planned === 0 ? '' : diff > 0 ? `⚠️ +R$ ${diff.toFixed(2)} acima` : `✅ R$ ${Math.abs(diff).toFixed(2)} abaixo`;
+      return `${c.name}: R$ ${c.total.toFixed(2)}${planned > 0 ? ` / planejado R$ ${planned.toFixed(2)} ${status}` : ''}`;
+    }).join('\n');
+
+    const response = await this.anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 400,
+      system: `Você é a Finora. Analise o desempenho orçamentário do cliente e dê um feedback direto e útil. Máx 15 linhas. Use emojis e *negrito* WhatsApp.`,
+      messages: [{
+        role: 'user',
+        content: `Renda: R$ ${income.toFixed(2)}
+Total gasto no mês: R$ ${reportData.currentMonth?.expense?.toFixed(2) || '0'}
+Saldo: R$ ${reportData.currentMonth?.balance?.toFixed(2) || '0'}
+
+Gastos por categoria (real vs planejado):
+${spendingLines || 'Sem gastos registrados ainda'}`,
+      }],
+    });
+
+    return response.content[0].type === 'text' ? response.content[0].text : '';
+  }
+
   // ── Analisa imagem/PDF de comprovante via Claude Vision ─────────────────
   async analyzeReceiptImage(base64: string, mimeType: string, categoryNames: string[]): Promise<ParsedTransaction[]> {
     if (!this.anthropic) return [];

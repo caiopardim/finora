@@ -93,7 +93,29 @@
       "Bash(grep -n \"19\\\\|por mês\\\\|prefix\\\\|R\\\\$\\\\|stats\\\\|counter\\\\|value.*price\" /Users/caiopardim/Desktop/Finora/frontend/src/app/page.tsx)",
       "Bash(grep -i \"19\\\\|mês\\\\|stat\\\\|prefix\\\\|R\\\\$\")",
       "Bash(xargs ls)",
-      "Bash(grep -n \"Plano Mensal\\\\|Plano Anual\\\\|priceMonthly\\\\|priceAnnual\\\\|\\\\/mês\\\\|\\\\/ano\\\\|R\\\\$.*input\\\\|flex.*row.*price\" /Users/caiopardim/Desktop/Finora/frontend/src/app/admin/page.tsx)"
+      "Bash(grep -n \"Plano Mensal\\\\|Plano Anual\\\\|priceMonthly\\\\|priceAnnual\\\\|\\\\/mês\\\\|\\\\/ano\\\\|R\\\\$.*input\\\\|flex.*row.*price\" /Users/caiopardim/Desktop/Finora/frontend/src/app/admin/page.tsx)",
+      "Bash(sips -z 64 64 /tmp/favicon-test.png --out /tmp/favicon-64.png)",
+      "Bash(sips -z 192 192 /tmp/favicon-test.png --out /tmp/icon-192-new.png)",
+      "Bash(sips -z 512 512 /tmp/favicon-test.png --out /tmp/icon-512-new.png)",
+      "Bash(cp /tmp/favicon-64.png /Users/caiopardim/Desktop/Finora/frontend/public/favicon-64.png)",
+      "Bash(cp /tmp/icon-192-new.png /Users/caiopardim/Desktop/Finora/frontend/public/icon-192.png)",
+      "Bash(cp /tmp/icon-512-new.png /Users/caiopardim/Desktop/Finora/frontend/public/icon-512.png)",
+      "Bash(npx png-to-ico *)",
+      "Bash(rm src/app/icon.svg)",
+      "Bash(cp public/icon-192.png src/app/icon.png)",
+      "Bash(sips -z 32 32 /Users/caiopardim/Desktop/Finora/frontend/public/icon-192.png --out /tmp/icon-32.png)",
+      "Bash(curl -s http://localhost:3001/health)",
+      "Bash(curl -s http://localhost:3000/health)",
+      "Bash(./node_modules/.bin/tsc --noEmit)",
+      "Bash(./node_modules/.bin/next build *)",
+      "WebFetch(domain:lp.pierre.finance)",
+      "mcp__Claude_in_Chrome__navigate",
+      "mcp__Claude_in_Chrome__get_page_text",
+      "mcp__Claude_in_Chrome__read_page",
+      "Bash(npm uninstall *)",
+      "Skill(claude-api)",
+      "Skill(claude-api:*)",
+      "Bash(xargs cat)"
     ]
   }
 }
