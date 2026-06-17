@@ -25,6 +25,8 @@ export interface MessageIntent {
     | 'create_bill'
     | 'list_bills'
     | 'mark_bill_paid'
+    | 'ask_advice'
+    | 'financial_diagnosis'
     | 'unknown';
   transaction?: ParsedTransaction;
   query?: string;
@@ -165,6 +167,17 @@ ATENÇÃO: Diferença crucial:
 - "paguei a conta de luz" → mark_bill_paid (marca uma conta cadastrada como paga)
 - "paguei 150 de luz" → register_transaction (registra uma despesa nova)
 
+━━━ CONSULTORIA FINANCEIRA ━━━
+{
+  "action": "ask_advice"
+}
+Use para: "como estou financeiramente", "analisa meus gastos", "me dá um conselho", "estou gastando muito", "como economizar", "me ajuda a economizar", "devo cortar gastos", "vale a pena", "o que você acha".
+
+{
+  "action": "financial_diagnosis"
+}
+Use para: "quero organizar minha vida financeira", "me ajuda a organizar", "quero um plano financeiro", "quero sair das dívidas", "quero começar a poupar", "não sei controlar meu dinheiro", "preciso de ajuda financeira", "diagnóstico financeiro".
+
 ━━━ DESCONHECIDO ━━━
 {
   "action": "unknown"
@@ -188,6 +201,8 @@ ATENÇÃO: Diferença crucial:
 - "Cadastra aluguel 1500 todo mês no dia 5" → create_bill, monthly
 - "Contas a pagar" → list_bills
 - "Paguei a conta de luz" → mark_bill_paid
+- "Como estou financeiramente?" → ask_advice
+- "Me ajuda a organizar minha vida financeira" → financial_diagnosis
 
 Responda APENAS com o JSON, sem texto adicional, sem markdown.`;
 
@@ -362,6 +377,111 @@ Responda APENAS com o JSON, sem texto adicional, sem markdown.`;
       this.logger.error('analyzeReceiptImage failed', err?.message);
       return [];
     }
+  }
+
+  // ── Gera comentário consultor após registrar uma transação ───────────────
+  async generateTransactionComment(
+    transaction: ParsedTransaction,
+    categoryMonthTotal: number,
+    lastMonthCategoryTotal: number,
+    monthIncome: number,
+    goals: any[],
+  ): Promise<string | null> {
+    if (!this.anthropic) return null;
+    try {
+      const goalsSummary = goals.length > 0
+        ? goals.map((g: any) => {
+            const pct = g.target_amount > 0 ? Math.round((g.current_amount / g.target_amount) * 100) : 0;
+            return `${g.name}: ${pct}% (R$ ${Number(g.current_amount).toFixed(2)} de R$ ${Number(g.target_amount).toFixed(2)})`;
+          }).join(', ')
+        : 'nenhuma meta cadastrada';
+
+      const response = await this.anthropic.messages.create({
+        model: 'claude-haiku-4-5',
+        max_tokens: 120,
+        system: `Você é a Finora, consultora financeira pessoal. Após registrar um gasto, gere UM insight curto (máx 2 linhas) que ajude o cliente a entender sua situação. Use emoji. Seja direta e útil.
+
+Não confirme o registro (já foi confirmado). Dê perspectiva financeira real.
+Se não houver nada relevante a dizer, retorne exatamente: SKIP
+
+Exemplos:
+- "💡 Já são R$ 620 em Alimentação este mês — 40% acima do mês passado. Considere cozinhar mais em casa!"
+- "✅ Alimentação controlada! Abaixo do mês anterior. Continue assim 💪"
+- "⚠️ Com esse gasto, você já comprometeu 35% da sua renda do mês."
+- "🎯 Lembra da sua meta de viagem? Cada economizado conta!"`,
+        messages: [{
+          role: 'user',
+          content: `Gasto registrado: ${transaction.description} — R$ ${transaction.amount.toFixed(2)} (${transaction.category})
+Total em ${transaction.category} este mês: R$ ${categoryMonthTotal.toFixed(2)}
+Total em ${transaction.category} mês passado: R$ ${lastMonthCategoryTotal.toFixed(2)}
+Receita do mês: R$ ${monthIncome.toFixed(2)}
+Metas: ${goalsSummary}`,
+        }],
+      });
+
+      const text = response.content[0].type === 'text' ? response.content[0].text.trim() : '';
+      return text && text !== 'SKIP' ? text : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // ── Gera resposta de consultoria financeira completa ─────────────────────
+  async generateAdvisorResponse(query: string, reportData: any, goals: any[], bills: any[]): Promise<string> {
+    if (!this.anthropic) return 'IA não configurada.';
+
+    const today = dayjs().format('DD/MM/YYYY');
+
+    const goalsSummary = goals.length > 0
+      ? goals.map((g: any) => {
+          const pct = g.target_amount > 0 ? Math.round((g.current_amount / g.target_amount) * 100) : 0;
+          return `• ${g.icon || '🎯'} ${g.name}: R$ ${Number(g.current_amount).toFixed(2)} / R$ ${Number(g.target_amount).toFixed(2)} (${pct}%)`;
+        }).join('\n')
+      : 'Nenhuma meta cadastrada';
+
+    const billsSummary = bills.length > 0
+      ? bills.map((b: any) => `• ${b.description}: R$ ${Number(b.amount).toFixed(2)} vence ${b.due_date}`).join('\n')
+      : 'Nenhuma conta pendente';
+
+    const response = await this.anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 600,
+      system: `Você é a Finora, consultora financeira pessoal. Hoje é ${today}.
+
+Analise os dados financeiros do cliente e dê uma consultoria real, personalizada e acionável.
+Responda em português brasileiro, use emojis. Máximo 20 linhas.
+
+Estrutura da resposta:
+1. Diagnóstico rápido (2-3 linhas sobre situação atual)
+2. Pontos de atenção (o que precisa melhorar)
+3. Recomendações concretas (3 ações específicas)
+4. Frase motivacional curta
+
+Formate valores em R$ com vírgula. Seja honesta mas encorajadora.`,
+      messages: [{
+        role: 'user',
+        content: `Pergunta do cliente: "${query}"
+
+DADOS FINANCEIROS:
+Este mês:
+- Receitas: R$ ${reportData.currentMonth?.income?.toFixed(2) || '0,00'}
+- Gastos: R$ ${reportData.currentMonth?.expense?.toFixed(2) || '0,00'}
+- Saldo: R$ ${reportData.currentMonth?.balance?.toFixed(2) || '0,00'}
+- Top categorias: ${reportData.currentMonth?.topCategories?.map((c: any) => `${c.name} R$ ${c.total.toFixed(2)}`).join(', ') || 'nenhuma'}
+
+Comparação com mês anterior:
+- Gastos antes: R$ ${reportData.lastMonth?.expense?.toFixed(2) || '0,00'}
+- Variação: ${reportData.comparison?.expenseDiffPercent || 0}%
+
+METAS:
+${goalsSummary}
+
+CONTAS PENDENTES:
+${billsSummary}`,
+      }],
+    });
+
+    return response.content[0].type === 'text' ? response.content[0].text : '';
   }
 
   // ── Analisa texto extraído de PDF ou planilha ─────────────────────────────

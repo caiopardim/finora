@@ -25,6 +25,8 @@ export class WhatsappService {
   private readonly pendingDeletes = new Map<string, { txId: string; description: string; amount: number; date: string }>();
   // Pending duplicate confirmations: phone -> pending transaction data
   private readonly pendingDuplicates = new Map<string, { type: string; amount: number; description: string; category: string; date: string; duplicateDesc: string; duplicateAgo: string }>();
+  // Onboarding flow: phone -> { stage, income?, fixedExpenses?, debts? }
+  private readonly pendingOnboarding = new Map<string, { stage: 'income' | 'fixed_expenses' | 'debts' | 'main_goal'; income?: number; fixedExpenses?: string; debts?: string }>();
 
   constructor(
     private config: ConfigService,
@@ -76,6 +78,92 @@ export class WhatsappService {
           `Qualquer dúvida, é só responder aqui! 😊`,
         );
         return;
+      }
+
+      // ── Onboarding flow ────────────────────────────────────────────────────
+      const onboarding = this.pendingOnboarding.get(normalizedPhone);
+      if (onboarding) {
+        const input = message.trim();
+        switch (onboarding.stage) {
+          case 'income': {
+            const income = parseFloat(input.replace(/[^\d,]/g, '').replace(',', '.'));
+            if (isNaN(income) || income <= 0) {
+              await this.sendMessage(normalizedPhone, `Por favor, me diga um valor numérico. Ex: *3500*`);
+              return;
+            }
+            this.pendingOnboarding.set(normalizedPhone, { ...onboarding, stage: 'fixed_expenses', income });
+            await this.sendMessage(normalizedPhone,
+              `Anotei! 💰 Renda mensal: *R$ ${income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n\n` +
+              `*2/4 — Gastos fixos*\n\n` +
+              `Quais são seus principais gastos fixos mensais?\n` +
+              `Ex: _"Aluguel 1200, luz 80, internet 100, faculdade 500"_`,
+            );
+            return;
+          }
+          case 'fixed_expenses': {
+            this.pendingOnboarding.set(normalizedPhone, { ...onboarding, stage: 'debts', fixedExpenses: input });
+            await this.sendMessage(normalizedPhone,
+              `Ótimo! Registrei seus gastos fixos. 📋\n\n` +
+              `*3/4 — Dívidas*\n\n` +
+              `Você tem alguma dívida atualmente?\n` +
+              `Ex: _"Cartão 2000, empréstimo 5000"_ ou _"Não tenho dívidas"_`,
+            );
+            return;
+          }
+          case 'debts': {
+            this.pendingOnboarding.set(normalizedPhone, { ...onboarding, stage: 'main_goal', debts: input });
+            await this.sendMessage(normalizedPhone,
+              `Entendido! 📊\n\n` +
+              `*4/4 — Objetivo principal*\n\n` +
+              `Qual é seu maior objetivo financeiro agora?\n` +
+              `Ex: _"Quitar dívidas"_, _"Juntar para viagem"_, _"Montar reserva de emergência"_, _"Comprar carro"_`,
+            );
+            return;
+          }
+          case 'main_goal': {
+            const state = { ...onboarding, debts: onboarding.debts };
+            this.pendingOnboarding.delete(normalizedPhone);
+
+            await this.sendMessage(normalizedPhone, `⏳ Analisando sua situação financeira...`);
+
+            // Build advisor plan based on collected data
+            const income = state.income || 0;
+            const hasDebts = state.debts && !['não', 'nao', 'nenhuma', 'nenhum', 'sem', 'zero'].some(w => state.debts!.toLowerCase().includes(w));
+            const savingsCapacity = income * 0.2; // suggest 20% savings rule
+
+            let plan = `🎯 *Seu Plano Financeiro Personalizado*\n\n`;
+            plan += `💰 *Renda mensal:* R$ ${income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
+            plan += `📋 *Gastos fixos:* ${state.fixedExpenses}\n`;
+            if (hasDebts) plan += `⚠️ *Dívidas:* ${state.debts}\n`;
+            plan += `🎯 *Objetivo:* ${input}\n\n`;
+            plan += `━━━━━━━━━━━━━━━\n\n`;
+            plan += `📌 *Recomendações:*\n\n`;
+
+            if (hasDebts) {
+              plan += `1️⃣ *Prioridade: quitar dívidas*\n   Dívidas cobram juros maiores do que qualquer investimento rende. Foque nisso primeiro.\n\n`;
+            } else {
+              plan += `1️⃣ *Reserve 20% da renda* (R$ ${savingsCapacity.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})\n   Pague você primeiro — transfira para poupança/investimento no dia do salário.\n\n`;
+            }
+
+            plan += `2️⃣ *Reserva de emergência*\n   Ideal: 3-6 meses de gastos guardados. Isso te protege de imprevistos sem endividar.\n\n`;
+            plan += `3️⃣ *Registre tudo aqui*\n   Me mande seus gastos pelo WhatsApp — em 30 dias você vai enxergar exatamente onde seu dinheiro vai.\n\n`;
+            plan += `━━━━━━━━━━━━━━━\n\n`;
+            plan += `Quer que eu crie uma meta de *Reserva de Emergência* para você começar? Responda *sim* ou me diga seu próximo objetivo! 💪`;
+
+            await this.sendMessage(normalizedPhone, plan);
+
+            // Auto-create emergency fund goal if no debts
+            if (!hasDebts) {
+              const emergencyTarget = income * 3;
+              await this.goals.create(user.id, {
+                name: 'Reserva de Emergência',
+                target_amount: emergencyTarget,
+                icon: '🛡️',
+              }).catch(() => {});
+            }
+            return;
+          }
+        }
       }
 
       // Check if user has a pending duplicate confirmation
@@ -208,6 +296,8 @@ export class WhatsappService {
           // Check budget thresholds after registering an expense
           if (transaction.type === 'expense') {
             this.budgetAlerts.checkAndNotify(user.id).catch(() => {});
+            // Fire consultant comment async (doesn't block the response)
+            this.sendConsultorComment(user.id, normalizedPhone, transaction).catch(() => {});
           }
           break;
         }
@@ -453,6 +543,30 @@ export class WhatsappService {
           break;
         }
 
+        case 'ask_advice': {
+          await this.sendMessage(normalizedPhone, `🔍 Analisando sua situação financeira...`);
+          const [reportData, allGoals, pendingBillsList] = await Promise.all([
+            this.reports.getReportData(user.id),
+            this.goals.findAll(user.id).catch(() => []),
+            this.bills.findAll(user.id, { paid: false }).catch(() => []),
+          ]);
+          const advice = await this.ai.generateAdvisorResponse(intent.query || 'Como estou financeiramente?', reportData, allGoals || [], pendingBillsList || []);
+          await this.sendMessage(normalizedPhone, advice);
+          break;
+        }
+
+        case 'financial_diagnosis': {
+          this.pendingOnboarding.set(normalizedPhone, { stage: 'income' });
+          await this.sendMessage(normalizedPhone,
+            `🎯 *Vamos organizar sua vida financeira!*\n\n` +
+            `Vou te fazer 4 perguntas rápidas para entender sua situação e montar um plano personalizado para você. 📋\n\n` +
+            `*1/4 — Renda mensal*\n\n` +
+            `Qual é a sua renda mensal líquida (o que cai na conta)?\n` +
+            `Ex: _"3500"_ ou _"4200"_`,
+          );
+          break;
+        }
+
         default:
           await this.sendMessage(
             normalizedPhone,
@@ -693,6 +807,38 @@ export class WhatsappService {
     } catch (error) {
       this.logger.error(`Error handling button reply: ${error.message}`, error.stack);
       await this.sendMessage(normalizedPhone, '❌ Não foi possível processar a ação. Tente novamente.');
+    }
+  }
+
+  // ── Busca dados da categoria e envia comentário consultor ───────────────
+  private async sendConsultorComment(userId: string, phone: string, transaction: any): Promise<void> {
+    try {
+      const [reportData, allGoals] = await Promise.all([
+        this.reports.getReportData(userId),
+        this.goals.findAll(userId).catch(() => []),
+      ]);
+
+      // Total gasto nesta categoria no mês (inclui a transação atual)
+      const categoryEntries = reportData.transactionsByCategory?.[transaction.category] || [];
+      const categoryMonthTotal = categoryEntries
+        .filter((t: any) => t.type === 'expense')
+        .reduce((s: number, t: any) => s + Number(t.amount), 0);
+
+      const monthIncome = reportData.currentMonth?.income || 0;
+
+      const comment = await this.ai.generateTransactionComment(
+        transaction,
+        categoryMonthTotal || transaction.amount,
+        0, // last month per-category not available without extra query
+        monthIncome,
+        allGoals || [],
+      );
+
+      if (comment) {
+        await this.sendMessage(phone, comment);
+      }
+    } catch {
+      // Silent fail — comentário é não-crítico
     }
   }
 
