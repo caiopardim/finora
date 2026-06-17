@@ -199,7 +199,8 @@ Responda APENAS com o JSON, sem texto adicional, sem markdown.`;
     });
 
     try {
-      const text = response.content[0].type === 'text' ? response.content[0].text : '';
+      const raw = response.content[0].type === 'text' ? response.content[0].text : '';
+      const text = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
       return JSON.parse(text) as MessageIntent;
     } catch {
       this.logger.error('Failed to parse AI response', response.content);
@@ -352,7 +353,8 @@ Responda APENAS com o JSON, sem texto adicional, sem markdown.`;
         ],
       });
 
-      const text = response.content[0].type === 'text' ? response.content[0].text : '{}';
+      const raw = response.content[0].type === 'text' ? response.content[0].text : '{}';
+      const text = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
       const parsed = JSON.parse(text);
       this.logger.log(`[analyzeReceiptImage] found ${parsed.transactions?.length ?? 0} transactions, summary: ${parsed.summary}`);
       return parsed.transactions || [];
@@ -432,7 +434,8 @@ Responda APENAS com o JSON, sem texto adicional, sem markdown.`,
         ],
       });
 
-      const responseText = response.content[0].type === 'text' ? response.content[0].text : '{}';
+      const rawText = response.content[0].type === 'text' ? response.content[0].text : '{}';
+      const responseText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
       const parsed = JSON.parse(responseText);
       return {
         transactions: parsed.transactions || [],
