@@ -27,6 +27,8 @@ export interface MessageIntent {
     | 'mark_bill_paid'
     | 'ask_advice'
     | 'financial_diagnosis'
+    | 'economy_suggestions'
+    | 'simulate_goal'
     | 'unknown';
   transaction?: ParsedTransaction;
   query?: string;
@@ -36,6 +38,7 @@ export interface MessageIntent {
   goal_progress?: { name: string; amount: number };
   bill?: { description: string; amount: number; due_date: string; is_recurring: boolean; recurrence_interval?: 'weekly' | 'monthly' | 'yearly' };
   bill_name?: string;
+  goal_name?: string;
 }
 
 @Injectable()
@@ -178,6 +181,17 @@ Use para: "como estou financeiramente", "analisa meus gastos", "me dá um consel
 }
 Use para: "quero organizar minha vida financeira", "me ajuda a organizar", "quero um plano financeiro", "quero sair das dívidas", "quero começar a poupar", "não sei controlar meu dinheiro", "preciso de ajuda financeira", "diagnóstico financeiro".
 
+{
+  "action": "economy_suggestions"
+}
+Use para: "me dá dica de economia", "como economizar", "onde cortei gastos", "onde consigo poupar", "como reduzir gastos", "dê um conselho de economia".
+
+{
+  "action": "simulate_goal",
+  "goal_name": string (nome ou parte do nome da meta)
+}
+Use para: "quando atinjo minha meta", "quanto tempo falta", "simula minha meta", "em quanto tempo consigo", "quando consigo juntar para".
+
 ━━━ DESCONHECIDO ━━━
 {
   "action": "unknown"
@@ -203,6 +217,8 @@ Use para: "quero organizar minha vida financeira", "me ajuda a organizar", "quer
 - "Paguei a conta de luz" → mark_bill_paid
 - "Como estou financeiramente?" → ask_advice
 - "Me ajuda a organizar minha vida financeira" → financial_diagnosis
+- "Me dá uma dica de economia" → economy_suggestions
+- "Quando atinjo minha meta de viagem?" → simulate_goal, goal_name: "viagem"
 
 Responda APENAS com o JSON, sem texto adicional, sem markdown.`;
 
@@ -408,6 +424,28 @@ Saldo: R$ ${reportData.currentMonth?.balance?.toFixed(2) || '0'}
 
 Gastos por categoria (real vs planejado):
 ${spendingLines || 'Sem gastos registrados ainda'}`,
+      }],
+    });
+
+    return response.content[0].type === 'text' ? response.content[0].text : '';
+  }
+
+  // ── Gera sugestões de economia baseado nos gastos ────────────────────────
+  async generateEconomySuggestions(topSpendersSummary: string, monthData: any, budgetPlan: any): Promise<string> {
+    if (!this.anthropic) return 'IA não configurada.';
+
+    const response = await this.anthropic.messages.create({
+      model: 'claude-haiku-4-5',
+      max_tokens: 300,
+      system: `Você é a Finora. Analise os gastos do cliente e dê 3-4 sugestões CONCRETAS e práticas de economia. Use emojis. Máx 12 linhas. Seja direto.
+
+Exemplos de sugestões:
+- "Você gasta R$ 800/mês em restaurantes. Se fazer a metade em casa, economiza R$ 400!"
+- "Internet, celular e TV custam juntos R$ 250. Renegocie ou troque de plano."
+- "Streaming: você tem 4 assinaturas. Cancele 2 que não usa."`,
+      messages: [{
+        role: 'user',
+        content: `Gastos principais este mês:\n${topSpendersSummary}\n\nTotal gasto: R$ ${monthData?.expense?.toFixed(2) || '0'}\nReceita: R$ ${monthData?.income?.toFixed(2) || '0'}\nSaldo: R$ ${(monthData?.income - monthData?.expense)?.toFixed(2) || '0'}`,
       }],
     });
 

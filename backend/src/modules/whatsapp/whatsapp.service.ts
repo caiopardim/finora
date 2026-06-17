@@ -307,8 +307,9 @@ export class WhatsappService {
           // Check budget thresholds after registering an expense
           if (transaction.type === 'expense') {
             this.budgetAlerts.checkAndNotify(user.id).catch(() => {});
-            // Fire consultant comment async (doesn't block the response)
+            // Fire consultant comment + budget alert async (doesn't block the response)
             this.sendConsultorComment(user.id, normalizedPhone, transaction).catch(() => {});
+            this.sendBudgetAlert(user.id, normalizedPhone, transaction).catch(() => {});
           }
           break;
         }
@@ -602,6 +603,45 @@ export class WhatsappService {
           break;
         }
 
+        case 'economy_suggestions': {
+          await this.sendMessage(normalizedPhone, `💡 Analisando seus gastos para encontrar oportunidades...`);
+          const [reportData] = await Promise.all([this.reports.getReportData(user.id)]);
+          const suggestions = await this.ai.generateEconomySuggestions(
+            reportData.currentMonth?.topCategories?.map((c: any) => `• ${c.name}: R$ ${c.total.toFixed(2)}`).join('\n') || 'Sem gastos registrados',
+            reportData.currentMonth,
+            user.budget_plan,
+          );
+          await this.sendMessage(normalizedPhone, suggestions);
+          break;
+        }
+
+        case 'simulate_goal': {
+          const goalName = intent.goal_name;
+          if (!goalName) {
+            await this.sendMessage(normalizedPhone, `Qual meta você quer simular? Ex: _"Simula minha meta de viagem"_`);
+            break;
+          }
+
+          const allGoals = await this.goals.findAll(user.id).catch(() => []);
+          const matched = allGoals?.find((g: any) =>
+            g.name.toLowerCase().includes(goalName.toLowerCase()) ||
+            goalName.toLowerCase().includes(g.name.toLowerCase().split(' ')[0]),
+          );
+
+          if (!matched) {
+            await this.sendMessage(normalizedPhone,
+              `❌ Não encontrei meta com o nome *"${goalName}"*.\n\nSuas metas:\n${allGoals?.map((g: any) => `• ${g.icon || '🎯'} ${g.name}`).join('\n') || 'Nenhuma meta cadastrada'}`,
+            );
+            break;
+          }
+
+          const reportData = await this.reports.getReportData(user.id);
+          const simulation = this.simulateGoalTimeline(matched, user.monthly_income || 0, reportData.currentMonth?.expense || 0);
+
+          await this.sendMessage(normalizedPhone, simulation);
+          break;
+        }
+
         default:
           await this.sendMessage(
             normalizedPhone,
@@ -843,6 +883,93 @@ export class WhatsappService {
       this.logger.error(`Error handling button reply: ${error.message}`, error.stack);
       await this.sendMessage(normalizedPhone, '❌ Não foi possível processar a ação. Tente novamente.');
     }
+  }
+
+  // ── Alerta quando gasto ultrapassa orçamento planejado ────────────────────
+  private async sendBudgetAlert(userId: string, phone: string, transaction: any): Promise<void> {
+    try {
+      const user = await this.users.findById(userId);
+      if (!user?.budget_plan || !user?.monthly_income) return; // Sem plano, sem alerta
+
+      const budgetPlan = user.budget_plan as any;
+      const categoryMap: Record<string, string> = {
+        'Alimentação': 'alimentacao',
+        'Transporte': 'transporte',
+        'Moradia': 'moradia',
+        'Saúde': 'saude',
+        'Lazer': 'lazer',
+        'Vestuário': 'roupas',
+      };
+
+      const planKey = categoryMap[transaction.category];
+      if (!planKey) return; // Categoria não mapeada
+
+      const plannedAmount = budgetPlan[planKey] || 0;
+      if (plannedAmount === 0) return; // Sem limite planejado
+
+      const reportData = await this.reports.getReportData(userId);
+      const categoryEntries = reportData.transactionsByCategory?.[transaction.category] || [];
+      const actualSpent = categoryEntries
+        .filter((t: any) => t.type === 'expense')
+        .reduce((s: number, t: any) => s + Number(t.amount), 0);
+
+      const percentUsed = (actualSpent / plannedAmount) * 100;
+
+      // Alerta quando passa de 80% e 100% do orçamento
+      if (percentUsed >= 100) {
+        const excess = actualSpent - plannedAmount;
+        await this.sendMessage(phone,
+          `⚠️ *${transaction.category} — Orçamento ultrapassado!*\n\n` +
+          `Planejado: R$ ${plannedAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n` +
+          `Gasto: R$ ${actualSpent.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n` +
+          `Excesso: R$ ${excess.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n\n` +
+          `Considere reduzir gastos nos próximos dias. 💪`,
+        );
+      } else if (percentUsed >= 80) {
+        const remaining = plannedAmount - actualSpent;
+        await this.sendMessage(phone,
+          `🟡 *${transaction.category} — Limite próximo!*\n\n` +
+          `Você já usou ${Math.round(percentUsed)}% do orçamento.\n` +
+          `Restam: R$ ${remaining.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} para o mês.`,
+        );
+      }
+    } catch {
+      // Silent fail — alerta é não-crítico
+    }
+  }
+
+  // ── Simula timeline da meta ───────────────────────────────────────────────
+  private simulateGoalTimeline(goal: any, monthlyIncome: number, currentMonthExpense: number): string {
+    const disposableIncome = monthlyIncome - currentMonthExpense;
+    const remaining = goal.target_amount - (goal.current_amount || 0);
+
+    if (disposableIncome <= 0) {
+      return `⚠️ *${goal.name}*\n\nVocê não tem renda disponível para esta meta no momento (gastos ≥ renda).\n\nReduca despesas primeiro! 💪`;
+    }
+
+    const monthsNeeded = Math.ceil(remaining / disposableIncome);
+    const completionDate = dayjs().add(monthsNeeded, 'month').format('MMMM/YYYY');
+
+    let sim = `🎯 *Simulação: ${goal.name}*\n\n`;
+    sim += `Faltam: R$ ${remaining.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
+    sim += `Renda disponível/mês: R$ ${disposableIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n\n`;
+    sim += `📅 *Estimativa: ${monthsNeeded} meses*\n`;
+    sim += `Você atinge em: *${completionDate}*\n\n`;
+
+    // Explore faster scenarios
+    const faster = disposableIncome * 1.5;
+    const fasterMonths = Math.ceil(remaining / faster);
+    const fasterDate = dayjs().add(fasterMonths, 'month').format('MMMM/YYYY');
+
+    sim += `💡 *Se economizar mais:*\n`;
+    sim += `├ +50% (R$ ${faster.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}): ${fasterMonths} meses (${fasterDate})\n`;
+
+    const muchFaster = disposableIncome * 2;
+    const muchFasterMonths = Math.ceil(remaining / muchFaster);
+    const muchFasterDate = dayjs().add(muchFasterMonths, 'month').format('MMMM/YYYY');
+    sim += `└ +100% (R$ ${muchFaster.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}): ${muchFasterMonths} meses (${muchFasterDate})`;
+
+    return sim;
   }
 
   // ── Busca dados da categoria e envia comentário consultor ───────────────
