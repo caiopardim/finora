@@ -29,6 +29,11 @@ export interface MessageIntent {
     | 'financial_diagnosis'
     | 'economy_suggestions'
     | 'simulate_goal'
+    | 'create_shopping_list'
+    | 'add_shopping_items'
+    | 'view_shopping_list'
+    | 'estimate_list_cost'
+    | 'complete_shopping_list'
     | 'unknown';
   transaction?: ParsedTransaction;
   query?: string;
@@ -39,6 +44,8 @@ export interface MessageIntent {
   bill?: { description: string; amount: number; due_date: string; is_recurring: boolean; recurrence_interval?: 'weekly' | 'monthly' | 'yearly' };
   bill_name?: string;
   goal_name?: string;
+  shopping_list?: { name: string; category?: string };
+  shopping_items?: Array<{ name: string; quantity?: number; unit?: string }>;
 }
 
 @Injectable()
@@ -170,6 +177,39 @@ ATENÇÃO: Diferença crucial:
 - "paguei a conta de luz" → mark_bill_paid (marca uma conta cadastrada como paga)
 - "paguei 150 de luz" → register_transaction (registra uma despesa nova)
 
+━━━ LISTA DE COMPRAS ━━━
+{
+  "action": "create_shopping_list",
+  "shopping_list": {
+    "name": string (nome da lista, ex: "Mercado", "Farmácia", "Compras da semana"),
+    "category": string (opcional, categoria de gasto)
+  }
+}
+Use para: "vou ao mercado", "cria uma lista de compras", "compras para a semana", "lista de farmácia".
+
+{
+  "action": "add_shopping_items",
+  "shopping_items": [
+    { "name": string, "quantity": number (opcional), "unit": string (opcional, ex: "kg", "L") }
+  ]
+}
+Use para: "adiciona pão, leite, ovos", "compra 2kg de frango, 1L de leite".
+
+{
+  "action": "view_shopping_list"
+}
+Use para: "minhas compras", "lista de compras", "o que eu vou comprar", "mostra a lista".
+
+{
+  "action": "estimate_list_cost"
+}
+Use para: "quanto vai custar", "estima o custo", "quanto gasto nessa lista".
+
+{
+  "action": "complete_shopping_list"
+}
+Use para: "comprei tudo", "finalizei a compra", "já comprei", "completa a lista".
+
 ━━━ CONSULTORIA FINANCEIRA ━━━
 {
   "action": "ask_advice"
@@ -219,6 +259,11 @@ Use para: "quando atinjo minha meta", "quanto tempo falta", "simula minha meta",
 - "Me ajuda a organizar minha vida financeira" → financial_diagnosis
 - "Me dá uma dica de economia" → economy_suggestions
 - "Quando atinjo minha meta de viagem?" → simulate_goal, goal_name: "viagem"
+- "Vou ao mercado" → create_shopping_list, shopping_list: {name: "Mercado", category: "Alimentação"}
+- "Adiciona pão, leite, ovos" → add_shopping_items, shopping_items: [{name: "Pão"}, {name: "Leite"}, {name: "Ovos"}]
+- "Minhas compras" → view_shopping_list
+- "Quanto vai custar?" → estimate_list_cost
+- "Comprei tudo" → complete_shopping_list
 
 Responda APENAS com o JSON, sem texto adicional, sem markdown.`;
 
@@ -450,6 +495,74 @@ Exemplos de sugestões:
     });
 
     return response.content[0].type === 'text' ? response.content[0].text : '';
+  }
+
+  // ── Estima preço dos itens da lista baseado em histórico ────────────────
+  async estimateShoppingItems(
+    items: Array<{ name: string; quantity?: number; unit?: string }>,
+    recentTransactions: any[],
+  ): Promise<Array<{ name: string; quantity: number; unit: string; estimated_price: number }>> {
+    if (!this.anthropic) {
+      return items.map((item) => ({
+        ...item,
+        quantity: item.quantity || 1,
+        unit: item.unit || 'un',
+        estimated_price: 0,
+      }));
+    }
+
+    const transactionsSummary = recentTransactions
+      .slice(0, 50)
+      .map((t: any) => `${t.description}: R$ ${t.amount.toFixed(2)}`)
+      .join('\n');
+
+    try {
+      const response = await this.anthropic.messages.create({
+        model: 'claude-haiku-4-5',
+        max_tokens: 500,
+        system: `Você é assistente financeiro. Baseado no histórico de gastos, estime o preço atual de cada item da lista.
+
+Retorne APENAS um JSON com esta estrutura:
+{
+  "items": [
+    {
+      "name": string,
+      "quantity": number,
+      "unit": string,
+      "estimated_price": number (preço unitário estimado em reais)
+    }
+  ]
+}
+
+REGRAS:
+- Use o histórico de transações para estimar preços realistas
+- Se o item não aparece no histórico, use preços atuais de mercado brasileiros
+- Preço unitário, NÃO total
+- Formate para 2 casas decimais
+- Unidade padrão: "un" para unidades, "kg" para peso, "L" para líquido`,
+        messages: [{
+          role: 'user',
+          content: `Itens da lista: ${JSON.stringify(items)}\n\nHistórico de gastos recentes:\n${transactionsSummary}`,
+        }],
+      });
+
+      const raw = response.content[0].type === 'text' ? response.content[0].text : '{}';
+      const text = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+      const parsed = JSON.parse(text);
+      return parsed.items || items.map((item) => ({
+        ...item,
+        quantity: item.quantity || 1,
+        unit: item.unit || 'un',
+        estimated_price: 0,
+      }));
+    } catch {
+      return items.map((item) => ({
+        ...item,
+        quantity: item.quantity || 1,
+        unit: item.unit || 'un',
+        estimated_price: 0,
+      }));
+    }
   }
 
   // ── Analisa imagem/PDF de comprovante via Claude Vision ─────────────────

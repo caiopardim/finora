@@ -10,6 +10,7 @@ import { AppointmentsService } from '../appointments/appointments.service';
 import { CategoriesService } from '../categories/categories.service';
 import { GoalsService } from '../goals/goals.service';
 import { BillsService } from '../bills/bills.service';
+import { ShoppingListService } from '../shopping-lists/shopping-list.service';
 import * as dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 dayjs.locale('pt-br');
@@ -39,6 +40,7 @@ export class WhatsappService {
     @Inject(forwardRef(() => AppointmentsService)) private appointments: AppointmentsService,
     private goals: GoalsService,
     private bills: BillsService,
+    private shoppingLists: ShoppingListService,
   ) {
     this.evolutionUrl = config.get('EVOLUTION_API_URL');
     this.evolutionKey = config.get('EVOLUTION_API_KEY');
@@ -639,6 +641,170 @@ export class WhatsappService {
           const simulation = this.simulateGoalTimeline(matched, user.monthly_income || 0, reportData.currentMonth?.expense || 0);
 
           await this.sendMessage(normalizedPhone, simulation);
+          break;
+        }
+
+        // ── LISTA DE COMPRAS ─────────────────────────────────────────────────
+        case 'create_shopping_list': {
+          const { shopping_list } = intent;
+          if (!shopping_list?.name) {
+            await this.sendMessage(normalizedPhone, `Qual é o nome da sua lista? Ex: _"Mercado"_, _"Farmácia"_, _"Compras da semana"_`);
+            break;
+          }
+
+          const created = await this.shoppingLists.create(user.id, {
+            name: shopping_list.name,
+            category: shopping_list.category || 'Alimentação',
+          });
+
+          await this.sendMessage(normalizedPhone,
+            `🛒 *Lista criada!*\n\n` +
+            `📝 *${created.name}*\n\n` +
+            `Agora me diga os itens que você quer comprar:\n` +
+            `_"Adiciona pão, leite, ovos"_\n\n` +
+            `Você pode adicionar quantidade também:\n` +
+            `_"2kg de frango, 1L de leite"_`,
+          );
+          break;
+        }
+
+        case 'add_shopping_items': {
+          const { shopping_items } = intent;
+          if (!shopping_items || shopping_items.length === 0) {
+            await this.sendMessage(normalizedPhone, `Quais itens você quer adicionar à lista?`);
+            break;
+          }
+
+          const activeLists = await this.shoppingLists.findActiveByUser(user.id);
+          if (!activeLists || activeLists.length === 0) {
+            await this.sendMessage(normalizedPhone, `Você não tem uma lista ativa. Cria uma com: _"Vou ao mercado"_`);
+            break;
+          }
+
+          const listId = activeLists[0].id;
+
+          // Estima preço dos itens baseado em histórico
+          const estimatedItems = await this.ai.estimateShoppingItems(shopping_items, []);
+
+          // Adiciona à lista
+          const added = await this.shoppingLists.addItems(listId, estimatedItems);
+
+          const itemsSummary = estimatedItems
+            .map((item) => {
+              const total = (item.estimated_price * item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+              return `✓ ${item.name} (${item.quantity}${item.unit}) — ~R$ ${total}`;
+            })
+            .join('\n');
+
+          const estimate = await this.shoppingLists.calculateEstimate(estimatedItems);
+
+          await this.sendMessage(normalizedPhone,
+            `✅ *Itens adicionados!*\n\n` +
+            `${itemsSummary}\n\n` +
+            `💰 *Estimativa:* ~R$ ${estimate.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n\n` +
+            `Quer adicionar mais itens? Ou *"quanto vai custar"* para análise final.`,
+          );
+          break;
+        }
+
+        case 'view_shopping_list': {
+          const activeLists = await this.shoppingLists.findActiveByUser(user.id);
+          if (!activeLists || activeLists.length === 0) {
+            await this.sendMessage(normalizedPhone, `Você não tem uma lista ativa. Cria uma com: _"Vou ao mercado"_`);
+            break;
+          }
+
+          const list = activeLists[0];
+          const items = (list.items || []) as any[];
+          if (items.length === 0) {
+            await this.sendMessage(normalizedPhone, `📝 *${list.name}* está vazia.\n\nAdiciona itens: _"Adiciona pão, leite, ovos"_`);
+            break;
+          }
+
+          const itemsList = items
+            .map((item) => {
+              const total = (item.estimated_price * item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+              const status = item.completed ? '✅' : '○';
+              return `${status} ${item.name} (${item.quantity}${item.unit}) — R$ ${total}`;
+            })
+            .join('\n');
+
+          const total = items.reduce((s: number, item) => s + item.estimated_price * item.quantity, 0);
+
+          await this.sendMessage(normalizedPhone,
+            `🛒 *${list.name}*\n\n${itemsList}\n\n` +
+            `💰 *Total estimado:* R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+          );
+          break;
+        }
+
+        case 'estimate_list_cost': {
+          const activeLists = await this.shoppingLists.findActiveByUser(user.id);
+          if (!activeLists || activeLists.length === 0) {
+            await this.sendMessage(normalizedPhone, `Você não tem uma lista ativa.`);
+            break;
+          }
+
+          const list = activeLists[0];
+          const summary = await this.shoppingLists.getListSummary(list.id!);
+          const user_ = await this.users.findById(user.id);
+          const budgetPlan = (user_?.budget_plan || {}) as any;
+
+          let response = `💰 *Análise de Custos - ${list.name}*\n\n`;
+          response += `📊 Estimado: R$ ${summary.estimated.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
+          response += `📦 ${summary.items} itens na lista\n\n`;
+
+          // Compare com orçamento se houver
+          if (user_?.monthly_income && budgetPlan.alimentacao) {
+            const alimentacaoBudget = budgetPlan.alimentacao;
+            const percentOfBudget = ((summary.estimated / alimentacaoBudget) * 100).toFixed(1);
+            response += `📈 *Comparado com orçamento:*\n`;
+            response += `Orçamento de Alimentação: R$ ${alimentacaoBudget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
+            response += `Esta lista: ${percentOfBudget}% do orçamento\n`;
+
+            if (parseFloat(percentOfBudget) > 80) {
+              response += `\n⚠️ Essa compra vai usar mais de 80% do seu orçamento de alimentação!`;
+            } else {
+              response += `\n✅ Dentro do orçamento!`;
+            }
+          }
+
+          await this.sendMessage(normalizedPhone, response);
+          break;
+        }
+
+        case 'complete_shopping_list': {
+          const activeLists = await this.shoppingLists.findActiveByUser(user.id);
+          if (!activeLists || activeLists.length === 0) {
+            await this.sendMessage(normalizedPhone, `Você não tem uma lista ativa.`);
+            break;
+          }
+
+          const list = activeLists[0];
+          const summary = await this.shoppingLists.getListSummary(list.id!);
+
+          // Completa a lista
+          await this.shoppingLists.completeList(list.id!);
+
+          // Opcionalmente, registra como transação
+          if (summary.estimated > 0) {
+            await this.transactions.create(user.id, {
+              type: 'expense',
+              amount: summary.estimated,
+              description: `Compras - ${list.name}`,
+              category_name: 'Alimentação',
+              date: dayjs().format('YYYY-MM-DD'),
+              source: 'whatsapp',
+              raw_message: `[Lista de compras completada: ${list.name}]`,
+            });
+          }
+
+          await this.sendMessage(normalizedPhone,
+            `✅ *Lista finalizada!*\n\n` +
+            `📝 *${list.name}*\n` +
+            `💸 Estimado: R$ ${summary.estimated.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n\n` +
+            `Registrei como gasto em sua conta! 📊`,
+          );
           break;
         }
 

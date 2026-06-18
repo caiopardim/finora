@@ -11,9 +11,10 @@ import { CategoriesModule } from '../categories/categories.module';
 import { AppointmentsModule } from '../appointments/appointments.module';
 import { GoalsModule } from '../goals/goals.module';
 import { BillsModule } from '../bills/bills.module';
+import { ShoppingListsModule } from '../shopping-lists/shopping-lists.module';
 
 @Module({
-  imports: [TransactionsModule, UsersModule, ReportsModule, CategoriesModule, forwardRef(() => AppointmentsModule), GoalsModule, BillsModule],
+  imports: [TransactionsModule, UsersModule, ReportsModule, CategoriesModule, forwardRef(() => AppointmentsModule), GoalsModule, BillsModule, ShoppingListsModule],
   controllers: [WhatsappController],
   providers: [WhatsappService, AiService, BudgetAlertsService, ScheduledReportsService],
   exports: [WhatsappService, AiService, BudgetAlertsService],
