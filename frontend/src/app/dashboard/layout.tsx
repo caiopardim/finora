@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import {
   LayoutDashboard, ArrowLeftRight, Tag, Target,
-  BarChart2, Settings, LogOut, ChevronRight, Bell, Receipt, AlertTriangle, Clock, Sun, Moon, CalendarDays, Wallet, LandmarkIcon, RefreshCw, Shield, CreditCard, MoreHorizontal, X,
+  BarChart2, Settings, LogOut, ChevronRight, Bell, Receipt, AlertTriangle, Clock, Sun, Moon, CalendarDays, Wallet, LandmarkIcon, RefreshCw, Shield, CreditCard, MoreHorizontal, X, ShoppingCart,
 } from 'lucide-react';
 import GlobalSearch from '@/components/ui/GlobalSearch';
 import PaywallGuard from '@/components/PaywallGuard';
@@ -23,6 +23,7 @@ const NAV = [
   { href: '/dashboard/goals',        label: 'Metas',        icon: Target           },
   { href: '/dashboard/budget',       label: 'Orçamento',    icon: LandmarkIcon     },
   { href: '/dashboard/agenda',       label: 'Agenda',       icon: CalendarDays     },
+  { href: '/dashboard/shopping-lists', label: 'Compras',    icon: ShoppingCart     },
   { href: '/dashboard/recurring',     label: 'Recorrentes',  icon: RefreshCw        },
   { href: '/dashboard/reports',      label: 'Relatórios',   icon: BarChart2        },
   { href: '/dashboard/settings',     label: 'Config.',      icon: Settings         },
