@@ -658,12 +658,12 @@ export class WhatsappService {
           });
 
           await this.sendMessage(normalizedPhone,
-            `🛒 *Lista criada!*\n\n` +
-            `📝 *${created.name}*\n\n` +
-            `Agora me diga os itens que você quer comprar:\n` +
-            `_"Adiciona pão, leite, ovos"_\n\n` +
-            `Você pode adicionar quantidade também:\n` +
-            `_"2kg de frango, 1L de leite"_`,
+            `🛒 *Lista "${created.name}" criada com sucesso!*\n\n` +
+            `Agora me diga quais itens você quer comprar. Pode ser assim:\n\n` +
+            `_"Pão, leite, ovos, tomate"_\n\n` +
+            `Ou com quantidade:\n` +
+            `_"2kg frango, 1L leite, meia dúzia ovos"_\n\n` +
+            `Vou estimar o preço e você não esquece de nada! 😊`,
           );
           break;
         }
@@ -697,12 +697,16 @@ export class WhatsappService {
             .join('\n');
 
           const estimate = await this.shoppingLists.calculateEstimate(estimatedItems);
+          const listName = activeLists[0].name;
 
           await this.sendMessage(normalizedPhone,
-            `✅ *Itens adicionados!*\n\n` +
+            `✅ *${estimatedItems.length} item${estimatedItems.length > 1 ? 's' : ''} adicionado${estimatedItems.length > 1 ? 's' : ''} à sua lista "${listName}"!*\n\n` +
             `${itemsSummary}\n\n` +
-            `💰 *Estimativa:* ~R$ ${estimate.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n\n` +
-            `Quer adicionar mais itens? Ou *"quanto vai custar"* para análise final.`,
+            `💰 *Estimativa total:* ~R$ ${estimate.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n\n` +
+            `📋 *Próximos passos:*\n` +
+            `• Quer adicionar mais? É só mandar mais itens\n` +
+            `• "_Minhas compras_" para ver a lista\n` +
+            `• "_Comprei tudo_" quando terminar`,
           );
           break;
         }
@@ -725,15 +729,17 @@ export class WhatsappService {
             .map((item) => {
               const total = (item.estimated_price * item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
               const status = item.completed ? '✅' : '○';
-              return `${status} ${item.name} (${item.quantity}${item.unit}) — R$ ${total}`;
+              return `${status} ${item.name} (${item.quantity}${item.unit}) — ~R$ ${total}`;
             })
             .join('\n');
 
           const total = items.reduce((s: number, item) => s + item.estimated_price * item.quantity, 0);
+          const completedCount = items.filter((i: any) => i.completed).length;
 
           await this.sendMessage(normalizedPhone,
-            `🛒 *${list.name}*\n\n${itemsList}\n\n` +
-            `💰 *Total estimado:* R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+            `🛒 *${list.name}* (${completedCount}/${items.length} itens ✅)\n\n${itemsList}\n\n` +
+            `💰 *Estimativa:* R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n\n` +
+            `📝 Dica: Acesse o dashboard em "${dayjs().format('HH:mm')}" para marcar itens enquanto compra! 📱`,
           );
           break;
         }
@@ -750,23 +756,27 @@ export class WhatsappService {
           const user_ = await this.users.findById(user.id);
           const budgetPlan = (user_?.budget_plan || {}) as any;
 
-          let response = `💰 *Análise de Custos - ${list.name}*\n\n`;
-          response += `📊 Estimado: R$ ${summary.estimated.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
-          response += `📦 ${summary.items} itens na lista\n\n`;
+          let response = `💰 *Custo Total - ${list.name}*\n\n`;
+          response += `📦 ${summary.items} itens\n`;
+          response += `💵 *Estimativa: R$ ${summary.estimated.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n\n`;
 
           // Compare com orçamento se houver
           if (user_?.monthly_income && budgetPlan.alimentacao) {
             const alimentacaoBudget = budgetPlan.alimentacao;
             const percentOfBudget = ((summary.estimated / alimentacaoBudget) * 100).toFixed(1);
-            response += `📈 *Comparado com orçamento:*\n`;
-            response += `Orçamento de Alimentação: R$ ${alimentacaoBudget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
-            response += `Esta lista: ${percentOfBudget}% do orçamento\n`;
+            response += `📊 *Comparado com seu orçamento:*\n`;
+            response += `Orçamento mensal (Alimentação): R$ ${alimentacaoBudget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
+            response += `Esta lista usa: ${percentOfBudget}%\n`;
 
             if (parseFloat(percentOfBudget) > 80) {
-              response += `\n⚠️ Essa compra vai usar mais de 80% do seu orçamento de alimentação!`;
+              response += `\n⚠️ Atenção! Essa compra vai usar mais de 80% do seu orçamento.`;
+            } else if (parseFloat(percentOfBudget) > 50) {
+              response += `\n💡 Você vai usar ${percentOfBudget}% do orçamento. Ainda tem espaço!`;
             } else {
-              response += `\n✅ Dentro do orçamento!`;
+              response += `\n✅ Ótimo! Ainda vai sobrar espaço no orçamento.`;
             }
+          } else {
+            response += `💡 Dica: Configure seu orçamento mensal para ver comparações!`;
           }
 
           await this.sendMessage(normalizedPhone, response);
@@ -786,7 +796,7 @@ export class WhatsappService {
           // Completa a lista
           await this.shoppingLists.completeList(list.id!);
 
-          // Opcionalmente, registra como transação
+          // Registra como transação
           if (summary.estimated > 0) {
             await this.transactions.create(user.id, {
               type: 'expense',
@@ -800,10 +810,11 @@ export class WhatsappService {
           }
 
           await this.sendMessage(normalizedPhone,
-            `✅ *Lista finalizada!*\n\n` +
-            `📝 *${list.name}*\n` +
-            `💸 Estimado: R$ ${summary.estimated.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n\n` +
-            `Registrei como gasto em sua conta! 📊`,
+            `✅ *${list.name} finalizada!*\n\n` +
+            `📦 ${summary.items} itens comprados\n` +
+            `💸 *Estimado: R$ ${summary.estimated.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n\n` +
+            `✨ Registrei como gasto em Alimentação!\n\n` +
+            `🛒 Quer criar outra lista? É só falar: _"Vou à farmácia"_`,
           );
           break;
         }
