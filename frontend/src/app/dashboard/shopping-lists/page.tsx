@@ -347,7 +347,7 @@ export default function ShoppingListsPage() {
                             </label>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ color: c.primary, fontWeight: 'bold', minWidth: '70px', textAlign: 'right' }}>
+                            <span style={{ color: '#6366f1', fontWeight: 'bold', minWidth: '70px', textAlign: 'right' }}>
                               R$ {((item.estimated_price || 0) * item.quantity).toFixed(2)}
                             </span>
                             <button
@@ -451,7 +451,7 @@ export default function ShoppingListsPage() {
                     alignItems: 'center',
                   }}>
                     <span style={{ color: c.textSecondary }}>Estimativa Total:</span>
-                    <span style={{ color: c.primary, fontWeight: 'bold', fontSize: '16px' }}>
+                    <span style={{ color: '#6366f1', fontWeight: 'bold', fontSize: '16px' }}>
                       R$ {calculateTotal(list).toFixed(2)}
                     </span>
                   </div>
@@ -483,7 +483,7 @@ export default function ShoppingListsPage() {
                     {(list.items || []).length} itens • R$ {calculateTotal(list).toFixed(2)}
                   </p>
                 </div>
-                <Check size={20} style={{ color: c.primary }} />
+                <Check size={20} style={{ color: '#6366f1' }} />
               </div>
             ))}
           </div>
