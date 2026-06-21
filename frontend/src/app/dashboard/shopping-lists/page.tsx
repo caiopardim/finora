@@ -158,7 +158,7 @@ export default function ShoppingListsPage() {
         <button
           onClick={() => setShowCreate(true)}
           style={{
-            background: c.primary,
+            background: '#6366f1',
             color: 'white',
             border: 'none',
             borderRadius: '8px',
@@ -234,7 +234,7 @@ export default function ShoppingListsPage() {
                 type="submit"
                 style={{
                   flex: 1,
-                  background: c.primary,
+                  background: '#6366f1',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
@@ -301,7 +301,7 @@ export default function ShoppingListsPage() {
                     <button
                       onClick={() => completeList(list.id)}
                       style={{
-                        background: c.primary,
+                        background: '#6366f1',
                         color: 'white',
                         border: 'none',
                         borderRadius: '6px',
@@ -394,7 +394,7 @@ export default function ShoppingListsPage() {
                         type="submit"
                         style={{
                           flex: 1,
-                          background: c.primary,
+                          background: '#6366f1',
                           color: 'white',
                           border: 'none',
                           borderRadius: '6px',
@@ -428,7 +428,7 @@ export default function ShoppingListsPage() {
                     onClick={() => setShowAddItems(list.id)}
                     style={{
                       width: '100%',
-                      background: c.primary,
+                      background: '#6366f1',
                       color: 'white',
                       border: 'none',
                       borderRadius: '6px',
