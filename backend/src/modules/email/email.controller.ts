@@ -50,31 +50,33 @@ export class EmailController {
   ): Promise<{ success: boolean }> {
     try {
       const frontendUrl = this.config.get('FRONTEND_URL') || 'https://meufinora.com.br';
+      const redirectUrl = `${frontendUrl}/auth/reset-password`;
 
-      // Call Supabase to initiate reset (this sends the default email, but we intercept and send custom one)
-      await this.supabase.auth.admin.generateLink({
+      // Generate recovery link using Supabase Admin API
+      const { data, error } = await this.supabase.auth.admin.generateLink({
         type: 'recovery',
         email: body.email,
-        options: { redirectTo: `${frontendUrl}/auth/reset-password` },
+        options: { redirectTo: redirectUrl },
       });
 
-      // Create a manual recovery link for the custom email
-      const { data: { user }, error: getUserError } = await this.supabase.auth.admin.getUserById(
-        // We'll just use the email to construct a link instead
-        '' as any
-      );
+      if (error) {
+        this.logger.error(`Supabase generateLink error:`, error);
+        throw new Error(`Failed to generate recovery link: ${error.message}`);
+      }
 
-      // Fallback: send email with a generic recovery URL
-      // Supabase will have already sent their email, but we send ours too for custom design
-      const resetLink = `${frontendUrl}/auth/reset-password`;
-      await this.emailService.sendPasswordResetEmail(body.email, resetLink);
+      const recoveryLink = data?.properties?.action_link;
+      if (!recoveryLink) {
+        throw new Error('No recovery link generated');
+      }
 
-      this.logger.log(`Password reset requested for ${body.email}`);
+      // Send email via Resend with custom template
+      await this.emailService.sendPasswordResetEmail(body.email, recoveryLink);
+
+      this.logger.log(`Password reset email sent via Resend for ${body.email}`);
       return { success: true };
     } catch (error) {
-      this.logger.error(`Error requesting password reset for ${body.email}:`, error);
-      // Still return success even if there's an error, since Supabase already sent default email
-      return { success: true };
+      this.logger.error(`Error in password reset for ${body.email}:`, error);
+      throw error;
     }
   }
 }
