@@ -56,7 +56,7 @@ export class EmailService {
       `;
 
       await this.resend.emails.send({
-        from: 'noreply@meufinora.com.br',
+        from: 'Finora <noreply@meufinora.com.br>',
         to: email,
         subject: 'Redefinir sua senha',
         html,
@@ -107,7 +107,7 @@ export class EmailService {
       `;
 
       await this.resend.emails.send({
-        from: 'noreply@meufinora.com.br',
+        from: 'Finora <noreply@meufinora.com.br>',
         to: email,
         subject: 'Bem-vindo ao Finora!',
         html,
