@@ -130,7 +130,10 @@
       "Bash(curl -s -m 60 -w \"\\\\n[HTTP %{http_code} | %{time_total}s]\\\\n\" \"https://finora-6p00.onrender.com/api/transactions\")",
       "Bash(curl -s -I \"https://finora-nine-beta.vercel.app/_next/static/chunks/app/auth/login/page-0cfcdcd948ed63e9.js\")",
       "Bash(curl -s -o /dev/null -w \"HTTP %{http_code}, redirect: %{redirect_url}\\\\n\" \"https://meufinora.com.br/auth/login\")",
-      "Bash(curl -sL \"https://meufinora.com.br/auth/login\")"
+      "Bash(curl -sL \"https://meufinora.com.br/auth/login\")",
+      "Bash(curl -s -o /dev/null -w \"GET /api -> HTTP %{http_code}\\\\n\" -m 30 \"https://finora-production-1651.up.railway.app/api\")",
+      "Bash(curl -s -m 30 -w '\\\\n[HTTP %{http_code}]\\\\n' -X POST https://finora-production-1651.up.railway.app/api/webhook/whatsapp -H 'Content-Type: application/json' -d '{}')",
+      "Bash(curl -s -m 30 -w '\\\\n[HTTP %{http_code}]\\\\n' -X POST https://finora-6p00.onrender.com/api/webhook/whatsapp -H 'Content-Type: application/json' -d '{}')"
     ]
   }
 }

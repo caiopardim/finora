@@ -31,9 +31,7 @@ export default function LoginPage() {
   async function handleForgot(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true); setError('');
-    // Backend de produção (Railway) — fixo para garantir que o reset de senha
-    // sempre use o backend que tem a rota de email + Resend configurados.
-    const apiUrl = 'https://finora-production-1651.up.railway.app/api';
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     try {
       const res = await fetch(`${apiUrl}/email/request-password-reset`, {
         method: 'POST',
