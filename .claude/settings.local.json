@@ -115,7 +115,9 @@
       "Bash(npm uninstall *)",
       "Skill(claude-api)",
       "Skill(claude-api:*)",
-      "Bash(xargs cat)"
+      "Bash(xargs cat)",
+      "Bash(curl -X POST http://localhost:3001/api/email/send-password-reset -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(pkill -f \"node dist/main\")"
     ]
   }
 }

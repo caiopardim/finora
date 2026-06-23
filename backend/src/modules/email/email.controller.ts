@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Logger } from '@nestjs/common';
 import { EmailService } from './email.service';
 
-@Controller('api/email')
+@Controller('email')
 export class EmailController {
   private readonly logger = new Logger(EmailController.name);
 
