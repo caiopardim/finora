@@ -31,22 +31,28 @@ export default function LoginPage() {
   async function handleForgot(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true); setError('');
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/email/request-password-reset`, {
+      if (!apiUrl) {
+        setLoading(false);
+        setError('Config error: API URL não definida.');
+        return;
+      }
+      const res = await fetch(`${apiUrl}/email/request-password-reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       setLoading(false);
       if (!res.ok || !data.success) {
-        setError('Erro ao enviar e-mail. Tente novamente.');
+        setError(`Erro (${res.status}): ${data.message || 'tente novamente'}`);
         return;
       }
       setMode('forgot-sent');
-    } catch (err) {
+    } catch (err: any) {
       setLoading(false);
-      setError('Erro ao enviar e-mail. Verifique o endereço.');
+      setError(`Falha de rede: ${err?.message || 'verifique a conexão'}`);
     }
   }
 

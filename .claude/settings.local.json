@@ -123,7 +123,9 @@
       "Bash(curl -X POST https://finora-production-1651.up.railway.app/api/email/request-password-reset -H 'Content-Type: application/json' -d '{\"email\":\"cfpardim@gmail.com\"}' -v)",
       "Bash(curl -s -i -X OPTIONS https://finora-production-1651.up.railway.app/api/email/request-password-reset -H 'Origin: https://meufinora.com.br' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: content-type')",
       "Bash(curl -s -i -X OPTIONS https://finora-production-1651.up.railway.app/api/email/request-password-reset -H 'Origin: https://finora-nine-beta.vercel.app' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: content-type')",
-      "Bash(curl -s -i -X OPTIONS https://finora-production-1651.up.railway.app/api/email/request-password-reset -H 'Origin: https://example.com' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: content-type')"
+      "Bash(curl -s -i -X OPTIONS https://finora-production-1651.up.railway.app/api/email/request-password-reset -H 'Origin: https://example.com' -H 'Access-Control-Request-Method: POST' -H 'Access-Control-Request-Headers: content-type')",
+      "Bash(ls -la .env*)",
+      "Bash(grep -h \"NEXT_PUBLIC_API_URL\" .env*)"
     ]
   }
 }
