@@ -430,8 +430,8 @@ function AssinaturaContent() {
               <span style={{ fontSize: 18, fontWeight: 800, color: '#fff', flexShrink: 0 }}>R$ {Number(p.price).toFixed(2).replace('.',',')}</span>
             </div>
 
-            {/* MP Card Brick container */}
-            <div id="mp-card-brick" style={{ minHeight: 320 }}/>
+            {/* MP Card Brick is rendered in a persistent host below (see #mp-card-brick)
+                to avoid React removing MP-injected DOM and crashing. */}
 
             {error && <p style={{ color: '#f87171', fontSize: 13, margin: '12px 0 0', textAlign: 'center' }}>{error}</p>}
             {loading && (
@@ -495,6 +495,13 @@ function AssinaturaContent() {
             </button>
           </div>
         )}
+
+        {/* Persistent MP Card Brick host — always mounted so React never removes
+            the DOM that Mercado Pago injects (prevents removeChild crash when
+            switching payment method). Shown only on the card step. */}
+        <div style={{ display: step === 'card' ? 'block' : 'none' }}>
+          <div id="mp-card-brick" style={{ minHeight: 320 }}/>
+        </div>
       </div>
     </div>
   );
