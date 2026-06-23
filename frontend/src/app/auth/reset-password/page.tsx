@@ -16,6 +16,12 @@ export default function ResetPasswordPage() {
   const router = useRouter();
 
   useEffect(() => {
+    // Check if we have a token in the URL (from email link)
+    const hash = window.location.hash;
+    if (hash.includes('type=recovery')) {
+      setReady(true);
+    }
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') setReady(true);
     });
