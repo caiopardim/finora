@@ -31,20 +31,12 @@ export default function LoginPage() {
   async function handleForgot(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true); setError('');
-    try {
-      const res = await fetch('/api/email/request-password-reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-      setLoading(false);
-      if (!data.success) { setError('Erro ao enviar e-mail. Tente novamente.'); return; }
-      setMode('forgot-sent');
-    } catch (err) {
-      setLoading(false);
-      setError('Erro ao enviar e-mail. Verifique o endereço.');
-    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset-password`,
+    });
+    setLoading(false);
+    if (error) { setError('Erro ao enviar e-mail. Verifique o endereço.'); return; }
+    setMode('forgot-sent');
   }
 
   return (
