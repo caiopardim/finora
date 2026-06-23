@@ -32,7 +32,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true); setError('');
     try {
-      const res = await fetch('/api/email/request-password-reset', {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/email/request-password-reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
