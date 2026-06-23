@@ -10,6 +10,7 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { BillsModule } from './modules/bills/bills.module';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { ShoppingListsModule } from './modules/shopping-lists/shopping-lists.module';
+import { EmailModule } from './modules/email/email.module';
 import { SupabaseModule } from './config/supabase.module';
 
 @Module({
@@ -17,6 +18,7 @@ import { SupabaseModule } from './config/supabase.module';
     ConfigModule.forRoot({ isGlobal: true }),
     ScheduleModule.forRoot(),
     SupabaseModule,
+    EmailModule,
     UsersModule,
     TransactionsModule,
     CategoriesModule,
