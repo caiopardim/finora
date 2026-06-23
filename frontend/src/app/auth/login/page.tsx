@@ -31,13 +31,10 @@ export default function LoginPage() {
   async function handleForgot(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true); setError('');
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    // Backend de produção (Railway) — fixo para garantir que o reset de senha
+    // sempre use o backend que tem a rota de email + Resend configurados.
+    const apiUrl = 'https://finora-production-1651.up.railway.app/api';
     try {
-      if (!apiUrl) {
-        setLoading(false);
-        setError('Config error: API URL não definida.');
-        return;
-      }
       const res = await fetch(`${apiUrl}/email/request-password-reset`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
