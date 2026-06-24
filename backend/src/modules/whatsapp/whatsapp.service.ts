@@ -683,26 +683,27 @@ export class WhatsappService {
 
           const listId = activeLists[0].id;
 
-          // Estima preço dos itens baseado em histórico
-          const estimatedItems = await this.ai.estimateShoppingItems(shopping_items, []);
+          // Monta os itens direto, sem estimar preço
+          const itemsToAdd = (shopping_items as any[]).map((it) =>
+            typeof it === 'string'
+              ? { name: it, quantity: 1, unit: 'un', estimated_price: 0 }
+              : { name: it.name, quantity: it.quantity || 1, unit: it.unit || 'un', estimated_price: 0 },
+          );
 
-          // Adiciona à lista
-          const added = await this.shoppingLists.addItems(listId, estimatedItems);
+          await this.shoppingLists.addItems(listId, itemsToAdd);
 
-          const itemsSummary = estimatedItems
+          const itemsSummary = itemsToAdd
             .map((item) => {
-              const total = (item.estimated_price * item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-              return `✓ ${item.name} (${item.quantity}${item.unit}) — ~R$ ${total}`;
+              const qty = item.quantity !== 1 || item.unit !== 'un' ? ` (${item.quantity}${item.unit})` : '';
+              return `✓ ${item.name}${qty}`;
             })
             .join('\n');
 
-          const estimate = await this.shoppingLists.calculateEstimate(estimatedItems);
           const listName = activeLists[0].name;
 
           await this.sendMessage(normalizedPhone,
-            `✅ *${estimatedItems.length} item${estimatedItems.length > 1 ? 's' : ''} adicionado${estimatedItems.length > 1 ? 's' : ''} à sua lista "${listName}"!*\n\n` +
+            `✅ *${itemsToAdd.length} item${itemsToAdd.length > 1 ? 's' : ''} adicionado${itemsToAdd.length > 1 ? 's' : ''} à sua lista "${listName}"!*\n\n` +
             `${itemsSummary}\n\n` +
-            `💰 *Estimativa total:* ~R$ ${estimate.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n\n` +
             `📋 *Próximos passos:*\n` +
             `• Quer adicionar mais? É só mandar mais itens\n` +
             `• "_Minhas compras_" para ver a lista\n` +
@@ -727,19 +728,17 @@ export class WhatsappService {
 
           const itemsList = items
             .map((item) => {
-              const total = (item.estimated_price * item.quantity).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
               const status = item.completed ? '✅' : '○';
-              return `${status} ${item.name} (${item.quantity}${item.unit}) — ~R$ ${total}`;
+              const qty = item.quantity !== 1 || item.unit !== 'un' ? ` (${item.quantity}${item.unit})` : '';
+              return `${status} ${item.name}${qty}`;
             })
             .join('\n');
 
-          const total = items.reduce((s: number, item) => s + item.estimated_price * item.quantity, 0);
           const completedCount = items.filter((i: any) => i.completed).length;
 
           await this.sendMessage(normalizedPhone,
             `🛒 *${list.name}* (${completedCount}/${items.length} itens ✅)\n\n${itemsList}\n\n` +
-            `💰 *Estimativa:* R$ ${total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n\n` +
-            `📝 Dica: Acesse o dashboard em "${dayjs().format('HH:mm')}" para marcar itens enquanto compra! 📱`,
+            `📝 Dica: acesse o dashboard para marcar os itens enquanto compra! 📱`,
           );
           break;
         }
@@ -753,33 +752,11 @@ export class WhatsappService {
 
           const list = activeLists[0];
           const summary = await this.shoppingLists.getListSummary(list.id!);
-          const user_ = await this.users.findById(user.id);
-          const budgetPlan = (user_?.budget_plan || {}) as any;
 
-          let response = `💰 *Custo Total - ${list.name}*\n\n`;
-          response += `📦 ${summary.items} itens\n`;
-          response += `💵 *Estimativa: R$ ${summary.estimated.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n\n`;
-
-          // Compare com orçamento se houver
-          if (user_?.monthly_income && budgetPlan.alimentacao) {
-            const alimentacaoBudget = budgetPlan.alimentacao;
-            const percentOfBudget = ((summary.estimated / alimentacaoBudget) * 100).toFixed(1);
-            response += `📊 *Comparado com seu orçamento:*\n`;
-            response += `Orçamento mensal (Alimentação): R$ ${alimentacaoBudget.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}\n`;
-            response += `Esta lista usa: ${percentOfBudget}%\n`;
-
-            if (parseFloat(percentOfBudget) > 80) {
-              response += `\n⚠️ Atenção! Essa compra vai usar mais de 80% do seu orçamento.`;
-            } else if (parseFloat(percentOfBudget) > 50) {
-              response += `\n💡 Você vai usar ${percentOfBudget}% do orçamento. Ainda tem espaço!`;
-            } else {
-              response += `\n✅ Ótimo! Ainda vai sobrar espaço no orçamento.`;
-            }
-          } else {
-            response += `💡 Dica: Configure seu orçamento mensal para ver comparações!`;
-          }
-
-          await this.sendMessage(normalizedPhone, response);
+          await this.sendMessage(normalizedPhone,
+            `🛒 *${list.name}* tem ${summary.items} item${summary.items === 1 ? '' : 's'}.\n\n` +
+            `Mande "_Minhas compras_" para ver a lista completa.`,
+          );
           break;
         }
 
@@ -796,24 +773,9 @@ export class WhatsappService {
           // Completa a lista
           await this.shoppingLists.completeList(list.id!);
 
-          // Registra como transação
-          if (summary.estimated > 0) {
-            await this.transactions.create(user.id, {
-              type: 'expense',
-              amount: summary.estimated,
-              description: `Compras - ${list.name}`,
-              category_name: 'Alimentação',
-              date: dayjs().format('YYYY-MM-DD'),
-              source: 'whatsapp',
-              raw_message: `[Lista de compras completada: ${list.name}]`,
-            });
-          }
-
           await this.sendMessage(normalizedPhone,
             `✅ *${list.name} finalizada!*\n\n` +
-            `📦 ${summary.items} itens comprados\n` +
-            `💸 *Estimado: R$ ${summary.estimated.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}*\n\n` +
-            `✨ Registrei como gasto em Alimentação!\n\n` +
+            `📦 ${summary.items} ${summary.items === 1 ? 'item comprado' : 'itens comprados'}\n\n` +
             `🛒 Quer criar outra lista? É só falar: _"Vou à farmácia"_`,
           );
           break;

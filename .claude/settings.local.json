@@ -139,7 +139,8 @@
       "Bash(git -C /Users/caiopardim/Desktop/Finora log --oneline -1)",
       "Bash(curl -s -I \"https://www.meufinora.com.br/dashboard/agenda\")",
       "Bash(curl -s \"https://www.meufinora.com.br/dashboard/agenda?nocache=$\\(date +%s\\)\" -H \"Cache-Control: no-cache\")",
-      "Bash(curl -s \"https://www.meufinora.com.br/?nocache=$\\(date +%s\\)\" -H \"Cache-Control: no-cache\")"
+      "Bash(curl -s \"https://www.meufinora.com.br/?nocache=$\\(date +%s\\)\" -H \"Cache-Control: no-cache\")",
+      "Bash(grep -rn \"Estimativa total\\\\|estimated_price\\\\|estimateShoppingItems\\\\|estimativa\\\\|R\\\\$\" src/modules/whatsapp/)"
     ]
   }
 }
