@@ -8,6 +8,7 @@ import { useTheme } from '@/lib/theme-context';
 
 // Categoriza um item pelo nome (apenas para agrupar a exibição — não usa o banco)
 const ITEM_CATEGORIES: { label: string; emoji: string; keywords: string[] }[] = [
+  { label: 'Salgadinhos', emoji: '🍟', keywords: ['batata frita','batata palha','salgadinho','chips','doritos','ruffles','pipoca','amendoim','salgadinhos','torcida'] },
   { label: 'Hortifruti', emoji: '🥬', keywords: ['alface','tomate','cebola','batata','banana','maça','maca','laranja','limão','limao','cenoura','alho','manga','uva','melancia','abacaxi','mamão','mamao','verdura','legume','fruta','salada','brócolis','brocolis','couve','pepino','pimentão','pimentao','abobrinha','mandioca','aipim','morango','abacate','melão','melao'] },
   { label: 'Carnes', emoji: '🥩', keywords: ['frango','carne','boi','porco','linguiça','linguica','peixe','salmão','salmao','tilápia','tilapia','bacon','presunto','salsicha','picanha','costela','file','filé','coxa','sobrecoxa','patinho','acém','acem','moída','moida','peito','hambúrguer','hamburguer'] },
   { label: 'Laticínios', emoji: '🧀', keywords: ['leite','queijo','iogurte','manteiga','requeijão','requeijao','creme de leite','nata','muçarela','mucarela','mussarela','ricota','margarina','danone'] },
