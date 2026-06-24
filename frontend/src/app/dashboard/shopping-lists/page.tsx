@@ -111,7 +111,7 @@ export default function ShoppingListsPage() {
     // Parse items (ex: "pão, leite, ovos" ou "2kg frango, 1L leite").
     // Só extrai quantidade/unidade quando a linha COMEÇA com número —
     // assim palavras simples como "arroz" não são quebradas.
-    const itemLines = itemsInput.split(',').map(line => line.trim()).filter(Boolean);
+    const itemLines = itemsInput.split(/[,\n]/).map(line => line.trim()).filter(Boolean);
     const items = itemLines.map(line => {
       const match = line.match(/^(\d+(?:[.,]\d+)?)\s*([a-zA-Z]+)?\s+(.+)$/);
       if (match) {
