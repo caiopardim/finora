@@ -138,12 +138,17 @@ export default function AgendaPage() {
       const res  = await fetch('/api/google/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: session.user.id }) });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
-      setSyncMsg(`${data.synced} compromisso(s) sincronizado(s) ✅`);
+      // Recarrega a lista para exibir os eventos importados do Google
+      await load();
+      const parts: string[] = [];
+      if (data.imported) parts.push(`${data.imported} importado(s) do Google`);
+      if (data.synced)   parts.push(`${data.synced} enviado(s)`);
+      setSyncMsg((parts.length ? parts.join(' · ') : 'Tudo sincronizado') + ' ✅');
     } catch (e: any) {
       setSyncMsg('Erro ao sincronizar: ' + e.message);
     }
     setSyncing(false);
-    setTimeout(() => setSyncMsg(''), 4000);
+    setTimeout(() => setSyncMsg(''), 6000);
   }
 
   async function disconnectGoogle() {
