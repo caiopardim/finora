@@ -42,7 +42,7 @@ export class ShoppingListService {
   async findActiveByUser(userId: string): Promise<ShoppingList[]> {
     const { data, error } = await this.supabase
       .from('shopping_lists')
-      .select('*, shopping_list_items(*)')
+      .select('*, items:shopping_list_items(*)')
       .eq('user_id', userId)
       .eq('completed', false)
       .order('created_at', { ascending: false });
@@ -53,7 +53,7 @@ export class ShoppingListService {
   async findById(userId: string, listId: string): Promise<ShoppingList | null> {
     const { data, error } = await this.supabase
       .from('shopping_lists')
-      .select('*, shopping_list_items(*)')
+      .select('*, items:shopping_list_items(*)')
       .eq('user_id', userId)
       .eq('id', listId)
       .single();
