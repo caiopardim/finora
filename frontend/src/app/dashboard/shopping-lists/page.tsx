@@ -142,10 +142,6 @@ export default function ShoppingListsPage() {
     load();
   }
 
-  const calculateTotal = (list: ShoppingList) => {
-    return (list.items || []).reduce((sum, item) => sum + (item.estimated_price * item.quantity), 0);
-  };
-
   const activeLists = lists.filter(l => !l.completed);
   const completedLists = lists.filter(l => l.completed);
 
@@ -347,9 +343,6 @@ export default function ShoppingListsPage() {
                             </label>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ color: '#6366f1', fontWeight: 'bold', minWidth: '70px', textAlign: 'right' }}>
-                              R$ {((item.estimated_price || 0) * item.quantity).toFixed(2)}
-                            </span>
                             <button
                               onClick={() => deleteItem(item.id)}
                               style={{
@@ -440,22 +433,6 @@ export default function ShoppingListsPage() {
                     + Adicionar Itens
                   </button>
                 )}
-
-                {/* Total */}
-                {(list.items || []).length > 0 && (
-                  <div style={{
-                    borderTop: `1px solid ${c.border}`,
-                    paddingTop: '8px',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                  }}>
-                    <span style={{ color: c.textSecondary }}>Estimativa Total:</span>
-                    <span style={{ color: '#6366f1', fontWeight: 'bold', fontSize: '16px' }}>
-                      R$ {calculateTotal(list).toFixed(2)}
-                    </span>
-                  </div>
-                )}
               </div>
             ))}
           </div>
@@ -480,7 +457,7 @@ export default function ShoppingListsPage() {
                 <div>
                   <p style={{ color: c.text, margin: '0 0 4px 0' }}>{list.name}</p>
                   <p style={{ color: c.textSecondary, margin: 0, fontSize: '12px' }}>
-                    {(list.items || []).length} itens • R$ {calculateTotal(list).toFixed(2)}
+                    {(list.items || []).length} itens
                   </p>
                 </div>
                 <Check size={20} style={{ color: '#6366f1' }} />
