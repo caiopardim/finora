@@ -108,12 +108,14 @@ export default function ShoppingListsPage() {
     e.preventDefault();
     if (!itemsInput.trim()) return;
 
-    // Parse items from input (ex: "pão, leite, ovos" or "2kg frango, 1L leite")
-    const itemLines = itemsInput.split(',').map(line => line.trim());
+    // Parse items (ex: "pão, leite, ovos" ou "2kg frango, 1L leite").
+    // Só extrai quantidade/unidade quando a linha COMEÇA com número —
+    // assim palavras simples como "arroz" não são quebradas.
+    const itemLines = itemsInput.split(',').map(line => line.trim()).filter(Boolean);
     const items = itemLines.map(line => {
-      const match = line.match(/^(\d+(?:\.\d+)?)?([a-z]*)\s*(.+)$/i);
+      const match = line.match(/^(\d+(?:[.,]\d+)?)\s*([a-zA-Z]+)?\s+(.+)$/);
       if (match) {
-        const quantity = parseFloat(match[1]) || 1;
+        const quantity = parseFloat(match[1].replace(',', '.')) || 1;
         const unit = match[2] || 'un';
         const name = match[3].trim();
         return { name, quantity, unit, estimated_price: 0, completed: false };
@@ -421,7 +423,10 @@ export default function ShoppingListsPage() {
                                               style={{ cursor: 'pointer' }}
                                             />
                                             <span style={{ textDecoration: item.completed ? 'line-through' : 'none' }}>
-                                              {item.name} ({item.quantity}{item.unit})
+                                              {item.name}
+                                              {(item.quantity !== 1 || (item.unit && item.unit !== 'un')) && (
+                                                <span style={{ color: c.textSecondary }}> ({item.quantity}{item.unit})</span>
+                                              )}
                                             </span>
                                           </label>
                                         </div>
