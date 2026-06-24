@@ -3,8 +3,28 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
-import { Plus, X, Trash2, Check, ShoppingCart } from 'lucide-react';
+import { Plus, X, Trash2, Check, ShoppingCart, Pencil } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
+
+// Categoriza um item pelo nome (apenas para agrupar a exibição — não usa o banco)
+const ITEM_CATEGORIES: { label: string; emoji: string; keywords: string[] }[] = [
+  { label: 'Hortifruti', emoji: '🥬', keywords: ['alface','tomate','cebola','batata','banana','maça','maca','laranja','limão','limao','cenoura','alho','manga','uva','melancia','abacaxi','mamão','mamao','verdura','legume','fruta','salada','brócolis','brocolis','couve','pepino','pimentão','pimentao','abobrinha','mandioca','aipim','morango','abacate','melão','melao'] },
+  { label: 'Carnes', emoji: '🥩', keywords: ['frango','carne','boi','porco','linguiça','linguica','peixe','salmão','salmao','tilápia','tilapia','bacon','presunto','salsicha','picanha','costela','file','filé','coxa','sobrecoxa','patinho','acém','acem','moída','moida','peito','hambúrguer','hamburguer'] },
+  { label: 'Laticínios', emoji: '🧀', keywords: ['leite','queijo','iogurte','manteiga','requeijão','requeijao','creme de leite','nata','muçarela','mucarela','mussarela','ricota','margarina','danone'] },
+  { label: 'Padaria', emoji: '🍞', keywords: ['pão','pao','bolo','biscoito','bolacha','torrada','croissant','baguete','rosca'] },
+  { label: 'Bebidas', emoji: '🥤', keywords: ['água','agua','suco','refrigerante','coca','guaraná','guarana','cerveja','vinho','café','cafe','chá','energético','energetico','achocolatado'] },
+  { label: 'Limpeza', emoji: '🧼', keywords: ['detergente','sabão','sabao','amaciante','desinfetante','sanitária','sanitaria','cloro','esponja','vassoura','rodo','álcool','alcool','papel higiênico','papel higienico','multiuso','lustra','saco de lixo'] },
+  { label: 'Higiene', emoji: '🧴', keywords: ['shampoo','condicionador','sabonete','creme dental','pasta de dente','escova','fio dental','desodorante','absorvente','fralda','cotonete','hidratante'] },
+  { label: 'Mercearia', emoji: '🛒', keywords: ['arroz','feijão','feijao','açúcar','acucar','sal','óleo','oleo','farinha','macarrão','macarrao','molho','extrato','tempero','vinagre','azeite','milho','ervilha','atum','sardinha','massa','fubá','fuba','aveia','granola'] },
+];
+
+function categorizeItem(name: string) {
+  const n = (name || '').toLowerCase();
+  for (const cat of ITEM_CATEGORIES) {
+    if (cat.keywords.some(k => n.includes(k))) return cat;
+  }
+  return { label: 'Outros', emoji: '📦', keywords: [] as string[] };
+}
 
 interface ShoppingListItem {
   id: string;
@@ -34,6 +54,21 @@ export default function ShoppingListsPage() {
   const [form, setForm] = useState({ name: '', category: 'Alimentação' });
   const [itemsInput, setItemsInput] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+
+  async function saveItemName(itemId: string) {
+    const newName = editValue.trim();
+    if (!newName) { setEditingItemId(null); return; }
+    const { error } = await supabase
+      .from('shopping_list_items')
+      .update({ name: newName })
+      .eq('id', itemId);
+    if (error) { alert(error.message); return; }
+    setEditingItemId(null);
+    setEditValue('');
+    load();
+  }
 
   async function load() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -279,7 +314,14 @@ export default function ShoppingListsPage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
                   <div>
                     <h3 style={{ color: c.text, margin: '0 0 4px 0' }}>{list.name}</h3>
-                    <p style={{ color: c.textSecondary, margin: '0', fontSize: '14px' }}>{list.category}</p>
+                    <p style={{ color: c.textSecondary, margin: '0', fontSize: '14px' }}>
+                      {list.category}
+                      {(list.items || []).length > 0 && (
+                        <span style={{ color: '#6366f1', fontWeight: 600 }}>
+                          {' · '}{(list.items || []).filter(i => i.completed).length}/{(list.items || []).length} comprados
+                        </span>
+                      )}
+                    </p>
                   </div>
                   <div style={{ display: 'flex', gap: '8px' }}>
                     <button
@@ -311,54 +353,104 @@ export default function ShoppingListsPage() {
                   </div>
                 </div>
 
-                {/* Items */}
+                {/* Items agrupados por categoria, comprados no fim */}
                 <div style={{ marginBottom: '12px' }}>
                   {(list.items || []).length === 0 ? (
                     <p style={{ color: c.textSecondary, margin: 0, fontSize: '14px' }}>Nenhum item ainda</p>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      {(list.items || []).map(item => (
-                        <div
-                          key={item.id}
-                          style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            padding: '8px 12px',
-                            background: c.bg,
-                            borderRadius: '8px',
-                            opacity: item.completed ? 0.5 : 1,
-                            textDecoration: item.completed ? 'line-through' : 'none',
-                          }}
-                        >
-                          <div style={{ flex: 1 }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: c.text }}>
-                              <input
-                                type="checkbox"
-                                checked={item.completed}
-                                onChange={() => toggleItem(item.id, list.id)}
-                                style={{ cursor: 'pointer' }}
-                              />
-                              <span>{item.name} ({item.quantity}{item.unit})</span>
-                            </label>
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <button
-                              onClick={() => deleteItem(item.id)}
-                              style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#ef4444',
-                                cursor: 'pointer',
-                                padding: '4px',
-                              }}
-                            >
-                              <X size={16} />
-                            </button>
-                          </div>
+                    (() => {
+                      // Agrupa por categoria deduzida do nome
+                      const groups: Record<string, { emoji: string; items: ShoppingListItem[] }> = {};
+                      for (const item of (list.items || [])) {
+                        const cat = categorizeItem(item.name);
+                        if (!groups[cat.label]) groups[cat.label] = { emoji: cat.emoji, items: [] };
+                        groups[cat.label].items.push(item);
+                      }
+                      // Ordem das categorias (conhecidas primeiro, "Outros" por último)
+                      const order = [...ITEM_CATEGORIES.map(c => c.label), 'Outros'];
+                      const groupNames = Object.keys(groups).sort((a, b) => order.indexOf(a) - order.indexOf(b));
+
+                      return (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                          {groupNames.map(gName => {
+                            const g = groups[gName];
+                            // Comprados descem para o fim
+                            const sorted = [...g.items].sort((a, b) => Number(a.completed) - Number(b.completed));
+                            return (
+                              <div key={gName}>
+                                <p style={{ color: c.textMuted, margin: '0 0 6px 0', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                  {g.emoji} {gName}
+                                </p>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                  {sorted.map(item => (
+                                    <div
+                                      key={item.id}
+                                      style={{
+                                        display: 'flex',
+                                        justifyContent: 'space-between',
+                                        alignItems: 'center',
+                                        padding: '8px 12px',
+                                        background: c.bg,
+                                        borderRadius: '8px',
+                                        opacity: item.completed ? 0.5 : 1,
+                                      }}
+                                    >
+                                      {editingItemId === item.id ? (
+                                        <input
+                                          autoFocus
+                                          value={editValue}
+                                          onChange={(e) => setEditValue(e.target.value)}
+                                          onBlur={() => saveItemName(item.id)}
+                                          onKeyDown={(e) => { if (e.key === 'Enter') saveItemName(item.id); if (e.key === 'Escape') setEditingItemId(null); }}
+                                          style={{
+                                            flex: 1,
+                                            padding: '4px 8px',
+                                            border: `1px solid #6366f1`,
+                                            borderRadius: '6px',
+                                            background: c.surface,
+                                            color: c.text,
+                                          }}
+                                        />
+                                      ) : (
+                                        <div style={{ flex: 1 }}>
+                                          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: c.text }}>
+                                            <input
+                                              type="checkbox"
+                                              checked={item.completed}
+                                              onChange={() => toggleItem(item.id, list.id)}
+                                              style={{ cursor: 'pointer' }}
+                                            />
+                                            <span style={{ textDecoration: item.completed ? 'line-through' : 'none' }}>
+                                              {item.name} ({item.quantity}{item.unit})
+                                            </span>
+                                          </label>
+                                        </div>
+                                      )}
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <button
+                                          onClick={() => { setEditingItemId(item.id); setEditValue(item.name); }}
+                                          style={{ background: 'transparent', border: 'none', color: c.textSecondary, cursor: 'pointer', padding: '4px' }}
+                                          title="Editar nome"
+                                        >
+                                          <Pencil size={15} />
+                                        </button>
+                                        <button
+                                          onClick={() => deleteItem(item.id)}
+                                          style={{ background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', padding: '4px' }}
+                                          title="Remover"
+                                        >
+                                          <X size={16} />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                      ))}
-                    </div>
+                      );
+                    })()
                   )}
                 </div>
 
