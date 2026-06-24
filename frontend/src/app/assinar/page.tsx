@@ -217,7 +217,9 @@ function AssinaturaContent() {
     return () => {
       clearTimeout(timer);
       if (brickControllerRef.current) {
-        brickControllerRef.current.unmount().catch(() => {});
+        // MP's unmount() returns undefined (not a Promise), so guard the call
+        // instead of chaining .catch() on its return value.
+        try { brickControllerRef.current.unmount(); } catch {}
         brickControllerRef.current = null;
       }
     };
