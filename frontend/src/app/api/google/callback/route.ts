@@ -11,12 +11,15 @@ function getAdmin() {
 }
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
+  const { searchParams, origin } = new URL(req.url);
   const code  = searchParams.get('code');
   const state = searchParams.get('state'); // user_id
   const error = searchParams.get('error');
 
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://meufinora.com.br';
+  // Deriva o domínio da própria requisição (o site onde o callback foi chamado),
+  // garantindo que o redirect_uri da troca de token bata com o usado no início
+  // e que o redirect final volte para o site — não para a API.
+  const baseUrl = origin;
 
   if (error || !code || !state) {
     return NextResponse.redirect(`${baseUrl}/dashboard/agenda?google=error`);
