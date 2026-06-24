@@ -23,7 +23,7 @@ const NAV = [
   { href: '/dashboard/goals',        label: 'Metas',        icon: Target           },
   { href: '/dashboard/budget',       label: 'Orçamento',    icon: LandmarkIcon     },
   { href: '/dashboard/agenda',       label: 'Agenda',       icon: CalendarDays     },
-  { href: '/dashboard/shopping-lists', label: 'Compras',    icon: ShoppingCart     },
+  { href: '/dashboard/shopping-lists', label: 'Lista de Compras', icon: ShoppingCart },
   { href: '/dashboard/recurring',     label: 'Recorrentes',  icon: RefreshCw        },
   { href: '/dashboard/reports',      label: 'Relatórios',   icon: BarChart2        },
   { href: '/dashboard/settings',     label: 'Config.',      icon: Settings         },
