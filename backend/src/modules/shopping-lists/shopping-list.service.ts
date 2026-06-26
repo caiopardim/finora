@@ -98,9 +98,9 @@ export class ShoppingListService {
     return data;
   }
 
-  // Marca como comprados os itens da lista cujo nome casa (parcial, sem acento)
-  // com algum dos nomes informados. Retorna os nomes efetivamente marcados.
-  async markItemsByName(listId: string, names: string[]): Promise<string[]> {
+  // Marca/desmarca como comprados os itens da lista cujo nome casa (parcial, sem
+  // acento) com algum dos nomes informados. Retorna os nomes afetados.
+  async markItemsByName(listId: string, names: string[], completed = true): Promise<string[]> {
     const { data: items, error } = await this.supabase
       .from('shopping_list_items')
       .select('id, name, completed')
@@ -120,7 +120,7 @@ export class ShoppingListService {
     if (ids.length) {
       const { error: upErr } = await this.supabase
         .from('shopping_list_items')
-        .update({ completed: true })
+        .update({ completed })
         .in('id', ids);
       if (upErr) throw new Error(upErr.message);
     }

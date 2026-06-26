@@ -34,6 +34,7 @@ export interface MessageIntent {
     | 'view_shopping_list'
     | 'estimate_list_cost'
     | 'mark_shopping_item'
+    | 'unmark_shopping_item'
     | 'complete_shopping_list'
     | 'unknown';
   transaction?: ParsedTransaction;
@@ -214,6 +215,12 @@ Use para: "quanto vai custar", "estima o custo", "quanto gasto nessa lista".
 Use quando o usuário avisa que comprou/pegou um ou mais itens ESPECÍFICOS da lista: "comprei o arroz", "já peguei o feijão e o leite", "marca o detergente como comprado", "coloquei o pão no carrinho". Extraia só o nome dos itens.
 
 {
+  "action": "unmark_shopping_item",
+  "shopping_item_names": ["arroz"]
+}
+Use quando o usuário quer DESMARCAR um item (reverter): "ainda não comprei o arroz", "desmarca o feijão", "marquei o leite errado", "tira o pão da lista de comprados".
+
+{
   "action": "complete_shopping_list"
 }
 Use para: "comprei tudo", "finalizei a compra", "completei a lista", "terminei as compras". Apenas quando se refere à lista TODA, sem citar item específico.
@@ -273,6 +280,7 @@ Use para: "quando atinjo minha meta", "quanto tempo falta", "simula minha meta",
 - "Quanto vai custar?" → estimate_list_cost
 - "Comprei o arroz" → mark_shopping_item, shopping_item_names: ["arroz"]
 - "Já peguei o leite e o pão" → mark_shopping_item, shopping_item_names: ["leite", "pão"]
+- "Ainda não comprei o arroz" → unmark_shopping_item, shopping_item_names: ["arroz"]
 - "Comprei tudo" → complete_shopping_list
 
 Responda APENAS com o JSON, sem texto adicional, sem markdown.`;
