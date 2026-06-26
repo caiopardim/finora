@@ -760,6 +760,43 @@ export class WhatsappService {
           break;
         }
 
+        case 'mark_shopping_item': {
+          const names = intent.shopping_item_names || [];
+          const activeLists = await this.shoppingLists.findActiveByUser(user.id);
+          if (!activeLists || activeLists.length === 0) {
+            await this.sendMessage(normalizedPhone, `Você não tem uma lista ativa. Cria uma com: _"Vou ao mercado"_`);
+            break;
+          }
+          if (names.length === 0) {
+            await this.sendMessage(normalizedPhone, `Qual item você comprou? Ex: _"comprei o arroz"_`);
+            break;
+          }
+
+          const list = activeLists[0];
+          const marked = await this.shoppingLists.markItemsByName(list.id!, names);
+
+          if (marked.length === 0) {
+            await this.sendMessage(normalizedPhone,
+              `Não encontrei ${names.map((n) => `"${n}"`).join(', ')} na lista *${list.name}*.\n\nMande "_Minhas compras_" para ver os itens.`,
+            );
+            break;
+          }
+
+          const refreshed = await this.shoppingLists.findActiveByUser(user.id);
+          const items = (refreshed[0]?.items || []) as any[];
+          const completedCount = items.filter((i) => i.completed).length;
+          const markedSummary = marked.map((n) => `✅ ${n}`).join('\n');
+
+          await this.sendMessage(normalizedPhone,
+            `Marquei como comprado:\n\n${markedSummary}\n\n` +
+            `🛒 *${list.name}*: ${completedCount}/${items.length} itens comprados\n\n` +
+            (completedCount === items.length
+              ? `Tudo comprado! Mande "_Comprei tudo_" para finalizar a lista. ✨`
+              : `Faltam ${items.length - completedCount}. Vai marcando conforme compra!`),
+          );
+          break;
+        }
+
         case 'complete_shopping_list': {
           const activeLists = await this.shoppingLists.findActiveByUser(user.id);
           if (!activeLists || activeLists.length === 0) {

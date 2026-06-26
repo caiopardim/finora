@@ -140,7 +140,8 @@
       "Bash(curl -s -I \"https://www.meufinora.com.br/dashboard/agenda\")",
       "Bash(curl -s \"https://www.meufinora.com.br/dashboard/agenda?nocache=$\\(date +%s\\)\" -H \"Cache-Control: no-cache\")",
       "Bash(curl -s \"https://www.meufinora.com.br/?nocache=$\\(date +%s\\)\" -H \"Cache-Control: no-cache\")",
-      "Bash(grep -rn \"Estimativa total\\\\|estimated_price\\\\|estimateShoppingItems\\\\|estimativa\\\\|R\\\\$\" src/modules/whatsapp/)"
+      "Bash(grep -rn \"Estimativa total\\\\|estimated_price\\\\|estimateShoppingItems\\\\|estimativa\\\\|R\\\\$\" src/modules/whatsapp/)",
+      "Bash(grep -n \"shopping_items\\\\|shopping_list,\\\\|const {.*action\\\\|intent\\\\.\" src/modules/whatsapp/whatsapp.service.ts)"
     ]
   }
 }

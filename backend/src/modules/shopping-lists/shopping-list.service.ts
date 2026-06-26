@@ -98,6 +98,35 @@ export class ShoppingListService {
     return data;
   }
 
+  // Marca como comprados os itens da lista cujo nome casa (parcial, sem acento)
+  // com algum dos nomes informados. Retorna os nomes efetivamente marcados.
+  async markItemsByName(listId: string, names: string[]): Promise<string[]> {
+    const { data: items, error } = await this.supabase
+      .from('shopping_list_items')
+      .select('id, name, completed')
+      .eq('shopping_list_id', listId);
+    if (error) throw new Error(error.message);
+
+    const norm = (s: string) =>
+      (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+    const targets = names.map(norm).filter(Boolean);
+
+    const matched = (items || []).filter((item: any) => {
+      const n = norm(item.name);
+      return targets.some((t) => n.includes(t) || t.includes(n));
+    });
+
+    const ids = matched.map((m: any) => m.id);
+    if (ids.length) {
+      const { error: upErr } = await this.supabase
+        .from('shopping_list_items')
+        .update({ completed: true })
+        .in('id', ids);
+      if (upErr) throw new Error(upErr.message);
+    }
+    return matched.map((m: any) => m.name);
+  }
+
   async completeList(listId: string): Promise<ShoppingList> {
     const { data, error } = await this.supabase
       .from('shopping_lists')
