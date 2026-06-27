@@ -682,33 +682,54 @@ export class WhatsappService {
           }
 
           const listId = activeLists[0].id;
+          const listName = activeLists[0].name;
 
           // Monta os itens direto, sem estimar preço
-          const itemsToAdd = (shopping_items as any[]).map((it) =>
+          const parsedItems = (shopping_items as any[]).map((it) =>
             typeof it === 'string'
               ? { name: it, quantity: 1, unit: 'un', estimated_price: 0 }
               : { name: it.name, quantity: it.quantity || 1, unit: it.unit || 'un', estimated_price: 0 },
           );
 
-          await this.shoppingLists.addItems(listId, itemsToAdd);
+          // Detecta duplicados (ignora acento e maiúsculas)
+          const norm = (s: string) =>
+            (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+          const existing = ((activeLists[0].items || []) as any[]).map((i) => norm(i.name));
 
-          const itemsSummary = itemsToAdd
-            .map((item) => {
-              const qty = item.quantity !== 1 || item.unit !== 'un' ? ` (${item.quantity}${item.unit})` : '';
-              return `✓ ${item.name}${qty}`;
-            })
-            .join('\n');
+          const itemsToAdd: typeof parsedItems = [];
+          const duplicates: string[] = [];
+          for (const item of parsedItems) {
+            const key = norm(item.name);
+            if (existing.includes(key) || itemsToAdd.some((i) => norm(i.name) === key)) {
+              duplicates.push(item.name);
+            } else {
+              itemsToAdd.push(item);
+            }
+          }
 
-          const listName = activeLists[0].name;
+          if (itemsToAdd.length > 0) {
+            await this.shoppingLists.addItems(listId, itemsToAdd);
+          }
 
-          await this.sendMessage(normalizedPhone,
-            `✅ *${itemsToAdd.length} item${itemsToAdd.length > 1 ? 's' : ''} adicionado${itemsToAdd.length > 1 ? 's' : ''} à sua lista "${listName}"!*\n\n` +
-            `${itemsSummary}\n\n` +
+          const fmtQty = (item: any) =>
+            item.quantity !== 1 || item.unit !== 'un' ? ` (${item.quantity}${item.unit})` : '';
+
+          let msg = '';
+          if (itemsToAdd.length > 0) {
+            const itemsSummary = itemsToAdd.map((item) => `✓ ${item.name}${fmtQty(item)}`).join('\n');
+            msg += `✅ *${itemsToAdd.length} item${itemsToAdd.length > 1 ? 's' : ''} adicionado${itemsToAdd.length > 1 ? 's' : ''} à sua lista "${listName}"!*\n\n${itemsSummary}\n\n`;
+          }
+          if (duplicates.length > 0) {
+            const dupSummary = duplicates.map((n) => `• ${n}`).join('\n');
+            msg += `⚠️ *Já ${duplicates.length > 1 ? 'estavam' : 'estava'} na lista* (não dupliquei):\n${dupSummary}\n\n`;
+          }
+          msg +=
             `📋 *Próximos passos:*\n` +
             `• Quer adicionar mais? É só mandar mais itens\n` +
             `• "_Minhas compras_" para ver a lista\n` +
-            `• "_Comprei tudo_" quando terminar`,
-          );
+            `• "_Comprei tudo_" quando terminar`;
+
+          await this.sendMessage(normalizedPhone, msg);
           break;
         }
 
