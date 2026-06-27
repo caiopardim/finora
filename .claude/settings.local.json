@@ -141,7 +141,10 @@
       "Bash(curl -s \"https://www.meufinora.com.br/dashboard/agenda?nocache=$\\(date +%s\\)\" -H \"Cache-Control: no-cache\")",
       "Bash(curl -s \"https://www.meufinora.com.br/?nocache=$\\(date +%s\\)\" -H \"Cache-Control: no-cache\")",
       "Bash(grep -rn \"Estimativa total\\\\|estimated_price\\\\|estimateShoppingItems\\\\|estimativa\\\\|R\\\\$\" src/modules/whatsapp/)",
-      "Bash(grep -n \"shopping_items\\\\|shopping_list,\\\\|const {.*action\\\\|intent\\\\.\" src/modules/whatsapp/whatsapp.service.ts)"
+      "Bash(grep -n \"shopping_items\\\\|shopping_list,\\\\|const {.*action\\\\|intent\\\\.\" src/modules/whatsapp/whatsapp.service.ts)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(grep -rn \"fetch\\(['\\\\\"\\\\`]/api/\" frontend/src)",
+      "Bash(npx next *)"
     ]
   }
 }

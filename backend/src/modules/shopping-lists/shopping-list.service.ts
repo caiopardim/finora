@@ -167,10 +167,6 @@ export class ShoppingListService {
     return data;
   }
 
-  async calculateEstimate(items: ShoppingListItem[]): Promise<number> {
-    return items.reduce((total, item) => total + ((item.estimated_price || 0) * (item.quantity || 1)), 0);
-  }
-
   async getListSummary(listId: string): Promise<{ estimated: number; actual: number; items: number }> {
     const { data, error } = await this.supabase
       .from('shopping_list_items')
