@@ -35,6 +35,7 @@ export interface MessageIntent {
     | 'estimate_list_cost'
     | 'mark_shopping_item'
     | 'unmark_shopping_item'
+    | 'remove_shopping_item'
     | 'complete_shopping_list'
     | 'unknown';
   transaction?: ParsedTransaction;
@@ -221,6 +222,12 @@ Use quando o usuário avisa que comprou/pegou um ou mais itens ESPECÍFICOS da l
 Use quando o usuário quer DESMARCAR um item (reverter): "ainda não comprei o arroz", "desmarca o feijão", "marquei o leite errado", "tira o pão da lista de comprados".
 
 {
+  "action": "remove_shopping_item",
+  "shopping_item_names": ["shampoo"]
+}
+Use quando o usuário quer EXCLUIR/REMOVER um item da lista (apagar de vez, não é o caso de comprar nem desmarcar): "remove o shampoo", "exclui o shampoo da lista", "tira o sabão da lista", "apaga o detergente", "não quero mais o leite na lista".
+
+{
   "action": "complete_shopping_list"
 }
 Use para: "comprei tudo", "finalizei a compra", "completei a lista", "terminei as compras". Apenas quando se refere à lista TODA, sem citar item específico.
@@ -281,6 +288,7 @@ Use para: "quando atinjo minha meta", "quanto tempo falta", "simula minha meta",
 - "Comprei o arroz" → mark_shopping_item, shopping_item_names: ["arroz"]
 - "Já peguei o leite e o pão" → mark_shopping_item, shopping_item_names: ["leite", "pão"]
 - "Ainda não comprei o arroz" → unmark_shopping_item, shopping_item_names: ["arroz"]
+- "Remove o shampoo da lista" → remove_shopping_item, shopping_item_names: ["shampoo"]
 - "Comprei tudo" → complete_shopping_list
 
 Responda APENAS com o JSON, sem texto adicional, sem markdown.`;

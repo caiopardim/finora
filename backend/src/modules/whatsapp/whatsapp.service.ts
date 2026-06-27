@@ -831,6 +831,39 @@ export class WhatsappService {
           break;
         }
 
+        case 'remove_shopping_item': {
+          const names = intent.shopping_item_names || [];
+          const activeLists = await this.shoppingLists.findActiveByUser(user.id);
+          if (!activeLists || activeLists.length === 0) {
+            await this.sendMessage(normalizedPhone, `Você não tem uma lista ativa.`);
+            break;
+          }
+          if (names.length === 0) {
+            await this.sendMessage(normalizedPhone, `Qual item você quer remover? Ex: _"remove o shampoo da lista"_`);
+            break;
+          }
+
+          const list = activeLists[0];
+          const removed = await this.shoppingLists.removeItemsByName(list.id!, names);
+
+          if (removed.length === 0) {
+            await this.sendMessage(normalizedPhone,
+              `Não encontrei ${names.map((n) => `"${n}"`).join(', ')} na lista *${list.name}*.\n\nMande "_Minhas compras_" para ver os itens.`,
+            );
+            break;
+          }
+
+          const refreshed = await this.shoppingLists.findActiveByUser(user.id);
+          const items = (refreshed[0]?.items || []) as any[];
+          const removedSummary = removed.map((n) => `🗑️ ${n}`).join('\n');
+
+          await this.sendMessage(normalizedPhone,
+            `Removi da lista:\n\n${removedSummary}\n\n` +
+            `🛒 *${list.name}* agora tem ${items.length} item${items.length === 1 ? '' : 's'}.`,
+          );
+          break;
+        }
+
         case 'complete_shopping_list': {
           const activeLists = await this.shoppingLists.findActiveByUser(user.id);
           if (!activeLists || activeLists.length === 0) {
