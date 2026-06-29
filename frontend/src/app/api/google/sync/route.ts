@@ -71,22 +71,25 @@ function toLocalBrazil(d: Date) {
   };
 }
 
-async function importFromGoogle(userId: string, accessToken: string, syncedMap: Record<string, string>) {
+async function importFromGoogle(userId: string, accessToken: string, syncedMap: Record<string, string>, deadline: number) {
   const timeMin = new Date().toISOString();
-  const timeMax = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString();
+  const timeMax = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
   const headers = { Authorization: `Bearer ${accessToken}` };
 
   // Fetch all calendars the user has access to
   const calListRes = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=50', { headers });
   const calListData = await calListRes.json();
   if (calListData.error) { console.error('[google-sync] calendarList error:', calListData.error); }
-  const calendars: string[] = (calListData.items || []).map((c: any) => c.id);
+  let calendars: string[] = (calListData.items || []).map((c: any) => c.id);
   if (!calendars.length) calendars.push('primary');
+  // Prioriza o calendário principal para caber no orçamento de tempo
+  calendars = ['primary', ...calendars.filter((c) => c !== 'primary')];
   console.log(`[google-sync] calendars found: ${calendars.length}`);
 
-  // Fetch events from all calendars
+  // Fetch events from all calendars (respeitando o orçamento de tempo)
   const events: any[] = [];
   for (const calId of calendars) {
+    if (Date.now() > deadline) { console.log('[google-sync] deadline atingido no fetch de calendários'); break; }
     let pageToken: string | undefined;
     do {
       const url = new URL(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events`);
@@ -94,7 +97,7 @@ async function importFromGoogle(userId: string, accessToken: string, syncedMap: 
       url.searchParams.set('timeMax', timeMax);
       url.searchParams.set('singleEvents', 'true');
       url.searchParams.set('orderBy', 'startTime');
-      url.searchParams.set('maxResults', '500');
+      url.searchParams.set('maxResults', '250');
       if (pageToken) url.searchParams.set('pageToken', pageToken);
 
       const res = await fetch(url.toString(), { headers });
@@ -102,7 +105,7 @@ async function importFromGoogle(userId: string, accessToken: string, syncedMap: 
       if (data.error) { console.error(`[google-sync] events error for ${calId}:`, data.error); break; }
       events.push(...(data.items || []));
       pageToken = data.nextPageToken;
-    } while (pageToken);
+    } while (pageToken && Date.now() <= deadline);
   }
   console.log(`[google-sync] total events fetched across all calendars: ${events.length}`);
 
@@ -158,40 +161,58 @@ export async function POST(req: NextRequest) {
     const { userId } = await req.json();
     if (!userId) return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
 
+    // Orçamento de tempo: retorna antes do limite da função serverless
+    // (Vercel Hobby corta em ~10s). Assim a sync nunca dá timeout — o que não
+    // couber fica para a próxima sincronização.
+    const deadline = Date.now() + 8000;
+
     const accessToken = await getAccessToken(userId);
     const { data: tokenRow } = await getAdmin()
       .from('user_google_tokens').select('synced_events').eq('user_id', userId).single();
     const syncedMap: Record<string, string> = tokenRow?.synced_events || {};
 
     // 1. Import Google → Finora
-    const imported = await importFromGoogle(userId, accessToken, syncedMap);
+    const imported = await importFromGoogle(userId, accessToken, syncedMap, deadline);
 
-    // 2. Push Finora → Google (only non-Google-imported appointments)
+    // 2. Push Finora → Google (apenas compromissos não importados do Google)
     const today = new Date().toISOString().slice(0, 10);
     const { data: appts } = await getAdmin()
       .from('appointments').select('*').eq('user_id', userId)
       .gte('date', today);
 
-    let synced = 0;
-    for (const appt of appts || []) {
-      if (appt.google_event_id) continue; // skip Google-imported ones
+    const pending = (appts || []).filter((a: any) => !a.google_event_id);
+
+    const pushOne = async (appt: any): Promise<boolean> => {
       const event = toGoogleEvent(appt);
-      if (syncedMap[appt.id]) {
-        await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${syncedMap[appt.id]}`, {
-          method: 'PUT',
-          headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify(event),
-        });
-      } else {
-        const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify(event),
-        });
-        const data = await res.json();
-        if (data.id) syncedMap[appt.id] = data.id;
+      try {
+        if (syncedMap[appt.id]) {
+          await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${syncedMap[appt.id]}`, {
+            method: 'PUT',
+            headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(event),
+          });
+        } else {
+          const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(event),
+          });
+          const data = await res.json();
+          if (data.id) syncedMap[appt.id] = data.id;
+        }
+        return true;
+      } catch {
+        return false;
       }
-      synced++;
+    };
+
+    // Envia em lotes paralelos, respeitando o orçamento de tempo
+    let synced = 0;
+    const BATCH = 5;
+    for (let i = 0; i < pending.length; i += BATCH) {
+      if (Date.now() > deadline) { console.log('[google-sync] deadline atingido no push'); break; }
+      const results = await Promise.all(pending.slice(i, i + BATCH).map(pushOne));
+      synced += results.filter(Boolean).length;
     }
 
     await getAdmin().from('user_google_tokens').update({ synced_events: syncedMap }).eq('user_id', userId);
