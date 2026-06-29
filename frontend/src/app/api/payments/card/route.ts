@@ -63,9 +63,8 @@ export async function POST(req: NextRequest) {
     const payData = await payRes.json();
     console.log('[card] payment status:', payData.status, 'detail:', payData.status_detail, 'http:', payRes.status);
 
-    const paymentApproved = ['approved', 'in_process', 'pending'].includes(payData.status);
-
-    if (!paymentApproved) {
+    // Pagamento explicitamente recusado → erro com mensagem amigável
+    if (!['approved', 'in_process', 'pending'].includes(payData.status)) {
       const detail = payData.status_detail || '';
       const msg = detail === 'cc_rejected_insufficient_amount'
         ? 'Saldo insuficiente no cartão.'
@@ -113,15 +112,31 @@ export async function POST(req: NextRequest) {
       console.error('[card] subscription creation failed:', subData.message);
     }
 
-    // ── PASSO 3: Ativar usuário ───────────────────────────────────────────────
+    // ── PASSO 3: Ativar usuário SOMENTE quando o pagamento foi aprovado ───────
+    if (payData.status === 'approved') {
+      await admin.from('profiles').update({
+        mp_subscription_id: subData.id || null,
+        plan_type,
+        plan_status: 'active',
+        paid: true,
+      }).eq('id', user.id);
+
+      return NextResponse.json({ ok: true, payment_id: payData.id, subscription_id: subData.id });
+    }
+
+    // in_process / pending → não libera acesso ainda. Guarda a assinatura e
+    // marca como pendente; o webhook ativa automaticamente quando aprovar.
     await admin.from('profiles').update({
       mp_subscription_id: subData.id || null,
       plan_type,
-      plan_status: 'active',
-      paid: true,
+      plan_status: 'pending',
     }).eq('id', user.id);
 
-    return NextResponse.json({ ok: true, payment_id: payData.id, subscription_id: subData.id });
+    return NextResponse.json({
+      ok: false,
+      pending: true,
+      error: 'Seu pagamento está em análise. Assim que for aprovado (geralmente em alguns instantes), seu acesso é liberado automaticamente — você receberá a confirmação no WhatsApp.',
+    });
   } catch (err: any) {
     console.error('[card] unexpected error:', err.message);
     return NextResponse.json({ error: 'Erro interno. Tente novamente.' }, { status: 500 });
