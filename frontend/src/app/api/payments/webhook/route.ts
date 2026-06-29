@@ -78,6 +78,9 @@ export async function POST(req: NextRequest) {
     if (planType === 'annual') expires.setFullYear(expires.getFullYear() + 1);
     else expires.setMonth(expires.getMonth() + 1);
 
+    // Estado anterior para enviar boas-vindas só na 1ª ativação (MP reenvia webhooks)
+    const { data: before } = await admin.from('profiles').select('phone, name, plan_status').eq('id', userId).single();
+
     await admin.from('profiles').update({
       paid: true,
       plan_status: 'active',
@@ -85,10 +88,9 @@ export async function POST(req: NextRequest) {
       plan_expires_at: expires.toISOString(),
     }).eq('id', userId);
 
-    // Send welcome WhatsApp message
-    const { data: profile } = await admin.from('profiles').select('phone, name').eq('id', userId).single();
-    if (profile?.phone) {
-      await sendWelcomeMessage(profile.phone, profile.name, planType);
+    // Send welcome WhatsApp message apenas quando ativando pela primeira vez
+    if (before?.phone && before.plan_status !== 'active') {
+      await sendWelcomeMessage(before.phone, before.name, planType);
     }
 
     return NextResponse.json({ ok: true });
@@ -131,6 +133,9 @@ export async function POST(req: NextRequest) {
       plan_status = 'cancelled';
     }
 
+    // Estado anterior para não repetir boas-vindas em reenvios do MP
+    const { data: before } = await admin.from('profiles').select('phone, name, plan_status').eq('id', userId).single();
+
     await admin.from('profiles').update({
       paid,
       plan_status,
@@ -139,12 +144,9 @@ export async function POST(req: NextRequest) {
       plan_type: planType,
     }).eq('id', userId);
 
-    // Send welcome message only when newly activated
-    if (status === 'authorized') {
-      const { data: profile } = await admin.from('profiles').select('phone, name').eq('id', userId).single();
-      if (profile?.phone) {
-        await sendWelcomeMessage(profile.phone, profile.name, planType);
-      }
+    // Send welcome message apenas na primeira ativação
+    if (status === 'authorized' && before?.phone && before.plan_status !== 'active') {
+      await sendWelcomeMessage(before.phone, before.name, planType);
     }
   }
 

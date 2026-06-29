@@ -1,8 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'nodejs';
 
 const MP_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN!;
+
+// Lê o preço do plano da tabela settings (mesma fonte do cartão/assinatura)
+async function getPlanPrice(plan_type: string): Promise<number> {
+  const admin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+  const { data } = await admin.from('settings').select('key, value');
+  const map: Record<string, string> = {};
+  (data || []).forEach((r: any) => { map[r.key] = r.value; });
+  return plan_type === 'annual' ? Number(map.price_annual || 199) : Number(map.price_monthly || 29);
+}
 
 export async function POST(req: NextRequest) {
   const { email, name, plan_type, user_id } = await req.json();
@@ -11,7 +21,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Dados incompletos' }, { status: 400 });
   }
 
-  const amount = plan_type === 'annual' ? 199.00 : 29.00;
+  const amount = await getPlanPrice(plan_type);
   const description = plan_type === 'annual'
     ? 'Finora Pro — Plano Anual'
     : 'Finora Pro — Plano Mensal';
