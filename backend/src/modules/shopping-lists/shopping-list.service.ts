@@ -1,6 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_CLIENT } from '../../config/supabase.module';
+import { matchItemsByName } from './shopping-match.util';
 
 export interface ShoppingListItem {
   id?: string;
@@ -107,14 +108,7 @@ export class ShoppingListService {
       .eq('shopping_list_id', listId);
     if (error) throw new Error(error.message);
 
-    const norm = (s: string) =>
-      (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-    const targets = names.map(norm).filter(Boolean);
-
-    const matched = (items || []).filter((item: any) => {
-      const n = norm(item.name);
-      return targets.some((t) => n.includes(t) || t.includes(n));
-    });
+    const matched = matchItemsByName((items || []) as any[], names);
 
     const ids = matched.map((m: any) => m.id);
     if (ids.length) {
@@ -136,14 +130,7 @@ export class ShoppingListService {
       .eq('shopping_list_id', listId);
     if (error) throw new Error(error.message);
 
-    const norm = (s: string) =>
-      (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-    const targets = names.map(norm).filter(Boolean);
-
-    const matched = (items || []).filter((item: any) => {
-      const n = norm(item.name);
-      return targets.some((t) => n.includes(t) || t.includes(n));
-    });
+    const matched = matchItemsByName((items || []) as any[], names);
 
     const ids = matched.map((m: any) => m.id);
     if (ids.length) {

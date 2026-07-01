@@ -144,7 +144,8 @@
       "Bash(grep -n \"shopping_items\\\\|shopping_list,\\\\|const {.*action\\\\|intent\\\\.\" src/modules/whatsapp/whatsapp.service.ts)",
       "Bash(echo \"exit: $?\")",
       "Bash(grep -rn \"fetch\\(['\\\\\"\\\\`]/api/\" frontend/src)",
-      "Bash(npx next *)"
+      "Bash(npx next *)",
+      "Bash(npx jest *)"
     ]
   }
 }
