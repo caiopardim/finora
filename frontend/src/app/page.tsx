@@ -218,7 +218,10 @@ export default function Home() {
         .nav-link { transition: color 0.2s; }
         .nav-link:hover { color: #22c55e !important; }
         @media (max-width: 900px) {
-          .hero-grid { flex-direction: column !important; align-items: center !important; }
+          .hero-section { padding: 104px 24px 72px !important; }
+          .hero-grid { flex-direction: column !important; align-items: center !important; text-align: center !important; }
+          .hero-grid p { margin-left: auto !important; margin-right: auto !important; }
+          .hero-cta, .hero-stats { justify-content: center !important; }
           .mockup-col { display: flex !important; justify-content: center !important; width: 100% !important; animation: none !important; }
           .hero-title { font-size: 42px !important; letter-spacing: -1px !important; }
           .section-pad { padding: 80px 24px !important; }
@@ -227,16 +230,25 @@ export default function Home() {
           .plans-grid { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 540px) {
-          .hero-title { font-size: 34px !important; }
+          .hero-section { padding: 88px 18px 56px !important; }
+          .hero-title { font-size: 32px !important; letter-spacing: -0.5px !important; }
+          .hero-sub { font-size: 16px !important; }
           .header-links { display: none !important; }
-          .header-inner { padding: 14px 20px !important; }
-          .feature-text-title { font-size: 30px !important; }
+          .header-inner { padding: 12px 16px !important; }
+          .header-logo { height: 34px !important; }
+          .header-btn { padding: 7px 14px !important; font-size: 13px !important; }
+          .feature-text-title { font-size: 28px !important; }
+          .section-pad { padding: 64px 18px !important; }
+        }
+        @media (max-width: 359px) {
+          .header-btn-login { display: none !important; }
+          .header-logo { height: 30px !important; }
         }
       `}</style>
 
       {/* ── Navbar ── */}
       <header className="header-inner" style={{ padding: '16px 48px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50, background: 'rgba(2,6,23,0.85)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <img src="/logo-finora-dark.svg" alt="Finora" style={{ height: 44 }}/>
+        <img className="header-logo" src="/logo-finora-dark.svg" alt="Finora" style={{ height: 44 }}/>
         <nav style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           <div className="header-links" style={{ display: 'flex', gap: 28, alignItems: 'center', marginRight: 16 }}>
             {['#como-funciona', '#funcionalidades', '#planos'].map((href, i) => (
@@ -245,13 +257,13 @@ export default function Home() {
               </a>
             ))}
           </div>
-          <Link href="/auth/login" style={{ padding: '8px 18px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#94a3b8', fontSize: 14, fontWeight: 500, textDecoration: 'none', whiteSpace: 'nowrap' }}>Já sou cliente</Link>
-          <Link href="/assinar" className="btn-primary" style={{ padding: '8px 20px', borderRadius: 10, background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none', boxShadow: '0 0 20px rgba(34,197,94,0.3)', whiteSpace: 'nowrap' }}>Assinar</Link>
+          <Link href="/auth/login" className="header-btn header-btn-login" style={{ padding: '8px 18px', borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)', color: '#94a3b8', fontSize: 14, fontWeight: 500, textDecoration: 'none', whiteSpace: 'nowrap' }}>Já sou cliente</Link>
+          <Link href="/assinar" className="btn-primary header-btn" style={{ padding: '8px 20px', borderRadius: 10, background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 14, fontWeight: 600, textDecoration: 'none', boxShadow: '0 0 20px rgba(34,197,94,0.3)', whiteSpace: 'nowrap' }}>Assinar</Link>
         </nav>
       </header>
 
       {/* ── Hero ── */}
-      <section style={{ padding: '130px 48px 100px', position: 'relative', overflow: 'hidden' }}>
+      <section className="hero-section" style={{ padding: '130px 48px 100px', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: '-10%', left: '50%', transform: 'translateX(-50%)', width: 900, height: 900, borderRadius: '50%', background: 'radial-gradient(circle,rgba(34,197,94,0.07) 0%,transparent 65%)', pointerEvents: 'none' }}/>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px)', backgroundSize: '64px 64px', pointerEvents: 'none' }}/>
 
@@ -278,12 +290,12 @@ export default function Home() {
                     sozinho.
                   </span>
                 </h1>
-                <p style={{ color: '#64748b', fontSize: 19, margin: '0 0 40px', lineHeight: 1.7, maxWidth: 500 }}>
+                <p className="hero-sub" style={{ color: '#64748b', fontSize: 19, margin: '0 0 40px', lineHeight: 1.7, maxWidth: 500 }}>
                   Manda uma mensagem no WhatsApp e eu registro, categorizo e organizo tudo. Seu dinheiro, sob controle — sem planilha, sem esforço.
                 </p>
               </div>
 
-              <div style={{ opacity: heroVisible ? 1 : 0, transition: 'all 0.7s ease 0.2s', display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 56 }}>
+              <div className="hero-cta" style={{ opacity: heroVisible ? 1 : 0, transition: 'all 0.7s ease 0.2s', display: 'flex', gap: 14, flexWrap: 'wrap', marginBottom: 56 }}>
                 <Link href="/assinar" className="btn-primary" style={{ padding: '16px 36px', borderRadius: 12, background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 16, fontWeight: 700, textDecoration: 'none', boxShadow: '0 0 32px rgba(34,197,94,0.35)', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                   Começar agora <ArrowRight size={17}/>
                 </Link>
@@ -292,7 +304,7 @@ export default function Home() {
                 </a>
               </div>
 
-              <div style={{ opacity: heroVisible ? 1 : 0, transition: 'all 0.7s ease 0.3s', display: 'flex', gap: 40, flexWrap: 'wrap' }}>
+              <div className="hero-stats" style={{ opacity: heroVisible ? 1 : 0, transition: 'all 0.7s ease 0.3s', display: 'flex', gap: 40, flexWrap: 'wrap' }}>
                 <div>
                   <p style={{ margin: '0 0 4px', fontSize: 28, fontWeight: 800, color: '#22c55e', letterSpacing: '-0.5px' }}>
                     <Counter target={12} suffix="+"/>
