@@ -56,6 +56,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Alerta de segurança por e-mail (código de recuperação usado → 2FA desativado)
+    if (user.email && process.env.NEXT_PUBLIC_API_URL) {
+      const when = new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+      fetch(`${process.env.NEXT_PUBLIC_API_URL}/email/security-alert`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user.email,
+          title: 'Código de recuperação usado',
+          message: 'Um código de recuperação foi usado para desativar a verificação em duas etapas da sua conta.',
+          details: [`🕐 Quando: ${when}`],
+        }),
+      }).catch(() => {});
+    }
+
     const remaining = codes.filter((c) => !c.used).length;
     return NextResponse.json({ ok: true, remaining });
   } catch (e: any) {

@@ -31,6 +31,20 @@ export class EmailController {
     }
   }
 
+  @Post('security-alert')
+  async securityAlert(
+    @Body() body: { email: string; title: string; message: string; details?: string[] },
+  ): Promise<{ success: boolean }> {
+    try {
+      if (!body.email || !body.title) return { success: false };
+      await this.emailService.sendSecurityAlert(body.email, { title: body.title, message: body.message, details: body.details });
+      return { success: true };
+    } catch (error) {
+      this.logger.error('Error sending security alert:', error);
+      return { success: false };
+    }
+  }
+
   @Post('send-welcome')
   async sendWelcome(
     @Body() body: { email: string; name?: string },

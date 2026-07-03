@@ -6,6 +6,7 @@ import { Check, User, Shield, MessageSquare, Camera, Loader, Bell, BellOff, Pale
 import { useTheme } from '@/lib/theme-context';
 import TwoFactorSetup from '@/components/ui/TwoFactorSetup';
 import DataExport from '@/components/ui/DataExport';
+import { sendSecurityAlert } from '@/lib/security';
 
 export default function SettingsPage() {
   const { c } = useTheme();
@@ -146,6 +147,7 @@ export default function SettingsPage() {
 
       setPwSuccess(true);
       setPwForm({ current: '', newPw: '', confirm: '' });
+      sendSecurityAlert('Senha alterada', 'A senha da sua conta Finora foi alterada.');
       setTimeout(() => setPwSuccess(false), 4000);
     } catch (err: any) {
       setPwError('Erro inesperado. Tente novamente.');

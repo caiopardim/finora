@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
+import { recordLoginEvent } from '@/lib/security';
 
 type Mode = 'login' | 'forgot' | 'forgot-sent' | 'mfa';
 
@@ -46,6 +47,7 @@ export default function LoginPage() {
 
   // Após login por senha, decide se precisa do 2FA (step-up para AAL2)
   async function routeAfterAuth() {
+    recordLoginEvent(); // registra acesso + detecta dispositivo/local novo (fire-and-forget)
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();

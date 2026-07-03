@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/lib/theme-context';
 import { ShieldCheck, ShieldOff, Loader2, Copy, Check, KeyRound } from 'lucide-react';
+import { sendSecurityAlert } from '@/lib/security';
 
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem caracteres ambíguos
 
@@ -94,6 +95,7 @@ export default function TwoFactorSetup() {
       if (user) {
         try { setRecoveryCodes(await generateAndStoreCodes(user.id)); } catch { /* segue mesmo sem códigos */ }
       }
+      sendSecurityAlert('2FA ativado', 'A verificação em duas etapas foi ativada na sua conta Finora.');
       await refresh();
     } catch (e: any) {
       setError(e?.message || 'Erro ao verificar o código.');
@@ -108,6 +110,7 @@ export default function TwoFactorSetup() {
       const { error } = await supabase.auth.mfa.unenroll({ factorId });
       if (error) { setError('Não foi possível desativar agora. Faça login novamente e tente de novo.'); setBusy(false); return; }
       setOkMsg('Verificação em duas etapas desativada.');
+      sendSecurityAlert('2FA desativado', 'A verificação em duas etapas foi DESATIVADA na sua conta Finora.');
       await refresh();
     } catch (e: any) {
       setError(e?.message || 'Erro ao desativar.');

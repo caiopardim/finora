@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import GlobalSearch from '@/components/ui/GlobalSearch';
 import PaywallGuard from '@/components/PaywallGuard';
+import SecurityAlertBanner from '@/components/ui/SecurityAlertBanner';
 import { formatCurrency } from '@/lib/utils';
 import dayjs from 'dayjs';
 import { useTheme } from '@/lib/theme-context';
@@ -277,6 +278,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
         {/* Page content */}
         <main style={{ flex: 1, padding: '20px 16px', paddingBottom: 90, overflowY: 'auto', overflowX: 'hidden', minWidth: 0 }}>
+          <SecurityAlertBanner />
           {children}
         </main>
 
@@ -458,7 +460,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {broadcast.type === 'warning' ? '⚠️' : broadcast.type === 'error' ? '🚨' : 'ℹ️'} <span>{broadcast.message}</span>
           </div>
         )}
-        <main style={{ flex: 1, padding: '32px', overflowY: 'auto', overflowX: 'hidden', minWidth: 0 }}><PaywallGuard>{children}</PaywallGuard></main>
+        <main style={{ flex: 1, padding: '32px', overflowY: 'auto', overflowX: 'hidden', minWidth: 0 }}><PaywallGuard><SecurityAlertBanner />{children}</PaywallGuard></main>
       </div>
 
       {/* WhatsApp floating button */}

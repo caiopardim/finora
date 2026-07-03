@@ -119,4 +119,46 @@ export class EmailService {
       throw error;
     }
   }
+
+  // ── Alerta de segurança (novo acesso, mudança na conta, etc.) ────────────
+  async sendSecurityAlert(email: string, opts: { title: string; message: string; details?: string[] }): Promise<void> {
+    try {
+      const detailRows = (opts.details || []).length
+        ? `<div style="background: rgba(255,255,255,0.05); border-radius: 8px; padding: 14px 16px; margin: 20px 0;">
+             ${opts.details!.map((d) => `<p style="margin: 4px 0; font-size: 14px; color: #cbd5e1;">${d}</p>`).join('')}
+           </div>`
+        : '';
+
+      const html = `
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="text-align: center; margin-bottom: 32px;">
+            <img src="https://meufinora.com.br/logo-finora.svg" alt="Finora" style="height: 40px;">
+          </div>
+          <div style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: #f1f5f9; padding: 40px; border-radius: 12px;">
+            <div style="font-size: 30px; margin-bottom: 8px;">🔐</div>
+            <h1 style="margin: 0 0 16px 0; font-size: 24px; font-weight: 700;">${opts.title}</h1>
+            <p style="margin: 0 0 8px 0; font-size: 16px; color: #cbd5e1; line-height: 1.6;">${opts.message}</p>
+            ${detailRows}
+            <p style="margin: 20px 0 0 0; font-size: 14px; color: #94a3b8; line-height: 1.6;">
+              <strong style="color: #f1f5f9;">Foi você?</strong> Então pode ignorar este e-mail.<br>
+              <strong style="color: #fca5a5;">Não reconhece?</strong> Troque sua senha imediatamente e ative a verificação em duas etapas em Configurações → Segurança.
+            </p>
+            <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 32px 0;">
+            <p style="margin: 0; font-size: 12px; color: #64748b; text-align: center;">© 2026 Finora IA. Suas finanças, no WhatsApp.</p>
+          </div>
+        </div>
+      `;
+
+      await this.resend.emails.send({
+        from: 'Finora <noreply@meufinora.com.br>',
+        to: email,
+        subject: `🔐 ${opts.title}`,
+        html,
+      });
+      this.logger.log(`Security alert sent to ${email}: ${opts.title}`);
+    } catch (error) {
+      this.logger.error(`Failed to send security alert to ${email}:`, error);
+      // Não relança — alerta de segurança não deve quebrar o fluxo principal
+    }
+  }
 }
