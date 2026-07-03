@@ -697,6 +697,7 @@ export default function Home() {
               {[
                 { label: 'Privacidade', href: '/privacidade' },
                 { label: 'Termos', href: '/termos' },
+                { label: 'Segurança', href: '/seguranca' },
                 { label: 'Suporte', href: 'https://wa.me/5562982237323' },
               ].map(l => (
                 <a key={l.label} href={l.href} target={l.href.startsWith('http') ? '_blank' : undefined} rel="noopener noreferrer" style={{ color: '#475569', fontSize: 13, textDecoration: 'none', transition: 'color 0.2s' }}
