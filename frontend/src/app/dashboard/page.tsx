@@ -22,6 +22,8 @@ export default function DashboardPage() {
   const [data, setData]         = useState<any>(null);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [showAdd, setShowAdd]   = useState(false);
+  const [addType, setAddType]   = useState<'income' | 'expense' | undefined>(undefined);
+  const openAdd = (type?: 'income' | 'expense') => { setAddType(type); setShowAdd(true); };
   const [loading, setLoading]   = useState(true);
 
   async function load() {
@@ -144,7 +146,7 @@ export default function DashboardPage() {
             Bem-vindo, {data.userName?.split(' ')[0]} 👋
           </h1>
         </div>
-        <button onClick={() => setShowAdd(true)} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 18px', background:'linear-gradient(135deg,#22c55e,#16a34a)', border:'none', borderRadius:11, color:'#fff', fontSize:14, fontWeight:600, cursor:'pointer', boxShadow:'0 4px 14px rgba(34,197,94,0.3)' }}>
+        <button onClick={() => openAdd()} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 18px', background:'linear-gradient(135deg,#22c55e,#16a34a)', border:'none', borderRadius:11, color:'#fff', fontSize:14, fontWeight:600, cursor:'pointer', boxShadow:'0 4px 14px rgba(34,197,94,0.3)' }}>
           <Plus size={16}/> Nova Transação
         </button>
       </div>
@@ -153,10 +155,10 @@ export default function DashboardPage() {
       <div className="grid-stats">
         <StatCard title="Saldo do Mês"  value={fmt(data.balance)} icon="💳" accent="#6366f1"
           badge={data.balance >= 0 ? '✓ positivo' : '⚠ negativo'} badgeGreen={data.balance >= 0} />
-        <StatCard title="Receitas"      value={fmt(data.income)}  icon="💰" accent="#22c55e"
+        <StatCard title="Receitas"      value={fmt(data.income)}  icon="💰" accent="#22c55e" onClick={() => openAdd('income')}
           badge={data.lIncome ? `${data.income >= data.lIncome ? '+' : ''}${Math.round((data.income-data.lIncome)/data.lIncome*100)}% vs mês ant.` : undefined}
           badgeGreen={data.income >= data.lIncome} />
-        <StatCard title="Despesas"      value={fmt(data.expense)} icon="💸" accent="#ef4444"
+        <StatCard title="Despesas"      value={fmt(data.expense)} icon="💸" accent="#ef4444" onClick={() => openAdd('expense')}
           badge={data.lExpense ? `${Math.round((data.expense-data.lExpense)/data.lExpense*100)}% vs mês ant.` : undefined}
           badgeGreen={data.expense <= data.lExpense} />
         <StatCard title="Hoje"          value={fmt(data.todayExpense)} icon="📅" accent="#f97316"
@@ -388,7 +390,7 @@ export default function DashboardPage() {
         {transactions.length ? <TxList txs={transactions} onRefresh={load}/> : <Empty text="Nenhuma transação ainda. Clique em Nova Transação!"/>}
       </Card>
 
-      {showAdd && <AddTransactionModal onClose={() => setShowAdd(false)} onSuccess={() => { setShowAdd(false); load(); }}/>}
+      {showAdd && <AddTransactionModal initialType={addType} onClose={() => setShowAdd(false)} onSuccess={() => { setShowAdd(false); load(); }}/>}
     </div>
   );
 }
@@ -413,10 +415,15 @@ function Card({ title, subtitle, action, children }: any) {
   );
 }
 
-function StatCard({ title, value, icon, accent, badge, badgeGreen }: any) {
+function StatCard({ title, value, icon, accent, badge, badgeGreen, onClick }: any) {
   const { c } = useTheme();
   return (
-    <div style={{ background:c.surface, borderRadius:16, border:`1px solid ${c.border}`, boxShadow:c.shadow, padding:20, borderTop:`3px solid ${accent}` }}>
+    <div
+      onClick={onClick}
+      title={onClick ? `Novo lançamento de ${title.toLowerCase()}` : undefined}
+      onMouseEnter={onClick ? (e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 6px 18px ${accent}22`; } : undefined}
+      onMouseLeave={onClick ? (e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = c.shadow; } : undefined}
+      style={{ background:c.surface, borderRadius:16, border:`1px solid ${c.border}`, boxShadow:c.shadow, padding:20, borderTop:`3px solid ${accent}`, cursor: onClick ? 'pointer' : 'default', transition:'transform 0.1s, box-shadow 0.1s' }}>
       <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:12 }}>
         <p style={{ margin:0, fontSize:11, fontWeight:600, color:c.textFaint, letterSpacing:'0.06em', textTransform:'uppercase' }}>{title}</p>
         <div style={{ width:34, height:34, borderRadius:9, background:accent+'18', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>{icon}</div>

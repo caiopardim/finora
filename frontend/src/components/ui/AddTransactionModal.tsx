@@ -8,6 +8,8 @@ import { useTheme } from '@/lib/theme-context';
 interface Props {
   onClose: () => void;
   onSuccess: () => void;
+  /** Tipo pré-selecionado ao abrir para um novo lançamento (receita/despesa). */
+  initialType?: 'income' | 'expense';
   transaction?: {
     id: string;
     type: 'income' | 'expense';
@@ -31,13 +33,13 @@ function toRawDigits(n: number): string {
   return Math.round(n * 100).toString();
 }
 
-export default function AddTransactionModal({ onClose, onSuccess, transaction }: Props) {
+export default function AddTransactionModal({ onClose, onSuccess, transaction, initialType }: Props) {
   const { c } = useTheme();
   const isEdit = !!transaction;
 
   const [rawDigits, setRawDigits] = useState(transaction ? toRawDigits(transaction.amount) : '');
   const [form, setForm] = useState({
-    type:        (transaction?.type ?? 'expense') as 'income' | 'expense',
+    type:        (transaction?.type ?? initialType ?? 'expense') as 'income' | 'expense',
     description: transaction?.description ?? '',
     category_id: transaction?.category_id ?? '',
     wallet_id:   transaction?.wallet_id ?? '',

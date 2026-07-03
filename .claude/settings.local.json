@@ -145,7 +145,11 @@
       "Bash(echo \"exit: $?\")",
       "Bash(grep -rn \"fetch\\(['\\\\\"\\\\`]/api/\" frontend/src)",
       "Bash(npx next *)",
-      "Bash(npx jest *)"
+      "Bash(npx jest *)",
+      "Bash(curl -sI https://www.meufinora.com.br)",
+      "Bash(openssl s_client -servername www.meufinora.com.br -connect www.meufinora.com.br:443)",
+      "Bash(openssl x509 *)",
+      "Bash(curl -sI http://meufinora.com.br)"
     ]
   }
 }

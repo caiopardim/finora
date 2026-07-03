@@ -130,6 +130,8 @@ export default function TransactionsPage() {
   const [count, setCount]   = useState(0);
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
+  const [addType, setAddType] = useState<'income' | 'expense' | undefined>(undefined);
+  const openAdd = (type?: 'income' | 'expense') => { setAddType(type); setShowAdd(true); };
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [confirmDeleteTx, setConfirmDeleteTx] = useState<any | null>(null);
   const [editTx, setEditTx] = useState<any | null>(null);
@@ -182,7 +184,7 @@ export default function TransactionsPage() {
           <h1 style={{ fontSize: 24, fontWeight: 700, color: c.text, margin: '0 0 2px' }}>Transações</h1>
           <p style={{ color: c.textFaint, fontSize: 14, margin: 0 }}>{count} registros encontrados</p>
         </div>
-        <button onClick={() => setShowAdd(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: 'linear-gradient(135deg,#22c55e,#16a34a)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}>
+        <button onClick={() => openAdd()} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: 'linear-gradient(135deg,#22c55e,#16a34a)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}>
           <Plus size={16}/> Nova
         </button>
       </div>
@@ -190,13 +192,22 @@ export default function TransactionsPage() {
       {/* Resumo do mês vigente — sempre visível */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 20 }}>
         {[
-          { label: `Receitas de ${new Date().toLocaleString('pt-BR',{month:'long'})}`, value: fmt(monthStats.income),  color: '#22c55e', accent: '#22c55e' },
-          { label: `Despesas de ${new Date().toLocaleString('pt-BR',{month:'long'})}`, value: fmt(monthStats.expense), color: '#ef4444', accent: '#ef4444' },
+          { label: `Receitas de ${new Date().toLocaleString('pt-BR',{month:'long'})}`, value: fmt(monthStats.income),  color: '#22c55e', accent: '#22c55e', onClick: () => openAdd('income') },
+          { label: `Despesas de ${new Date().toLocaleString('pt-BR',{month:'long'})}`, value: fmt(monthStats.expense), color: '#ef4444', accent: '#ef4444', onClick: () => openAdd('expense') },
           { label: 'Balanço do mês', value: fmt(monthStats.income - monthStats.expense), color: monthStats.income >= monthStats.expense ? '#22c55e' : '#ef4444', accent: '#6366f1' },
           { label: 'Transações', value: String(count), color: '#6366f1', accent: '#6366f1' },
-        ].map(s => (
-          <div key={s.label} style={{ background: c.surface, borderRadius: 14, border: `1px solid ${c.border}`, padding: '14px 18px', borderTop: `3px solid ${s.accent}` }}>
-            <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{s.label}</p>
+        ].map((s: any) => (
+          <div
+            key={s.label}
+            onClick={s.onClick}
+            title={s.onClick ? `Novo lançamento de ${s.label.toLowerCase().startsWith('receitas') ? 'receita' : 'despesa'}` : undefined}
+            style={{ background: c.surface, borderRadius: 14, border: `1px solid ${c.border}`, padding: '14px 18px', borderTop: `3px solid ${s.accent}`, cursor: s.onClick ? 'pointer' : 'default', transition: 'transform 0.1s, box-shadow 0.1s' }}
+            onMouseEnter={s.onClick ? (e) => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = `0 6px 18px ${s.accent}22`; } : undefined}
+            onMouseLeave={s.onClick ? (e) => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; } : undefined}
+          >
+            <p style={{ margin: '0 0 6px', fontSize: 11, fontWeight: 600, color: c.textFaint, textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: 5 }}>
+              {s.label}{s.onClick && <Plus size={12} style={{ opacity: 0.6 }}/>}
+            </p>
             <p style={{ margin: 0, fontSize: 20, fontWeight: 700, color: s.color }}>{s.value}</p>
           </div>
         ))}
@@ -325,7 +336,7 @@ export default function TransactionsPage() {
           />
         )
       )}
-      {showAdd && <AddTransactionModal onClose={() => setShowAdd(false)} onSuccess={() => { setShowAdd(false); load(); }}/>}
+      {showAdd && <AddTransactionModal initialType={addType} onClose={() => setShowAdd(false)} onSuccess={() => { setShowAdd(false); load(); }}/>}
       {editTx && <AddTransactionModal transaction={editTx} onClose={() => setEditTx(null)} onSuccess={() => { setEditTx(null); load(); }}/>}
     </div>
   );
