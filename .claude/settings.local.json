@@ -149,7 +149,8 @@
       "Bash(curl -sI https://www.meufinora.com.br)",
       "Bash(openssl s_client -servername www.meufinora.com.br -connect www.meufinora.com.br:443)",
       "Bash(openssl x509 *)",
-      "Bash(curl -sI http://meufinora.com.br)"
+      "Bash(curl -sI http://meufinora.com.br)",
+      "Bash(node -e \"require\\('xlsx'\\); require\\('jspdf'\\); require\\('jspdf-autotable'\\); console.log\\('libs OK'\\)\")"
     ]
   }
 }
