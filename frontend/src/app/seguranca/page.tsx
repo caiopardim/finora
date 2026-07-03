@@ -39,6 +39,14 @@ export default function SegurancaPage() {
             content: 'Os pagamentos são processados diretamente pelo Mercado Pago, com toda a segurança de um provedor certificado (PCI-DSS). O Finora não armazena números de cartão de crédito — esses dados nunca passam pelos nossos servidores.',
           },
           {
+            title: '🍪 Cookies e permissões do navegador',
+            content: 'Usamos apenas cookies essenciais (para manter você conectado e lembrar preferências) — sem rastreamento ou publicidade de terceiros. A única permissão que pedimos é a de notificações, e só quando você clica para ativá-la nas Configurações. Nunca pedimos acesso a localização, câmera ou microfone.',
+          },
+          {
+            title: '🚨 Alertas de segurança',
+            content: 'Avisamos você por e-mail quando detectamos eventos importantes: um novo acesso de dispositivo ou local diferente, e mudanças sensíveis na conta (senha alterada, 2FA ativado/desativado). Se algo não foi você, poderá agir na hora.',
+          },
+          {
             title: '🛡️ Autenticação em dois fatores (2FA)',
             content: 'Disponível! Você pode ativar a verificação em duas etapas em Configurações → Segurança. Com o 2FA, além da senha o login pede um código gerado pelo seu app autenticador (Google Authenticator, Authy, 1Password…) — mesmo que alguém descubra sua senha, não consegue entrar sem o código.',
           },
