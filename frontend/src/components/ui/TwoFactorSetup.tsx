@@ -38,6 +38,7 @@ export default function TwoFactorSetup() {
   const [error, setError]       = useState('');
   const [okMsg, setOkMsg]       = useState('');
   const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null); // texto puro, mostrado 1x
+  const [remaining, setRemaining] = useState<number | null>(null); // códigos de recuperação não usados
   const [copied, setCopied]     = useState(false);
 
   async function refresh() {
@@ -45,6 +46,14 @@ export default function TwoFactorSetup() {
     const { data } = await supabase.auth.mfa.listFactors();
     const verified = (data?.totp || []).find((f: any) => f.status === 'verified');
     setFactorId(verified?.id || null);
+    if (verified) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: p } = await supabase.from('profiles').select('recovery_codes').eq('id', user.id).single();
+        const codes = (p?.recovery_codes as any[]) || [];
+        setRemaining(codes.filter((c) => !c.used).length);
+      }
+    }
     setLoading(false);
   }
 
@@ -166,9 +175,18 @@ export default function TwoFactorSetup() {
           <ShieldCheck size={18} color="#22c55e" />
           <span style={{ color: c.text, fontSize: 14, fontWeight: 600 }}>Verificação em duas etapas ativada</span>
         </div>
-        <p style={{ color: c.textSecondary, fontSize: 13, margin: '0 0 14px', lineHeight: 1.6 }}>
+        <p style={{ color: c.textSecondary, fontSize: 13, margin: '0 0 12px', lineHeight: 1.6 }}>
           Sua conta está protegida: além da senha, o login pede um código do seu app autenticador.
         </p>
+        {remaining !== null && (
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: remaining <= 2 ? 'rgba(239,68,68,0.08)' : c.bg, border: `1px solid ${remaining <= 2 ? '#ef444455' : c.border}`, borderRadius: 8, padding: '7px 12px', marginBottom: 14 }}>
+            <KeyRound size={14} color={remaining <= 2 ? '#ef4444' : c.textSecondary} />
+            <span style={{ fontSize: 13, color: remaining <= 2 ? '#ef4444' : c.textSecondary }}>
+              {remaining} código{remaining === 1 ? '' : 's'} de recuperação restante{remaining === 1 ? '' : 's'}
+              {remaining <= 2 && ' — gere novos'}
+            </span>
+          </div>
+        )}
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button onClick={regenerate} disabled={busy} style={{ ...primaryBtn, background: 'transparent', color: c.text, border: `1px solid ${c.border}`, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
             {busy ? <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} /> : <KeyRound size={15} />} Gerar novos códigos de recuperação
