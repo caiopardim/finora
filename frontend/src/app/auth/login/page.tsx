@@ -15,7 +15,34 @@ export default function LoginPage() {
   const [error, setError]       = useState('');
   const [mode, setMode]         = useState<Mode>('login');
   const [mfaCode, setMfaCode]   = useState('');
+  const [useRecovery, setUseRecovery] = useState(false);
+  const [recoveryCode, setRecoveryCode] = useState('');
+  const [recoveredMsg, setRecoveredMsg] = useState('');
   const router = useRouter();
+
+  async function handleRecover(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true); setError('');
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) { setError('Sessão expirada. Faça login novamente.'); setMode('login'); setLoading(false); return; }
+      const res = await fetch('/api/auth/recover-2fa', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ code: recoveryCode }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) { setError(data.error || 'Código inválido.'); setLoading(false); return; }
+      await supabase.auth.signOut();
+      setLoading(false);
+      setMode('login');
+      setUseRecovery(false); setRecoveryCode(''); setMfaCode(''); setPassword('');
+      setRecoveredMsg('2FA desativado com o código de recuperação. Entre com sua senha e reative o 2FA em Configurações.');
+    } catch {
+      setLoading(false);
+      setError('Erro ao validar o código. Tente novamente.');
+    }
+  }
 
   // Após login por senha, decide se precisa do 2FA (step-up para AAL2)
   async function routeAfterAuth() {
@@ -171,6 +198,12 @@ export default function LoginPage() {
                 <p style={{ color: '#475569', fontSize: 14, margin: 0 }}>Entre para acessar seu dashboard</p>
               </div>
 
+              {recoveredMsg && (
+                <div style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 10, padding: '11px 14px', color: '#4ade80', fontSize: 13, marginBottom: 18, lineHeight: 1.6 }}>
+                  {recoveredMsg}
+                </div>
+              )}
+
               <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
                 <div>
                   <label style={labelStyle}>E-mail</label>
@@ -249,7 +282,7 @@ export default function LoginPage() {
             </div>
           )}
 
-          {mode === 'mfa' && (
+          {mode === 'mfa' && !useRecovery && (
             <div>
               <h1 style={{ fontSize: 24, fontWeight: 800, color: '#fff', margin: '0 0 8px' }}>Verificação em duas etapas</h1>
               <p style={{ color: '#475569', fontSize: 14, lineHeight: 1.7, margin: '0 0 24px' }}>
@@ -271,8 +304,39 @@ export default function LoginPage() {
                 <button type="submit" disabled={loading || mfaCode.length !== 6} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: loading ? 'wait' : 'pointer', opacity: mfaCode.length !== 6 ? 0.6 : 1 }}>
                   {loading ? 'Verificando…' : 'Entrar'} <ArrowRight size={16}/>
                 </button>
+                <button type="button" onClick={() => { setUseRecovery(true); setError(''); }} style={{ background: 'none', border: 'none', color: '#22c55e', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                  Perdi meu autenticador — usar código de recuperação
+                </button>
                 <button type="button" onClick={async () => { await supabase.auth.signOut(); setMode('login'); setMfaCode(''); setError(''); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, margin: '0 auto', background: 'none', border: 'none', color: '#475569', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
                   <ArrowLeft size={15}/> Voltar
+                </button>
+              </form>
+            </div>
+          )}
+
+          {mode === 'mfa' && useRecovery && (
+            <div>
+              <h1 style={{ fontSize: 24, fontWeight: 800, color: '#fff', margin: '0 0 8px' }}>Código de recuperação</h1>
+              <p style={{ color: '#475569', fontSize: 14, lineHeight: 1.7, margin: '0 0 24px' }}>
+                Digite um dos códigos que você salvou ao ativar o 2FA. Ele será usado uma vez e o 2FA será desativado para você reentrar.
+              </p>
+              <form onSubmit={handleRecover} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                <div>
+                  <label style={labelStyle}>Código de recuperação</label>
+                  <input
+                    value={recoveryCode}
+                    onChange={(e) => setRecoveryCode(e.target.value.toUpperCase())}
+                    placeholder="XXXXX-XXXXX"
+                    autoFocus
+                    style={{ ...inputStyle, letterSpacing: 2, textAlign: 'center', fontSize: 18, fontFamily: 'monospace' }}
+                  />
+                </div>
+                {error && <p style={{ color: '#f87171', fontSize: 13, margin: 0 }}>{error}</p>}
+                <button type="submit" disabled={loading || recoveryCode.replace(/[^A-Z0-9]/g, '').length < 10} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: loading ? 'wait' : 'pointer', opacity: recoveryCode.replace(/[^A-Z0-9]/g, '').length < 10 ? 0.6 : 1 }}>
+                  {loading ? 'Validando…' : 'Recuperar acesso'} <ArrowRight size={16}/>
+                </button>
+                <button type="button" onClick={() => { setUseRecovery(false); setRecoveryCode(''); setError(''); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, margin: '0 auto', background: 'none', border: 'none', color: '#475569', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+                  <ArrowLeft size={15}/> Voltar ao código do app
                 </button>
               </form>
             </div>
