@@ -2,9 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Check, User, Shield, MessageSquare, Camera, Loader, Bell, BellOff, Palette, Eye, EyeOff } from 'lucide-react';
+import { Check, User, Shield, MessageSquare, Camera, Loader, Bell, BellOff, Palette, Eye, EyeOff, Download } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 import TwoFactorSetup from '@/components/ui/TwoFactorSetup';
+import DataExport from '@/components/ui/DataExport';
 
 export default function SettingsPage() {
   const { c } = useTheme();
@@ -340,6 +341,10 @@ export default function SettingsPage() {
 
         <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: c.text }}>Verificação em duas etapas (2FA)</h3>
         <TwoFactorSetup />
+      </Section>
+
+      <Section icon={<Download size={17}/>} title="Backup e exportação">
+        <DataExport />
       </Section>
 
       {/* Push notifications */}
