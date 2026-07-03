@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, ArrowRight, ArrowLeft, CheckCircle } from 'lucide-react';
 
-type Mode = 'login' | 'forgot' | 'forgot-sent';
+type Mode = 'login' | 'forgot' | 'forgot-sent' | 'mfa';
 
 export default function LoginPage() {
   const [email, setEmail]       = useState('');
@@ -14,18 +14,51 @@ export default function LoginPage() {
   const [loading, setLoading]   = useState(false);
   const [error, setError]       = useState('');
   const [mode, setMode]         = useState<Mode>('login');
+  const [mfaCode, setMfaCode]   = useState('');
   const router = useRouter();
+
+  // Após login por senha, decide se precisa do 2FA (step-up para AAL2)
+  async function routeAfterAuth() {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+      if (profile?.role === 'admin') { router.push('/admin'); return; }
+    }
+    router.push('/dashboard');
+  }
+
+  async function handleMfa(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true); setError('');
+    try {
+      const { data: factors } = await supabase.auth.mfa.listFactors();
+      const factor = (factors?.totp || []).find((f: any) => f.status === 'verified');
+      if (!factor) { setError('Fator 2FA não encontrado.'); setLoading(false); return; }
+      const { data: ch, error: chErr } = await supabase.auth.mfa.challenge({ factorId: factor.id });
+      if (chErr) { setError('Erro ao validar. Tente novamente.'); setLoading(false); return; }
+      const { error: vErr } = await supabase.auth.mfa.verify({ factorId: factor.id, challengeId: ch.id, code: mfaCode.trim() });
+      if (vErr) { setError('Código inválido. Tente novamente.'); setLoading(false); return; }
+      await routeAfterAuth();
+    } catch {
+      setLoading(false);
+      setError('Erro ao verificar o código.');
+    }
+  }
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true); setError('');
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) { setError('E-mail ou senha incorretos'); setLoading(false); return; }
-    if (data?.user) {
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
-      if (profile?.role === 'admin') { router.push('/admin'); return; }
+
+    // Se a conta tem 2FA, o login sobe para AAL1 e precisa do código (AAL2)
+    const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+    if (aal?.nextLevel === 'aal2' && aal.nextLevel !== aal.currentLevel) {
+      setLoading(false);
+      setMode('mfa');
+      return;
     }
-    router.push('/dashboard');
+    await routeAfterAuth();
   }
 
   async function handleForgot(e: React.FormEvent) {
@@ -213,6 +246,35 @@ export default function LoginPage() {
               <button onClick={() => { setMode('login'); setError(''); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, margin: '0 auto', background: 'none', border: 'none', color: '#22c55e', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
                 <ArrowLeft size={15}/> Voltar ao login
               </button>
+            </div>
+          )}
+
+          {mode === 'mfa' && (
+            <div>
+              <h1 style={{ fontSize: 24, fontWeight: 800, color: '#fff', margin: '0 0 8px' }}>Verificação em duas etapas</h1>
+              <p style={{ color: '#475569', fontSize: 14, lineHeight: 1.7, margin: '0 0 24px' }}>
+                Digite o código de 6 dígitos do seu app autenticador.
+              </p>
+              <form onSubmit={handleMfa} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                <div>
+                  <label style={labelStyle}>Código</label>
+                  <input
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="000000"
+                    inputMode="numeric"
+                    autoFocus
+                    style={{ ...inputStyle, letterSpacing: 6, textAlign: 'center', fontSize: 20 }}
+                  />
+                </div>
+                {error && <p style={{ color: '#f87171', fontSize: 13, margin: 0 }}>{error}</p>}
+                <button type="submit" disabled={loading || mfaCode.length !== 6} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '13px', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: loading ? 'wait' : 'pointer', opacity: mfaCode.length !== 6 ? 0.6 : 1 }}>
+                  {loading ? 'Verificando…' : 'Entrar'} <ArrowRight size={16}/>
+                </button>
+                <button type="button" onClick={async () => { await supabase.auth.signOut(); setMode('login'); setMfaCode(''); setError(''); }} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, margin: '0 auto', background: 'none', border: 'none', color: '#475569', fontWeight: 600, fontSize: 14, cursor: 'pointer' }}>
+                  <ArrowLeft size={15}/> Voltar
+                </button>
+              </form>
             </div>
           )}
         </div>

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Check, User, Shield, MessageSquare, Camera, Loader, Bell, BellOff, Palette, Eye, EyeOff } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
+import TwoFactorSetup from '@/components/ui/TwoFactorSetup';
 
 export default function SettingsPage() {
   const { c } = useTheme();
@@ -334,6 +335,11 @@ export default function SettingsPage() {
             {pwLoading ? 'Alterando...' : 'Alterar senha'}
           </button>
         </form>
+
+        <div style={{ height: 1, background: c.border, margin: '22px 0' }} />
+
+        <h3 style={{ margin: '0 0 12px', fontSize: 14, fontWeight: 700, color: c.text }}>Verificação em duas etapas (2FA)</h3>
+        <TwoFactorSetup />
       </Section>
 
       {/* Push notifications */}

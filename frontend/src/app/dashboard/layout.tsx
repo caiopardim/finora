@@ -60,6 +60,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { router.replace('/auth/login'); return; }
+      // Bloqueia acesso se o 2FA foi iniciado mas não concluído (AAL1 pendente de AAL2)
+      const { data: aal } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+      if (aal?.nextLevel === 'aal2' && aal.nextLevel !== aal.currentLevel) {
+        await supabase.auth.signOut();
+        router.replace('/auth/login');
+        return;
+      }
       supabase.from('profiles').select('name,avatar_url,onboarded,role').eq('id', session.user.id).single()
         .then(({ data: p }) => {
           setUser({ email: session.user.email, name: p?.name, avatar_url: p?.avatar_url, isAdmin: p?.role === 'admin' });

@@ -40,7 +40,7 @@ export default function SegurancaPage() {
           },
           {
             title: '🛡️ Autenticação em dois fatores (2FA)',
-            content: 'A verificação em duas etapas está no nosso roadmap para adicionar uma camada extra de proteção ao login. Enquanto isso, recomendamos fortemente as boas práticas abaixo — especialmente o uso de uma senha forte e exclusiva.',
+            content: 'Disponível! Você pode ativar a verificação em duas etapas em Configurações → Segurança. Com o 2FA, além da senha o login pede um código gerado pelo seu app autenticador (Google Authenticator, Authy, 1Password…) — mesmo que alguém descubra sua senha, não consegue entrar sem o código.',
           },
         ].map((section) => (
           <div key={section.title} style={{ marginBottom: 36 }}>
@@ -55,7 +55,7 @@ export default function SegurancaPage() {
           {[
             { icon: '🔓', title: 'Cuidado com Wi-Fi público', text: 'Evite acessar sua conta em redes Wi-Fi públicas sem uma VPN. Redes abertas podem ser monitoradas por terceiros.' },
             { icon: '🔤', title: 'Use senhas fortes e exclusivas', text: 'Crie uma senha longa, com letras, números e símbolos, e não a reutilize em outros sites. Um gerenciador de senhas ajuda.' },
-            { icon: '📲', title: 'Mantenha o 2FA habilitado', text: 'Assim que a verificação em duas etapas estiver disponível, ative-a. Ela protege sua conta mesmo se a senha vazar.' },
+            { icon: '📲', title: 'Mantenha o 2FA habilitado', text: 'Ative a verificação em duas etapas em Configurações → Segurança. Ela protege sua conta mesmo se a senha vazar.' },
             { icon: '🤫', title: 'Nunca compartilhe códigos', text: 'O Finora nunca vai pedir sua senha ou códigos de verificação por mensagem. Nunca compartilhe esses códigos com ninguém.' },
             { icon: '📱', title: 'Proteja seu WhatsApp', text: 'Como o Finora funciona pelo WhatsApp, mantenha a verificação em duas etapas do próprio WhatsApp ativada e o celular bloqueado.' },
           ].map((tip) => (
