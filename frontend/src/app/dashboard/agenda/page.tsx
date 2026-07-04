@@ -40,19 +40,20 @@ export default function AgendaPage() {
   const [syncMsg, setSyncMsg]   = useState('');
   const [view, setView]         = useState<'month' | 'list'>('month');
   const [upcoming, setUpcoming] = useState<Appt[]>([]);
+  const [undated, setUndated]   = useState<Appt[]>([]);
 
   async function loadUpcoming() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
     const from = dayjs().format('YYYY-MM-DD');
-    const { data } = await supabase
-      .from('appointments')
-      .select('*')
-      .eq('user_id', session.user.id)
-      .gte('date', from)
-      .order('date').order('time', { nullsFirst: true })
-      .limit(300);
-    setUpcoming(data || []);
+    const [up, un] = await Promise.all([
+      supabase.from('appointments').select('*').eq('user_id', session.user.id)
+        .gte('date', from).order('date').order('time', { nullsFirst: true }).limit(300),
+      supabase.from('appointments').select('*').eq('user_id', session.user.id)
+        .is('date', null).order('created_at', { ascending: false }).limit(100),
+    ]);
+    setUpcoming(up.data || []);
+    setUndated(un.data || []);
   }
 
   async function load() {
@@ -151,6 +152,7 @@ export default function AgendaPage() {
     await supabase.from('appointments').update({ done: !a.done }).eq('id', a.id);
     setAppts(prev => prev.map(x => x.id === a.id ? { ...x, done: !x.done } : x));
     setUpcoming(prev => prev.map(x => x.id === a.id ? { ...x, done: !x.done } : x));
+    setUndated(prev => prev.map(x => x.id === a.id ? { ...x, done: !x.done } : x));
   }
 
   async function doDelete() {
@@ -278,7 +280,7 @@ export default function AgendaPage() {
       {/* Visão em LISTA (agenda corrida) */}
       {view === 'list' && (
         <div style={{ background: c.surface, borderRadius: 18, border: `1px solid ${c.border}`, boxShadow: c.shadow, overflow: 'hidden' }}>
-          {upcoming.length === 0 ? (
+          {upcoming.length === 0 && undated.length === 0 ? (
             <p style={{ padding: 40, textAlign: 'center', color: c.textFaint, fontSize: 14, margin: 0 }}>
               Nenhum compromisso a partir de hoje. Crie um novo! 📅
             </p>
@@ -309,6 +311,28 @@ export default function AgendaPage() {
                 ))}
               </div>
             ))
+          )}
+
+          {/* Tarefas sem data de vencimento */}
+          {undated.length > 0 && (
+            <div>
+              <div style={{ padding: '10px 20px', background: c.bg, borderBottom: `1px solid ${c.borderLight}`, display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 13, fontWeight: 700, color: c.textMuted }}>📌 Sem data</span>
+                <span style={{ fontSize: 11, color: c.textFaint }}>({undated.length})</span>
+              </div>
+              {undated.map(a => (
+                <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: `1px solid ${c.borderLight}`, opacity: a.done ? 0.55 : 1 }}>
+                  <button onClick={() => toggleDone(a)} title={a.done ? 'Marcar como pendente' : 'Concluir'} style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${a.done ? '#22c55e' : c.border}`, background: a.done ? '#22c55e' : 'transparent', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12 }}>
+                    {a.done ? '✓' : ''}
+                  </button>
+                  <span style={{ fontSize: 18, flexShrink: 0 }}>{a.icon || '📝'}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: c.text, textDecoration: a.done ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.title}</p>
+                  </div>
+                  <button onClick={() => setConfirmId(a.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: 4, fontSize: 14 }}>✕</button>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}

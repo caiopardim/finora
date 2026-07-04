@@ -200,26 +200,37 @@ async function importTasksFromGoogle(userId: string, accessToken: string, deadli
 
       const rows: any[] = [];
       for (const task of (data.items || [])) {
-        if (!task.id || !task.due) continue; // só tarefas com data (aparecem no calendário)
+        if (!task.id) continue;
         const gid = `gtask_${task.id}`;
         if (knownIds.has(gid)) continue;
-
-        // task.due é data (meia-noite UTC). Trata como data local BR às 09:00.
-        const day = task.due.split('T')[0];
-        const scheduledAt = new Date(`${day}T09:00:00-03:00`).toISOString();
         knownIds.add(gid);
-        const { date } = toLocalBrazil(new Date(scheduledAt));
+
+        let dateVal: string | null;
+        let scheduledAt: string;
+        if (task.due) {
+          // task.due é data (meia-noite UTC). Trata como data local BR às 09:00.
+          const day = task.due.split('T')[0];
+          scheduledAt = new Date(`${day}T09:00:00-03:00`).toISOString();
+          dateVal = toLocalBrazil(new Date(scheduledAt)).date;
+        } else {
+          // Sem data de vencimento → date null (aparece na seção "Sem data" da lista)
+          dateVal = null;
+          scheduledAt = new Date().toISOString();
+        }
+
         rows.push({
           user_id: userId,
           title: task.title || 'Tarefa',
           description: task.notes || null,
           scheduled_at: scheduledAt,
-          date,
+          date: dateVal,
           time: null,
           color: '#f59e0b',
           icon: '📝',
           done: task.status === 'completed',
           google_event_id: gid,
+          // tarefas sem data não devem disparar lembrete (scheduled_at é só sentinela)
+          ...(dateVal ? {} : { reminder_sent_1d: true, reminder_sent_1h: true, reminder_sent_now: true }),
         });
       }
 
