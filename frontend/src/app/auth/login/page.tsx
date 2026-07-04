@@ -51,7 +51,8 @@ export default function LoginPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-      if (profile?.role === 'admin') { router.push('/admin'); return; }
+      // Admin escolhe entre Dashboard e Administração
+      if (profile?.role === 'admin') { router.push('/portal'); return; }
     }
     router.push('/dashboard');
   }
