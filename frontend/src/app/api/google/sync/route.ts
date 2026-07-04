@@ -254,25 +254,6 @@ export async function POST(req: NextRequest) {
     const userId = body.userId;
     if (!userId) return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
 
-    // Diagnóstico das tarefas: retorna a resposta crua da Tasks API
-    if (body.debug === 'tasks') {
-      const accessToken = await getAccessToken(userId);
-      const headers = { Authorization: `Bearer ${accessToken}` };
-      const listsRes = await fetch('https://www.googleapis.com/tasks/v1/users/@me/lists?maxResults=100', { headers });
-      const lists = await listsRes.json();
-      let tasksSample: any = null;
-      if (Array.isArray(lists.items) && lists.items.length) {
-        const tRes = await fetch(`https://www.googleapis.com/tasks/v1/lists/${encodeURIComponent(lists.items[0].id)}/tasks?showCompleted=true&showHidden=true&maxResults=25`, { headers });
-        tasksSample = await tRes.json();
-      }
-      return NextResponse.json({
-        listsStatus: listsRes.status,
-        lists,
-        tasksSample,
-        datedTasks: Array.isArray(tasksSample?.items) ? tasksSample.items.filter((t: any) => t.due).map((t: any) => ({ title: t.title, due: t.due, status: t.status })) : [],
-      });
-    }
-
     // Orçamento de tempo: retorna antes do limite da função serverless
     // (Vercel Hobby corta em ~10s). A importação é incremental e roda primeiro,
     // então o que couber é salvo; o que faltar entra na próxima sync (sem duplicar).
