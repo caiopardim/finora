@@ -8,6 +8,12 @@ html, body {
   max-width: 100%;
 }
 
+/* Esconde os brilhos decorativos no mobile (iOS Safari não clipa 100%,
+   criando uma faixa lateral). Sem perda visual em telas pequenas. */
+@media (max-width: 768px) {
+  .landing-glow { display: none !important; }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;

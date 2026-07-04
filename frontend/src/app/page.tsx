@@ -268,7 +268,7 @@ export default function Home() {
 
       {/* ── Hero ── */}
       <section className="hero-section" style={{ padding: '130px 48px 100px', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: '-10%', left: '50%', transform: 'translateX(-50%)', width: 900, height: 900, borderRadius: '50%', background: 'radial-gradient(circle,rgba(34,197,94,0.07) 0%,transparent 65%)', pointerEvents: 'none' }}/>
+        <div className="landing-glow" style={{ position: 'absolute', top: '-10%', left: '50%', transform: 'translateX(-50%)', width: 900, height: 900, borderRadius: '50%', background: 'radial-gradient(circle,rgba(34,197,94,0.07) 0%,transparent 65%)', pointerEvents: 'none' }}/>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px)', backgroundSize: '64px 64px', pointerEvents: 'none' }}/>
 
         <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative' }}>
@@ -355,7 +355,7 @@ export default function Home() {
 
       {/* ── Feature 1: WhatsApp ── */}
       <section id="como-funciona" className="section-pad" style={{ padding: '120px 48px', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', right: '-5%', top: '50%', transform: 'translateY(-50%)', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle,rgba(34,197,94,0.06) 0%,transparent 70%)', pointerEvents: 'none' }}/>
+        <div className="landing-glow" style={{ position: 'absolute', right: '-5%', top: '50%', transform: 'translateY(-50%)', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle,rgba(34,197,94,0.06) 0%,transparent 70%)', pointerEvents: 'none' }}/>
         <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative' }}>
           <div className="feature-row" style={{ display: 'flex', alignItems: 'center', gap: 100 }}>
             <FadeIn direction="left">
@@ -398,7 +398,7 @@ export default function Home() {
 
       {/* ── Feature 2: Dashboard ── */}
       <section className="section-pad" style={{ padding: '120px 48px', background: 'rgba(255,255,255,0.015)', borderTop: '1px solid rgba(255,255,255,0.05)', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', left: '-5%', top: '50%', transform: 'translateY(-50%)', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle,rgba(99,102,241,0.06) 0%,transparent 70%)', pointerEvents: 'none' }}/>
+        <div className="landing-glow" style={{ position: 'absolute', left: '-5%', top: '50%', transform: 'translateY(-50%)', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle,rgba(99,102,241,0.06) 0%,transparent 70%)', pointerEvents: 'none' }}/>
         <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative' }}>
           <div className="feature-row reverse" style={{ display: 'flex', alignItems: 'center', gap: 100, flexDirection: 'row-reverse' as any }}>
             <FadeIn direction="right">
@@ -442,7 +442,7 @@ export default function Home() {
 
       {/* ── Feature 3: Orçamento e alertas ── */}
       <section className="section-pad" style={{ padding: '120px 48px', position: 'relative', overflow: 'hidden', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ position: 'absolute', right: '-5%', top: '50%', transform: 'translateY(-50%)', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle,rgba(245,158,11,0.05) 0%,transparent 70%)', pointerEvents: 'none' }}/>
+        <div className="landing-glow" style={{ position: 'absolute', right: '-5%', top: '50%', transform: 'translateY(-50%)', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle,rgba(245,158,11,0.05) 0%,transparent 70%)', pointerEvents: 'none' }}/>
         <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative' }}>
           <div className="feature-row" style={{ display: 'flex', alignItems: 'center', gap: 100 }}>
             <FadeIn direction="left">
@@ -485,7 +485,7 @@ export default function Home() {
 
       {/* ── Feature 4: Metas ── */}
       <section className="section-pad" style={{ padding: '120px 48px', background: 'rgba(255,255,255,0.015)', borderTop: '1px solid rgba(255,255,255,0.05)', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', left: '-5%', top: '50%', transform: 'translateY(-50%)', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle,rgba(249,115,22,0.05) 0%,transparent 70%)', pointerEvents: 'none' }}/>
+        <div className="landing-glow" style={{ position: 'absolute', left: '-5%', top: '50%', transform: 'translateY(-50%)', width: 600, height: 600, borderRadius: '50%', background: 'radial-gradient(circle,rgba(249,115,22,0.05) 0%,transparent 70%)', pointerEvents: 'none' }}/>
         <div style={{ maxWidth: 1100, margin: '0 auto', position: 'relative' }}>
           <div className="feature-row reverse" style={{ display: 'flex', alignItems: 'center', gap: 100, flexDirection: 'row-reverse' as any }}>
             <FadeIn direction="right">
@@ -530,7 +530,7 @@ export default function Home() {
 
       {/* ── Feature 5: Como funciona (steps) ── */}
       <section id="funcionalidades" className="section-pad" style={{ padding: '120px 48px', position: 'relative', overflow: 'hidden', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 700, borderRadius: '50%', background: 'radial-gradient(circle,rgba(34,197,94,0.05) 0%,transparent 70%)', pointerEvents: 'none' }}/>
+        <div className="landing-glow" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 700, height: 700, borderRadius: '50%', background: 'radial-gradient(circle,rgba(34,197,94,0.05) 0%,transparent 70%)', pointerEvents: 'none' }}/>
         <div style={{ maxWidth: 1000, margin: '0 auto', textAlign: 'center', position: 'relative' }}>
           <FadeIn>
             <p style={{ fontSize: 12, fontWeight: 700, color: '#22c55e', letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 16 }}>Como funciona</p>
@@ -684,7 +684,7 @@ export default function Home() {
 
       {/* ── CTA Final ── */}
       <section className="section-pad" style={{ padding: '120px 48px', textAlign: 'center', position: 'relative', overflow: 'hidden', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 800, height: 800, borderRadius: '50%', background: 'radial-gradient(circle,rgba(34,197,94,0.07) 0%,transparent 65%)', pointerEvents: 'none' }}/>
+        <div className="landing-glow" style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: 800, height: 800, borderRadius: '50%', background: 'radial-gradient(circle,rgba(34,197,94,0.07) 0%,transparent 65%)', pointerEvents: 'none' }}/>
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px)', backgroundSize: '64px 64px', pointerEvents: 'none' }}/>
         <FadeIn>
           <div style={{ maxWidth: 560, margin: '0 auto', position: 'relative' }}>
