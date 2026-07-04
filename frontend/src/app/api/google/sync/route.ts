@@ -161,6 +161,82 @@ async function importFromGoogle(userId: string, accessToken: string, syncedMap: 
   return imported;
 }
 
+// Importa as TAREFAS (Google Tasks — API separada dos eventos) que têm data
+async function importTasksFromGoogle(userId: string, accessToken: string, deadline: number): Promise<number> {
+  const headers = { Authorization: `Bearer ${accessToken}` };
+
+  // Lista de listas de tarefas
+  const listsRes = await fetch('https://www.googleapis.com/tasks/v1/users/@me/lists?maxResults=100', { headers });
+  const listsData = await listsRes.json();
+  if (listsData.error) {
+    // Token sem escopo de tasks (usuário precisa reconectar) → ignora silenciosamente
+    console.error('[google-sync] tasks lists error:', JSON.stringify(listsData.error));
+    return 0;
+  }
+  const taskLists: string[] = (listsData.items || []).map((l: any) => l.id);
+  if (!taskLists.length) return 0;
+
+  // IDs já conhecidos (dedup) — tarefas usam prefixo gtask_
+  const { data: existingAppts } = await getAdmin()
+    .from('appointments').select('google_event_id').eq('user_id', userId);
+  const knownIds = new Set<string>((existingAppts || []).map((a: any) => a.google_event_id).filter(Boolean));
+
+  const admin = getAdmin();
+  let imported = 0;
+
+  for (const listId of taskLists) {
+    if (Date.now() > deadline) break;
+    let pageToken: string | undefined;
+    do {
+      const url = new URL(`https://www.googleapis.com/tasks/v1/lists/${encodeURIComponent(listId)}/tasks`);
+      url.searchParams.set('showCompleted', 'true');
+      url.searchParams.set('showHidden', 'false');
+      url.searchParams.set('maxResults', '100');
+      if (pageToken) url.searchParams.set('pageToken', pageToken);
+
+      const res = await fetch(url.toString(), { headers });
+      const data = await res.json();
+      if (data.error) { console.error('[google-sync] tasks error:', JSON.stringify(data.error)); break; }
+
+      const rows: any[] = [];
+      for (const task of (data.items || [])) {
+        if (!task.id || !task.due) continue; // só tarefas com data (aparecem no calendário)
+        const gid = `gtask_${task.id}`;
+        if (knownIds.has(gid)) continue;
+
+        // task.due é data (meia-noite UTC). Trata como data local BR às 09:00.
+        const day = task.due.split('T')[0];
+        const scheduledAt = new Date(`${day}T09:00:00-03:00`).toISOString();
+        knownIds.add(gid);
+        const { date } = toLocalBrazil(new Date(scheduledAt));
+        rows.push({
+          user_id: userId,
+          title: task.title || 'Tarefa',
+          description: task.notes || null,
+          scheduled_at: scheduledAt,
+          date,
+          time: null,
+          color: '#f59e0b',
+          icon: '📝',
+          done: task.status === 'completed',
+          google_event_id: gid,
+        });
+      }
+
+      for (let i = 0; i < rows.length; i += 100) {
+        const { error } = await admin.from('appointments').insert(rows.slice(i, i + 100));
+        if (error) console.error('[google-sync] task insert error:', JSON.stringify(error));
+        else imported += Math.min(100, rows.length - i);
+      }
+
+      pageToken = data.nextPageToken;
+    } while (pageToken && Date.now() <= deadline);
+  }
+
+  console.log(`[google-sync] tasks imported: ${imported}`);
+  return imported;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await req.json();
@@ -176,8 +252,10 @@ export async function POST(req: NextRequest) {
       .from('user_google_tokens').select('synced_events').eq('user_id', userId).single();
     const syncedMap: Record<string, string> = tokenRow?.synced_events || {};
 
-    // 1. Import Google → Finora
-    const imported = await importFromGoogle(userId, accessToken, syncedMap, deadline);
+    // 1. Import Google → Finora (eventos + tarefas)
+    const importedEvents = await importFromGoogle(userId, accessToken, syncedMap, deadline);
+    const importedTasks = await importTasksFromGoogle(userId, accessToken, deadline);
+    const imported = importedEvents + importedTasks;
 
     // 2. Push Finora → Google (apenas compromissos não importados do Google)
     const today = new Date().toISOString().slice(0, 10);
