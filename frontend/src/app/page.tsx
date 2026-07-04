@@ -533,7 +533,7 @@ export default function Home() {
             <h2 style={{ fontSize: 44, fontWeight: 800, color: '#fff', margin: '0 0 14px', letterSpacing: '-1.5px' }}>Em 3 passos simples</h2>
             <p style={{ fontSize: 17, color: '#475569', margin: '0 0 72px' }}>Sem configuração complicada. Começa hoje, funciona amanhã.</p>
           </FadeIn>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 24 }}>
             {[
               { step: '01', icon: '📱', title: 'Adiciona o número', desc: 'Salva o contato da Finora no seu WhatsApp. Só isso.' },
               { step: '02', icon: '💬', title: 'Manda mensagem', desc: '"Gastei R$ 50 no mercado" — e eu registro na hora.' },

@@ -151,7 +151,8 @@
       "Bash(openssl x509 *)",
       "Bash(curl -sI http://meufinora.com.br)",
       "Bash(node -e \"require\\('xlsx'\\); require\\('jspdf'\\); require\\('jspdf-autotable'\\); console.log\\('libs OK'\\)\")",
-      "Bash(grep -noE \"gridTemplateColumns: '[^']*'|maxWidth: [0-9]+|width: '[0-9]+px'|fontSize: [0-9]{2,}\" src/app/page.tsx)"
+      "Bash(grep -noE \"gridTemplateColumns: '[^']*'|maxWidth: [0-9]+|width: '[0-9]+px'|fontSize: [0-9]{2,}\" src/app/page.tsx)",
+      "Bash(curl -s -o /dev/null -w \"home HTTP %{http_code}\\\\n\" http://localhost:3000/)"
     ]
   }
 }
