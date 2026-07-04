@@ -38,6 +38,22 @@ export default function AgendaPage() {
   const [googleConnected, setGoogleConnected] = useState(false);
   const [syncing, setSyncing]   = useState(false);
   const [syncMsg, setSyncMsg]   = useState('');
+  const [view, setView]         = useState<'month' | 'list'>('month');
+  const [upcoming, setUpcoming] = useState<Appt[]>([]);
+
+  async function loadUpcoming() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const from = dayjs().format('YYYY-MM-DD');
+    const { data } = await supabase
+      .from('appointments')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .gte('date', from)
+      .order('date').order('time', { nullsFirst: true })
+      .limit(300);
+    setUpcoming(data || []);
+  }
 
   async function load() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -72,6 +88,30 @@ export default function AgendaPage() {
   }
 
   useEffect(() => { load(); }, [currentMonth]);
+  useEffect(() => { if (view === 'list') loadUpcoming(); }, [view]);
+
+  // Auto-sync silencioso ao abrir a agenda (no máximo 1x a cada 30 min)
+  useEffect(() => {
+    if (!googleConnected) return;
+    const key = 'finora-agenda-autosync';
+    const last = Number(localStorage.getItem(key) || 0);
+    if (Date.now() - last < 30 * 60 * 1000) return;
+    localStorage.setItem(key, String(Date.now()));
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      try {
+        const res = await fetch('/api/google/sync', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: session.user.id }) });
+        const d = await res.json();
+        if (d?.imported) {
+          await load();
+          if (view === 'list') await loadUpcoming();
+          setSyncMsg(`${d.imported} novo(s) compromisso(s) do Google ✅`);
+          setTimeout(() => setSyncMsg(''), 5000);
+        }
+      } catch { /* silencioso */ }
+    })();
+  }, [googleConnected]);
 
   function openCreate() {
     setEditing(null);
@@ -104,11 +144,13 @@ export default function AgendaPage() {
     }
     setShowForm(false);
     load();
+    if (view === 'list') loadUpcoming();
   }
 
   async function toggleDone(a: Appt) {
     await supabase.from('appointments').update({ done: !a.done }).eq('id', a.id);
     setAppts(prev => prev.map(x => x.id === a.id ? { ...x, done: !x.done } : x));
+    setUpcoming(prev => prev.map(x => x.id === a.id ? { ...x, done: !x.done } : x));
   }
 
   async function doDelete() {
@@ -116,6 +158,7 @@ export default function AgendaPage() {
     await supabase.from('appointments').delete().eq('id', confirmId);
     setConfirmId(null);
     load();
+    if (view === 'list') loadUpcoming();
   }
 
   async function connectGoogle() {
@@ -222,7 +265,55 @@ export default function AgendaPage() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', gap: 20, alignItems: 'start' }} className="agenda-grid">
+      {/* Toggle Calendário / Lista */}
+      <div style={{ display: 'inline-flex', gap: 4, background: c.surface, border: `1px solid ${c.border}`, borderRadius: 10, padding: 4, marginBottom: 20 }}>
+        {([['month', '📅 Calendário'], ['list', '📋 Lista']] as const).map(([v, label]) => (
+          <button key={v} onClick={() => setView(v)} style={{
+            padding: '7px 16px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+            background: view === v ? '#6366f1' : 'transparent', color: view === v ? '#fff' : c.textMuted,
+          }}>{label}</button>
+        ))}
+      </div>
+
+      {/* Visão em LISTA (agenda corrida) */}
+      {view === 'list' && (
+        <div style={{ background: c.surface, borderRadius: 18, border: `1px solid ${c.border}`, boxShadow: c.shadow, overflow: 'hidden' }}>
+          {upcoming.length === 0 ? (
+            <p style={{ padding: 40, textAlign: 'center', color: c.textFaint, fontSize: 14, margin: 0 }}>
+              Nenhum compromisso a partir de hoje. Crie um novo! 📅
+            </p>
+          ) : (
+            Object.entries(
+              upcoming.reduce((acc: Record<string, Appt[]>, a) => { (acc[a.date] ||= []).push(a); return acc; }, {})
+            ).map(([date, items]) => (
+              <div key={date}>
+                <div style={{ padding: '10px 20px', background: c.bg, borderBottom: `1px solid ${c.borderLight}`, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: date === today ? '#6366f1' : c.text, textTransform: 'capitalize' }}>
+                    {dayjs(date).locale('pt-br').format('ddd, DD [de] MMMM')}
+                  </span>
+                  {date === today && <span style={{ fontSize: 11, fontWeight: 700, color: '#6366f1', background: '#6366f120', padding: '2px 8px', borderRadius: 99 }}>hoje</span>}
+                </div>
+                {items.map(a => (
+                  <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: `1px solid ${c.borderLight}`, opacity: a.done ? 0.55 : 1 }}>
+                    <button onClick={() => toggleDone(a)} title={a.done ? 'Marcar como pendente' : 'Concluir'} style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${a.done ? '#22c55e' : c.border}`, background: a.done ? '#22c55e' : 'transparent', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12 }}>
+                      {a.done ? '✓' : ''}
+                    </button>
+                    <span style={{ fontSize: 18, flexShrink: 0 }}>{a.icon || '📅'}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ margin: 0, fontSize: 14, fontWeight: 600, color: c.text, textDecoration: a.done ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.title}</p>
+                      {a.time && <p style={{ margin: 0, fontSize: 12, color: c.textFaint }}>{a.time.slice(0, 5)}</p>}
+                    </div>
+                    <button onClick={() => openEdit(a)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.textFaint, padding: 4 }}>✏️</button>
+                    <button onClick={() => setConfirmId(a.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444', padding: 4, fontSize: 14 }}>✕</button>
+                  </div>
+                ))}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      <div style={{ display: view === 'month' ? 'grid' : 'none', gridTemplateColumns: 'minmax(0,1fr)', gap: 20, alignItems: 'start' }} className="agenda-grid">
 
         {/* Calendar */}
         <div style={{ background: c.surface, borderRadius: 18, border: `1px solid ${c.border}`, padding: 24, boxShadow: c.shadow }}>

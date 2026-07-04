@@ -81,7 +81,11 @@ async function importFromGoogle(userId: string, accessToken: string, syncedMap: 
   const calListRes = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=50', { headers });
   const calListData = await calListRes.json();
   if (calListData.error) { console.error('[google-sync] calendarList error:', JSON.stringify(calListData.error)); }
-  let calendars: string[] = (calListData.items || []).map((c: any) => c.id);
+  // Ignora calendários de feriados/aniversários/semana/clima (ruído), mantém os do usuário
+  const isNoise = (id: string) => /holiday|#contacts|weeknum|#weather|birthday/i.test(id || '');
+  let calendars: string[] = (calListData.items || [])
+    .filter((c: any) => !isNoise(c.id))
+    .map((c: any) => c.id);
   if (!calendars.length) calendars.push('primary');
   // Prioriza o calendário principal
   calendars = ['primary', ...calendars.filter((c) => c !== 'primary')];
