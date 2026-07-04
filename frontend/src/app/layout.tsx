@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/lib/theme-context';
 import CookieConsent from '@/components/ui/CookieConsent';
+import SentryInit from '@/components/SentryInit';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -35,6 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className={inter.className}>
+        <SentryInit />
         <ThemeProvider>{children}</ThemeProvider>
         <CookieConsent />
       </body>

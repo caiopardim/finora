@@ -1,10 +1,22 @@
 import ws from 'ws';
 (global as any).WebSocket = ws;
 
-import { NestFactory } from '@nestjs/core';
+import * as Sentry from '@sentry/node';
+
+// Monitoramento de erros (inerte até definir SENTRY_DSN)
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV || 'production',
+    tracesSampleRate: 0.1,
+  });
+}
+
+import { NestFactory, HttpAdapterHost } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { SentryExceptionFilter } from './common/sentry-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -29,6 +41,8 @@ async function bootstrap() {
   });
   app.setGlobalPrefix('api');
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
+  const { httpAdapter } = app.get(HttpAdapterHost);
+  app.useGlobalFilters(new SentryExceptionFilter(httpAdapter));
 
   const config = new DocumentBuilder()
     .setTitle('Finora API')
