@@ -72,24 +72,34 @@ function toLocalBrazil(d: Date) {
 }
 
 async function importFromGoogle(userId: string, accessToken: string, syncedMap: Record<string, string>, deadline: number) {
-  const timeMin = new Date().toISOString();
-  const timeMax = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString();
+  // Janela ampla: 1 ano atrás → 1 ano à frente, para puxar TUDO (não só o futuro)
+  const timeMin = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString();
+  const timeMax = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
   const headers = { Authorization: `Bearer ${accessToken}` };
 
   // Fetch all calendars the user has access to
   const calListRes = await fetch('https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=50', { headers });
   const calListData = await calListRes.json();
-  if (calListData.error) { console.error('[google-sync] calendarList error:', calListData.error); }
+  if (calListData.error) { console.error('[google-sync] calendarList error:', JSON.stringify(calListData.error)); }
   let calendars: string[] = (calListData.items || []).map((c: any) => c.id);
   if (!calendars.length) calendars.push('primary');
-  // Prioriza o calendário principal para caber no orçamento de tempo
+  // Prioriza o calendário principal
   calendars = ['primary', ...calendars.filter((c) => c !== 'primary')];
   console.log(`[google-sync] calendars found: ${calendars.length}`);
 
-  // Fetch events from all calendars (respeitando o orçamento de tempo)
-  const events: any[] = [];
+  // IDs já conhecidos (para não duplicar)
+  const { data: existingAppts } = await getAdmin()
+    .from('appointments').select('google_event_id').eq('user_id', userId);
+  const knownIds = new Set<string>((existingAppts || []).map((a: any) => a.google_event_id).filter(Boolean));
+  Object.values(syncedMap).forEach((id) => knownIds.add(id as string));
+
+  const admin = getAdmin();
+  let imported = 0;
+
+  // Busca e insere de forma INCREMENTAL (por página) — se o tempo estourar,
+  // o que já entrou fica salvo e a próxima sync continua de onde parou.
   for (const calId of calendars) {
-    if (Date.now() > deadline) { console.log('[google-sync] deadline atingido no fetch de calendários'); break; }
+    if (Date.now() > deadline) { console.log('[google-sync] deadline no loop de calendários'); break; }
     let pageToken: string | undefined;
     do {
       const url = new URL(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calId)}/events`);
@@ -102,57 +112,48 @@ async function importFromGoogle(userId: string, accessToken: string, syncedMap: 
 
       const res = await fetch(url.toString(), { headers });
       const data = await res.json();
-      if (data.error) { console.error(`[google-sync] events error for ${calId}:`, data.error); break; }
-      events.push(...(data.items || []));
+      if (data.error) { console.error(`[google-sync] events error for ${calId}:`, JSON.stringify(data.error)); break; }
+
+      const rows: any[] = [];
+      for (const event of (data.items || [])) {
+        if (!event.id || knownIds.has(event.id)) continue;
+        if (event.status === 'cancelled') continue;
+
+        let scheduledAt: string;
+        if (event.start?.dateTime) {
+          scheduledAt = new Date(event.start.dateTime).toISOString();
+        } else if (event.start?.date) {
+          scheduledAt = new Date(`${event.start.date}T09:00:00-03:00`).toISOString();
+        } else continue;
+
+        knownIds.add(event.id); // evita duplicar dentro da mesma execução
+        const { date, time } = toLocalBrazil(new Date(scheduledAt));
+        rows.push({
+          user_id: userId,
+          title: event.summary || 'Compromisso',
+          description: event.description || null,
+          scheduled_at: scheduledAt,
+          date,
+          time: event.start?.dateTime ? time : null,
+          color: '#4285f4',
+          icon: '📅',
+          done: false,
+          google_event_id: event.id,
+        });
+      }
+
+      // Insere esta página imediatamente
+      for (let i = 0; i < rows.length; i += 100) {
+        const { error } = await admin.from('appointments').insert(rows.slice(i, i + 100));
+        if (error) console.error('[google-sync] insert error:', JSON.stringify(error));
+        else imported += Math.min(100, rows.length - i);
+      }
+
       pageToken = data.nextPageToken;
     } while (pageToken && Date.now() <= deadline);
   }
-  console.log(`[google-sync] total events fetched across all calendars: ${events.length}`);
 
-  // Get already-imported google_event_ids
-  const { data: existingAppts } = await getAdmin()
-    .from('appointments').select('google_event_id').eq('user_id', userId);
-  const existingGoogleIds = new Set((existingAppts || []).map((a: any) => a.google_event_id).filter(Boolean));
-  const finoraExportedIds = new Set(Object.values(syncedMap));
-
-  // Build rows
-  const toInsert: any[] = [];
-  for (const event of events) {
-    if (finoraExportedIds.has(event.id)) continue;
-    if (existingGoogleIds.has(event.id)) continue;
-
-    let scheduledAt: string;
-    if (event.start?.dateTime) {
-      scheduledAt = new Date(event.start.dateTime).toISOString();
-    } else if (event.start?.date) {
-      scheduledAt = new Date(`${event.start.date}T09:00:00-03:00`).toISOString();
-    } else continue;
-
-    const { date, time } = toLocalBrazil(new Date(scheduledAt));
-    toInsert.push({
-      user_id:         userId,
-      title:           event.summary || 'Compromisso',
-      description:     event.description || null,
-      scheduled_at:    scheduledAt,
-      date,
-      time:            event.start?.dateTime ? time : null,
-      color:           '#4285f4',
-      icon:            '📅',
-      done:            false,
-      google_event_id: event.id,
-    });
-  }
-
-  console.log(`[google-sync] total fetched: ${events.length}, existingIds: ${existingGoogleIds.size}, finoraIds: ${finoraExportedIds.size}, toInsert: ${toInsert.length}`);
-
-  // Batch insert in chunks of 100
-  let imported = 0;
-  for (let i = 0; i < toInsert.length; i += 100) {
-    const { error } = await getAdmin().from('appointments').insert(toInsert.slice(i, i + 100));
-    if (error) console.error('[google-sync] insert error:', JSON.stringify(error));
-    else imported += Math.min(100, toInsert.length - i);
-  }
-
+  console.log(`[google-sync] imported total: ${imported}`);
   return imported;
 }
 
@@ -162,9 +163,9 @@ export async function POST(req: NextRequest) {
     if (!userId) return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
 
     // Orçamento de tempo: retorna antes do limite da função serverless
-    // (Vercel Hobby corta em ~10s). Assim a sync nunca dá timeout — o que não
-    // couber fica para a próxima sincronização.
-    const deadline = Date.now() + 8000;
+    // (Vercel Hobby corta em ~10s). A importação é incremental e roda primeiro,
+    // então o que couber é salvo; o que faltar entra na próxima sync (sem duplicar).
+    const deadline = Date.now() + 9000;
 
     const accessToken = await getAccessToken(userId);
     const { data: tokenRow } = await getAdmin()
