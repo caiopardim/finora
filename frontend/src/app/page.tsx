@@ -18,7 +18,11 @@ function useInView(threshold = 0.1) {
 
 function FadeIn({ children, delay = 0, direction = 'up' }: { children: React.ReactNode; delay?: number; direction?: 'up' | 'left' | 'right' | 'none' }) {
   const { ref, visible } = useInView();
-  const tx = direction === 'up' ? '0,30px' : direction === 'left' ? '-30px,0' : direction === 'right' ? '30px,0' : '0,0';
+  // No mobile, evita deslocamento horizontal (que pode parecer "descentralizado" ao rolar)
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => { setIsMobile(window.matchMedia('(max-width: 768px)').matches); }, []);
+  const dir = isMobile && (direction === 'left' || direction === 'right') ? 'up' : direction;
+  const tx = dir === 'up' ? '0,30px' : dir === 'left' ? '-30px,0' : dir === 'right' ? '30px,0' : '0,0';
   return (
     <div ref={ref} style={{ opacity: visible ? 1 : 0, transform: visible ? 'translate(0,0)' : `translate(${tx})`, transition: `opacity 0.7s ease ${delay}ms, transform 0.7s ease ${delay}ms` }}>
       {children}
