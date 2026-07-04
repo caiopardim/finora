@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Impede qualquer scroll horizontal / faixa fantasma em toda a app */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
