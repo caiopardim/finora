@@ -66,6 +66,81 @@ export class ScheduledReportsService {
     }
   }
 
+  // ── Resumo diário proativo — todo dia às 7:00 ──────────────────────────────
+  @Cron('0 7 * * *', { name: 'dailySummary', timeZone: 'America/Sao_Paulo' })
+  async sendDailySummaries() {
+    this.logger.log('[Cron] Iniciando envio de resumos diários...');
+    try {
+      const { data: users } = await this.supabase
+        .from('profiles')
+        .select('id, phone, name, monthly_income')
+        .eq('paid', true)
+        .not('phone', 'is', null)
+        .limit(500);
+
+      for (const user of users || []) {
+        try {
+          await this.sendDailySummary(user.id, user.phone, user.name, user.monthly_income);
+        } catch (err) {
+          this.logger.error(`Failed to send daily summary to ${user.phone}`, err.message);
+        }
+      }
+    } catch (err) {
+      this.logger.error('sendDailySummaries failed', err.message);
+    }
+  }
+
+  private async sendDailySummary(userId: string, phone: string, name: string, monthlyIncome: number): Promise<void> {
+    const today = dayjs().format('YYYY-MM-DD');
+    const monthStart = dayjs().startOf('month').format('YYYY-MM-DD');
+
+    const [apptsRes, billsRes, txRes] = await Promise.all([
+      this.supabase.from('appointments').select('title, time, done').eq('user_id', userId).eq('date', today).order('time', { nullsFirst: false }),
+      this.supabase.from('bills').select('description, amount').eq('user_id', userId).eq('paid', false).eq('due_date', today),
+      this.supabase.from('transactions').select('type, amount').eq('user_id', userId).gte('date', monthStart).lte('date', today),
+    ]);
+
+    const appts = (apptsRes.data || []).filter((a: any) => !a.done);
+    const bills = billsRes.data || [];
+    const txs = txRes.data || [];
+
+    const income = txs.filter((t: any) => t.type === 'income').reduce((s: number, t: any) => s + Number(t.amount), 0);
+    const expense = txs.filter((t: any) => t.type === 'expense').reduce((s: number, t: any) => s + Number(t.amount), 0);
+    const balance = income - expense;
+
+    // Alerta de orçamento: gastou muito da renda no mês?
+    const spentPct = monthlyIncome > 0 ? (expense / monthlyIncome) * 100 : 0;
+    const budgetWarning = monthlyIncome > 0 && spentPct >= 80;
+
+    // Só envia se houver algo relevante (evita spam diário)
+    if (appts.length === 0 && bills.length === 0 && !budgetWarning) return;
+
+    const money = (n: number) => n.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+    let msg = `☀️ *Bom dia${name ? `, ${name.split(' ')[0]}` : ''}!* Seu resumo de hoje:\n`;
+
+    if (appts.length > 0) {
+      msg += `\n📅 *Compromissos de hoje:*\n`;
+      msg += appts.map((a: any) => `• ${a.time ? a.time.slice(0, 5) + ' — ' : ''}${a.title}`).join('\n') + '\n';
+    }
+
+    if (bills.length > 0) {
+      const total = bills.reduce((s: number, b: any) => s + Number(b.amount), 0);
+      msg += `\n💳 *Vence hoje:*\n`;
+      msg += bills.map((b: any) => `• ${b.description} — R$ ${money(Number(b.amount))}`).join('\n') + '\n';
+      if (bills.length > 1) msg += `_Total: R$ ${money(total)}_\n`;
+    }
+
+    msg += `\n💰 Saldo do mês até agora: *R$ ${money(balance)}*\n`;
+
+    if (budgetWarning) {
+      msg += `\n⚠️ Você já usou *${spentPct.toFixed(0)}%* da sua renda este mês. Segura o ritmo! 💪\n`;
+    }
+
+    msg += `\nTenha um ótimo dia! 🐷`;
+
+    await this.whatsapp.sendMessage(phone, msg);
+  }
+
   // ── Relatório mensal personalizado ─────────────────────────────────────────
   private async sendPersonalizedMonthlyReport(
     userId: string,
