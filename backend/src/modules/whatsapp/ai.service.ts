@@ -19,6 +19,7 @@ export interface MessageIntent {
     | 'create_appointment'
     | 'list_appointments'
     | 'delete_transaction'
+    | 'edit_transaction'
     | 'create_goal'
     | 'list_goals'
     | 'add_goal_progress'
@@ -42,6 +43,7 @@ export interface MessageIntent {
   query?: string;
   appointment?: { title: string; description?: string; scheduledAt: string };
   delete?: { description?: string; amount?: number; date?: string };
+  edit?: { description?: string; amount?: number; new_amount?: number; new_description?: string; new_category?: string; new_date?: string };
   goal?: { name: string; target_amount: number; deadline?: string; icon?: string };
   goal_progress?: { name: string; amount: number };
   bill?: { description: string; amount: number; due_date: string; is_recurring: boolean; recurrence_interval?: 'weekly' | 'monthly' | 'yearly' };
@@ -104,6 +106,19 @@ Use para: "gastei", "paguei", "comprei", "recebi", "ganhei", "entrou".
   }
 }
 Use para: "cancela", "apaga", "exclui", "desfaz", "errei", "lancei errado".
+
+{
+  "action": "edit_transaction",
+  "edit": {
+    "description": string (nome da transação existente que quer corrigir),
+    "amount": number (valor atual, se mencionado, para localizar),
+    "new_amount": number (novo valor, se for mudar),
+    "new_description": string (novo nome, se for mudar),
+    "new_category": string (nova categoria, se for mudar),
+    "new_date": "YYYY-MM-DD" (nova data, se for mudar)
+  }
+}
+Use quando o usuário quer CORRIGIR/ALTERAR uma transação já lançada (sem apagar): "muda o mercado de 50 pra 45", "na verdade o uber foi 30", "corrige o salário para 3200", "troca a categoria do lanche para alimentação". Preencha só os campos "new_*" que ele quer mudar.
 
 ━━━ RELATÓRIOS / CONSULTAS ━━━
 {
@@ -269,7 +284,10 @@ Use para: "quando atinjo minha meta", "quanto tempo falta", "simula minha meta",
 - "Gastei 45 no mercado" → register_transaction, expense, Alimentação
 - "Recebi 3500 de salário" → register_transaction, income, Salário
 - "Quanto gastei este mês?" → query_report
-- "Cancela o mercado" → delete_transaction
+- "Cancela o mercado" → delete_transaction, delete: {description: "mercado"}
+- "Muda o mercado de 50 pra 45" → edit_transaction, edit: {description: "mercado", amount: 50, new_amount: 45}
+- "Na verdade o uber foi 30" → edit_transaction, edit: {description: "uber", new_amount: 30}
+- "Troca a categoria do lanche para alimentação" → edit_transaction, edit: {description: "lanche", new_category: "Alimentação"}
 - "Dentista sexta às 10h" → create_appointment
 - "Quero juntar 10000 para viagem em dezembro" → create_goal
 - "Guardei 500 para a viagem" → add_goal_progress

@@ -342,6 +342,45 @@ export class WhatsappService {
           break;
         }
 
+        case 'edit_transaction': {
+          const { edit } = intent;
+          if (!edit?.description) {
+            await this.sendMessage(normalizedPhone, `❓ Qual transação você quer corrigir? Ex: _"muda o mercado de 50 pra 45"_`);
+            break;
+          }
+          const tx = await this.transactions.findRecentByDescription(user.id, edit.description, edit.amount);
+          if (!tx) {
+            await this.sendMessage(normalizedPhone, `❌ Não encontrei nenhuma transação com *"${edit.description}"*.\n\nVerifique no dashboard ou tente com outro termo.`);
+            break;
+          }
+
+          const updates: any = {};
+          if (edit.new_amount != null) updates.amount = edit.new_amount;
+          if (edit.new_description) updates.description = edit.new_description;
+          if (edit.new_date) updates.date = edit.new_date;
+          if (edit.new_category) updates.category_name = edit.new_category;
+
+          if (Object.keys(updates).length === 0) {
+            await this.sendMessage(normalizedPhone, `❓ O que você quer mudar em *"${tx.description}"*? (valor, nome, categoria ou data)`);
+            break;
+          }
+
+          const oldAmt = Number(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          const updated = await this.transactions.update(user.id, tx.id, updates);
+          const newAmt = Number(updated.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+          const changes: string[] = [];
+          if (updates.amount != null) changes.push(`💸 R$ ${oldAmt} → *R$ ${newAmt}*`);
+          if (updates.description) changes.push(`📝 ${tx.description} → *${updated.description}*`);
+          if (updates.category_name) changes.push(`🏷️ categoria → *${updated.categories?.name || edit.new_category}*`);
+          if (updates.date) changes.push(`📅 → *${new Date(updated.date + 'T12:00:00').toLocaleDateString('pt-BR')}*`);
+
+          await this.sendMessage(normalizedPhone,
+            `✏️ *Transação atualizada!*\n\n${changes.join('\n')}`,
+          );
+          break;
+        }
+
         case 'create_appointment': {
           const { appointment } = intent;
           const created = await this.appointments.create(user.id, {

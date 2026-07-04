@@ -93,9 +93,22 @@ export class TransactionsService {
   async update(userId: string, id: string, dto: Partial<CreateTransactionDto>) {
     await this.findOne(userId, id);
 
+    const payload: any = { ...dto };
+    // Resolve categoria por nome (category_name) para category_id, como no create
+    if (payload.category_name) {
+      const { data: cat } = await this.supabase
+        .from('categories')
+        .select('id')
+        .eq('user_id', userId)
+        .ilike('name', payload.category_name)
+        .single();
+      if (cat?.id) payload.category_id = cat.id;
+      delete payload.category_name;
+    }
+
     const { data, error } = await this.supabase
       .from('transactions')
-      .update({ ...dto, updated_at: new Date().toISOString() })
+      .update({ ...payload, updated_at: new Date().toISOString() })
       .eq('user_id', userId)
       .eq('id', id)
       .select('*, categories(name, icon, color)')
