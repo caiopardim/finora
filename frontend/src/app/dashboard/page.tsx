@@ -131,7 +131,7 @@ export default function DashboardPage() {
 
   useEffect(() => { load(); }, []);
 
-  if (loading) return <Spinner />;
+  if (loading) return <DashboardSkeleton />;
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', minWidth: 0, width: '100%' }}>
@@ -387,7 +387,16 @@ export default function DashboardPage() {
           Ver todas <ArrowUpRight size={14}/>
         </a>
       }>
-        {transactions.length ? <TxList txs={transactions} onRefresh={load}/> : <Empty text="Nenhuma transação ainda. Clique em Nova Transação!"/>}
+        {transactions.length ? <TxList txs={transactions} onRefresh={load}/> : (
+          <div style={{ textAlign: 'center', padding: '32px 16px' }}>
+            <div style={{ fontSize: 40, marginBottom: 10 }}>💸</div>
+            <p style={{ color: c.text, fontSize: 15, fontWeight: 600, margin: '0 0 4px' }}>Nenhuma transação ainda</p>
+            <p style={{ color: c.textFaint, fontSize: 13, margin: '0 0 18px' }}>Registre seu primeiro lançamento pra começar a organizar suas finanças.</p>
+            <button onClick={() => openAdd()} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 11, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}>
+              <Plus size={16}/> Adicionar primeiro lançamento
+            </button>
+          </div>
+        )}
       </Card>
 
       {showAdd && <AddTransactionModal initialType={addType} onClose={() => setShowAdd(false)} onSuccess={() => { setShowAdd(false); load(); }}/>}
@@ -479,9 +488,49 @@ function TxList({ txs, onRefresh }: { txs: any[]; onRefresh: () => void }) {
   );
 }
 
-function Spinner() {
+function Skel({ h = 16, w = '100%', r = 8, style = {} }: { h?: number | string; w?: number | string; r?: number; style?: React.CSSProperties }) {
   const { c } = useTheme();
-  return <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:300, color:c.textFaint, fontSize:14 }}>Carregando...</div>;
+  return <div style={{ height: h, width: w, borderRadius: r, background: c.border, opacity: 0.5, animation: 'skel-pulse 1.4s ease-in-out infinite', ...style }} />;
+}
+
+function DashboardSkeleton() {
+  const { c } = useTheme();
+  const card: React.CSSProperties = { background: c.surface, borderRadius: 16, border: `1px solid ${c.border}`, padding: 20 };
+  return (
+    <div>
+      <style>{`@keyframes skel-pulse { 0%,100%{opacity:0.4} 50%{opacity:0.7} }`}</style>
+      <Skel h={12} w={160} style={{ marginBottom: 20 }} />
+      {/* Stat cards */}
+      <div className="grid-stats" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 16, marginBottom: 24 }}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} style={card}>
+            <Skel h={10} w={70} style={{ marginBottom: 16 }} />
+            <Skel h={22} w={110} style={{ marginBottom: 10 }} />
+            <Skel h={16} w={80} r={99} />
+          </div>
+        ))}
+      </div>
+      {/* Charts */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))', gap: 16, marginBottom: 24 }}>
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} style={{ ...card, height: 260 }}>
+            <Skel h={14} w={140} style={{ marginBottom: 20 }} />
+            <Skel h={170} w="100%" r={12} />
+          </div>
+        ))}
+      </div>
+      <div style={{ ...card }}>
+        <Skel h={14} w={140} style={{ marginBottom: 18 }} />
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0' }}>
+            <Skel h={36} w={36} r={10} />
+            <div style={{ flex: 1 }}><Skel h={12} w="60%" style={{ marginBottom: 6 }} /><Skel h={10} w="35%" /></div>
+            <Skel h={14} w={70} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 function Empty({ text }: { text: string }) {
   const { c } = useTheme();
