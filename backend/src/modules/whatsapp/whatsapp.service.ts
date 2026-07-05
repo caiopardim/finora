@@ -24,6 +24,8 @@ export class WhatsappService {
   private readonly dashboardUrl: string;
   // Pending delete confirmations: phone -> { txId, description, amount, date }
   private readonly pendingDeletes = new Map<string, { txId: string; description: string; amount: number; date: string }>();
+  // Última transação registrada por telefone (para "apaga esse", "muda o último")
+  private readonly lastTransaction = new Map<string, { id: string; description: string; amount: number }>();
   // Pending duplicate confirmations: phone -> pending transaction data
   private readonly pendingDuplicates = new Map<string, { type: string; amount: number; description: string; category: string; date: string; duplicateDesc: string; duplicateAgo: string }>();
   // Onboarding flow: phone -> { stage, income?, fixedExpenses?, debts? }
@@ -287,6 +289,7 @@ export class WhatsappService {
             raw_message: message,
           });
           this.logger.log(`[5] Transaction created: ${created?.id}`);
+          if (created?.id) this.lastTransaction.set(normalizedPhone, { id: created.id, description: transaction.description, amount: transaction.amount });
 
           const transactionId = created?.id as string;
           const verb = transaction.type === 'expense' ? 'Novo Gasto Registrado' : 'Nova Receita Registrada';
@@ -360,13 +363,21 @@ export class WhatsappService {
 
         case 'delete_transaction': {
           const { delete: del } = intent;
-          if (!del?.description) {
-            await this.sendMessage(normalizedPhone, `❓ Qual transação você quer excluir? Me diga o nome ou valor, ex:\n_"Cancela o mercado"_ ou _"Apaga o gasto de R$ 50"_`);
-            break;
+          const isRef = (s?: string) => !s || /^(esse|este|essa|esta|isso|isto|[uú]ltimo|[uú]ltima|anterior|esse a[ií]|o de agora)\b/i.test(s.trim());
+          let tx: any = null;
+          if (isRef(del?.description)) {
+            // "apaga esse" / "exclui o último" → usa a última transação registrada
+            const last = this.lastTransaction.get(normalizedPhone);
+            if (last) tx = await this.transactions.findOne(user.id, last.id).catch(() => null);
+            if (!tx) {
+              await this.sendMessage(normalizedPhone, `❓ Qual transação você quer excluir? Me diga o nome ou valor, ex:\n_"Cancela o mercado"_ ou _"Apaga o gasto de R$ 50"_`);
+              break;
+            }
+          } else {
+            tx = await this.transactions.findRecentByDescription(user.id, del!.description!, del?.amount);
           }
-          const tx = await this.transactions.findRecentByDescription(user.id, del.description, del.amount);
           if (!tx) {
-            await this.sendMessage(normalizedPhone, `❌ Não encontrei nenhuma transação com *"${del.description}"*.\n\nVerifique no dashboard ou tente com outro termo.`);
+            await this.sendMessage(normalizedPhone, `❌ Não encontrei nenhuma transação com *"${del?.description}"*.\n\nVerifique no dashboard ou tente com outro termo.`);
             break;
           }
           const fmtAmt = Number(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -379,13 +390,20 @@ export class WhatsappService {
 
         case 'edit_transaction': {
           const { edit } = intent;
-          if (!edit?.description) {
-            await this.sendMessage(normalizedPhone, `❓ Qual transação você quer corrigir? Ex: _"muda o mercado de 50 pra 45"_`);
-            break;
+          const isRefE = (s?: string) => !s || /^(esse|este|essa|esta|isso|isto|[uú]ltimo|[uú]ltima|anterior|esse a[ií]|o de agora)\b/i.test(s.trim());
+          let tx: any = null;
+          if (isRefE(edit?.description)) {
+            const last = this.lastTransaction.get(normalizedPhone);
+            if (last) tx = await this.transactions.findOne(user.id, last.id).catch(() => null);
+            if (!tx) {
+              await this.sendMessage(normalizedPhone, `❓ Qual transação você quer corrigir? Ex: _"muda o mercado de 50 pra 45"_`);
+              break;
+            }
+          } else {
+            tx = await this.transactions.findRecentByDescription(user.id, edit!.description!, edit?.amount);
           }
-          const tx = await this.transactions.findRecentByDescription(user.id, edit.description, edit.amount);
           if (!tx) {
-            await this.sendMessage(normalizedPhone, `❌ Não encontrei nenhuma transação com *"${edit.description}"*.\n\nVerifique no dashboard ou tente com outro termo.`);
+            await this.sendMessage(normalizedPhone, `❌ Não encontrei nenhuma transação com *"${edit?.description}"*.\n\nVerifique no dashboard ou tente com outro termo.`);
             break;
           }
 

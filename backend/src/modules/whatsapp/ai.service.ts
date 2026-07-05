@@ -299,6 +299,8 @@ Use para: "quando atinjo minha meta", "quanto tempo falta", "simula minha meta",
 - "Muda o mercado de 50 pra 45" → edit_transaction, edit: {description: "mercado", amount: 50, new_amount: 45}
 - "Na verdade o uber foi 30" → edit_transaction, edit: {description: "uber", new_amount: 30}
 - "Troca a categoria do lanche para alimentação" → edit_transaction, edit: {description: "lanche", new_category: "Alimentação"}
+- "Apaga esse" / "Exclui o último" → delete_transaction, delete: {description: "esse"} (refere-se à última transação)
+- "Muda esse pra 45" / "O último foi 30 na verdade" → edit_transaction, edit: {description: "esse", new_amount: 45} (refere-se à última)
 - "Dentista sexta às 10h" → create_appointment
 - "Quero juntar 10000 para viagem em dezembro" → create_goal
 - "Guardei 500 para a viagem" → add_goal_progress
