@@ -366,14 +366,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   );
                 })}
                 {user?.isAdmin && (
-                  <Link href="/admin" onClick={() => setShowMoreMenu(false)} style={{
+                  <Link href="/portal" onClick={() => setShowMoreMenu(false)} style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                     padding: '16px 8px', textDecoration: 'none', color: '#818cf8',
                   }}>
                     <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(99,102,241,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Shield size={20} color="#818cf8"/>
+                      <RefreshCw size={20} color="#818cf8"/>
                     </div>
-                    <span style={{ fontSize: 11, fontWeight: 600, textAlign: 'center' }}>Admin</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, textAlign: 'center' }}>Trocar área</span>
                   </Link>
                 )}
               </div>
@@ -417,9 +417,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           })}
 
           {user?.isAdmin && (
-            <Link href="/admin" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, textDecoration: 'none', background: 'rgba(99,102,241,0.12)', color: '#818cf8', fontWeight: 600, fontSize: 14, marginTop: 8, border: '1px solid rgba(99,102,241,0.2)' }}>
-              <Shield size={17}/>
-              Painel Admin
+            <Link href="/portal" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, textDecoration: 'none', background: 'rgba(99,102,241,0.12)', color: '#818cf8', fontWeight: 600, fontSize: 14, marginTop: 8, border: '1px solid rgba(99,102,241,0.2)' }}>
+              <RefreshCw size={17}/>
+              Trocar área
               <span style={{ marginLeft: 'auto', fontSize: 9, padding: '2px 6px', borderRadius: 99, background: '#6366f1', color: '#fff', fontWeight: 700 }}>ADM</span>
             </Link>
           )}

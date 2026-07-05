@@ -308,9 +308,14 @@ export default function AdminPage() {
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontSize: 26, fontWeight: 800, color: c.text, margin: '0 0 4px' }}>Painel Administrativo</h1>
-        <p style={{ color: c.textFaint, fontSize: 14, margin: 0 }}>Gerencie usuários, envie avisos e controle o sistema</p>
+      <div style={{ marginBottom: 24, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div>
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: c.text, margin: '0 0 4px' }}>Painel Administrativo</h1>
+          <p style={{ color: c.textFaint, fontSize: 14, margin: 0 }}>Gerencie usuários, envie avisos e controle o sistema</p>
+        </div>
+        <a href="/portal" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: 10, textDecoration: 'none', background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)', color: '#6366f1', fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
+          <RefreshCw size={15}/> Trocar área
+        </a>
       </div>
 
       {/* Tabs */}
