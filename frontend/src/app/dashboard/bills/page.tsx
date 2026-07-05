@@ -8,6 +8,7 @@ import { useRef } from 'react';
 import dayjs from 'dayjs';
 import { useTheme } from '@/lib/theme-context';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import { toast, toastError } from '@/lib/toast';
 const uuidv4 = () => crypto.randomUUID();
 
 function fmtDisplay(raw: string): string {
@@ -111,7 +112,7 @@ export default function BillsPage() {
         recurrent: form.tipo === 'recurrent',
         category_id: form.category_id || null,
       }).eq('id', editing.id);
-      if (error) { alert(error.message); return; }
+      if (error) { toastError(error.message); return; }
     } else if (form.tipo === 'installment') {
       const n = parseInt(form.installments) || 2;
       const group = uuidv4();
@@ -125,7 +126,7 @@ export default function BillsPage() {
         installment_group: group,
       }));
       const { error } = await supabase.from('bills').insert(rows);
-      if (error) { alert(error.message); return; }
+      if (error) { toastError(error.message); return; }
     } else {
       const { error } = await supabase.from('bills').insert({
         ...base,
@@ -133,16 +134,18 @@ export default function BillsPage() {
         installments: 1,
         installment_number: 1,
       });
-      if (error) { alert(error.message); return; }
+      if (error) { toastError(error.message); return; }
     }
 
     setShowForm(false);
+    toast(editing ? 'Fatura atualizada!' : 'Fatura cadastrada!');
     load();
   }
 
   async function togglePaid(bill: Bill) {
     const paid = !bill.paid;
     await supabase.from('bills').update({ paid, paid_date: paid ? dayjs().format('YYYY-MM-DD') : null }).eq('id', bill.id);
+    toast(paid ? 'Marcada como paga ✅' : 'Marcada como pendente', 'info');
     load();
   }
 
@@ -158,6 +161,7 @@ export default function BillsPage() {
     if (!confirmInstallments) return;
     await supabase.from('bills').delete().eq('installment_group', confirmInstallments.installment_group!);
     setConfirmInstallments(null);
+    toast('Parcelas removidas', 'info');
     load();
   }
 
@@ -167,6 +171,7 @@ export default function BillsPage() {
     await supabase.from('bills').delete().eq('id', bill.id);
     setConfirmInstallments(null);
     setConfirmBill(null);
+    toast('Fatura removida', 'info');
     load();
   }
 

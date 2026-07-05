@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
 import { useTheme } from '@/lib/theme-context';
+import { toast } from '@/lib/toast';
 import { Plus, X, Check, Pencil, Trash2 } from 'lucide-react';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 
@@ -69,6 +70,7 @@ export default function WalletsPage() {
     setShowForm(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+    toast(editing ? 'Conta atualizada!' : 'Conta criada!');
     load();
   }
 
@@ -76,6 +78,7 @@ export default function WalletsPage() {
     if (!confirmId) return;
     await supabase.from('wallets').delete().eq('id', confirmId);
     setConfirmId(null);
+    toast('Conta removida', 'info');
     load();
   }
 

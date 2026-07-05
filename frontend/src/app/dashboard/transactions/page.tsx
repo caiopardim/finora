@@ -7,6 +7,7 @@ import AddTransactionModal from '@/components/ui/AddTransactionModal';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
+import { toast, toastError } from '@/lib/toast';
 
 function fmt(v: number) { return formatCurrency(v); }
 
@@ -316,7 +317,7 @@ export default function TransactionsPage() {
               if (!session) return;
               await supabase.from('transactions').delete().eq('id', confirmDeleteId).eq('user_id', session.user.id);
               await supabase.from('recurring_templates').update({ active: false }).eq('id', confirmDeleteTx.recurring_template_id).eq('user_id', session.user.id);
-              setConfirmDeleteId(null); setConfirmDeleteTx(null); load();
+              setConfirmDeleteId(null); setConfirmDeleteTx(null); toast('Transação excluída e recorrência cancelada', 'info'); load();
             }}
             onCancel={() => { setConfirmDeleteId(null); setConfirmDeleteTx(null); }}
           />
@@ -329,8 +330,8 @@ export default function TransactionsPage() {
               const { data: { session } } = await supabase.auth.getSession();
               if (!session) return;
               const { error } = await supabase.from('transactions').delete().eq('id', confirmDeleteId).eq('user_id', session.user.id);
-              if (error) { alert('Erro ao excluir: ' + error.message); return; }
-              setConfirmDeleteId(null); setConfirmDeleteTx(null); load();
+              if (error) { toastError('Erro ao excluir: ' + error.message); return; }
+              setConfirmDeleteId(null); setConfirmDeleteTx(null); toast('Transação excluída', 'info'); load();
             }}
             onCancel={() => { setConfirmDeleteId(null); setConfirmDeleteTx(null); }}
           />

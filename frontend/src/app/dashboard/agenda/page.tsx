@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useTheme } from '@/lib/theme-context';
+import { toast } from '@/lib/toast';
 import { Plus, X, Check, Clock, ChevronLeft, ChevronRight, Pencil, Trash2, RefreshCw, CalendarDays, Unlink } from 'lucide-react';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import dayjs from 'dayjs';
@@ -145,6 +146,7 @@ export default function AgendaPage() {
       await supabase.from('appointments').insert({ ...payload, user_id: session.user.id, done: false });
     }
     setShowForm(false);
+    toast(editing ? 'Compromisso atualizado!' : 'Compromisso criado!');
     load();
     if (view === 'list') loadUpcoming();
   }
@@ -160,6 +162,7 @@ export default function AgendaPage() {
     if (!confirmId) return;
     await supabase.from('appointments').delete().eq('id', confirmId);
     setConfirmId(null);
+    toast('Compromisso removido', 'info');
     load();
     if (view === 'list') loadUpcoming();
   }

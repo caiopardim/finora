@@ -6,6 +6,7 @@ import { formatCurrency } from '@/lib/utils';
 import { Plus, X, TrendingUp, Trash2, Pencil } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import { toast, toastError } from '@/lib/toast';
 
 const GOAL_ICONS   = ['🎯','🏠','🚗','✈️','📱','💻','💍','📚','🎓','🌴','💰','🏋️','🐾','🎵','🎮'];
 const GOAL_COLORS  = ['#6366f1','#f97316','#10b981','#3b82f6','#ec4899','#eab308','#8b5cf6','#06b6d4'];
@@ -44,9 +45,10 @@ export default function GoalsPage() {
       color: form.color,
       current_amount: 0,
     });
-    if (error) { console.error('goals insert error:', error); alert(error.message); return; }
+    if (error) { console.error('goals insert error:', error); toastError(error.message); return; }
     setShowCreate(false);
     setForm({ name: '', target_amount: '', deadline: '', icon: '🎯', color: '#6366f1' });
+    toast('Meta criada!');
     load();
   }
 
@@ -71,8 +73,9 @@ export default function GoalsPage() {
       icon: editForm.icon,
       color: editForm.color,
     }).eq('id', showEdit.id);
-    if (error) { alert(error.message); return; }
+    if (error) { toastError(error.message); return; }
     setShowEdit(null);
+    toast('Meta atualizada!');
     load();
   }
 
@@ -83,6 +86,7 @@ export default function GoalsPage() {
     await supabase.from('goals').update({ current_amount: newAmount }).eq('id', showProgress.id);
     setShowProgress(null);
     setProgressAmount('');
+    toast('Progresso adicionado! 🎯');
     load();
   }
 
@@ -180,7 +184,7 @@ export default function GoalsPage() {
           title="Excluir meta?"
           message="Esta meta e todo o seu progresso serão removidos permanentemente."
           confirmLabel="Excluir"
-          onConfirm={async () => { await supabase.from('goals').delete().eq('id', confirmDeleteId); setConfirmDeleteId(null); load(); }}
+          onConfirm={async () => { await supabase.from('goals').delete().eq('id', confirmDeleteId); setConfirmDeleteId(null); toast('Meta removida', 'info'); load(); }}
           onCancel={() => setConfirmDeleteId(null)}
         />
       )}

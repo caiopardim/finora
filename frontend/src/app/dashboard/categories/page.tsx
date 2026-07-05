@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
 import { Plus, X, Check, Pencil, Trash2 } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
+import { toast } from '@/lib/toast';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 
 const ICONS  = ['🍔','🚗','🏠','💊','🎮','📚','👕','📱','🔧','📦','💼','💻','📈','💰','✈️','🎵','🐾','⚽','🎓','🌴'];
@@ -42,6 +43,7 @@ export default function CategoriesPage() {
       await supabase.from('categories').insert({ ...payload, user_id: session.user.id });
     }
     setShowForm(false);
+    toast(editing ? 'Categoria atualizada!' : 'Categoria criada!');
     load();
   }
 
@@ -53,6 +55,7 @@ export default function CategoriesPage() {
     if (!confirmDelete) return;
     await supabase.from('categories').delete().eq('id', confirmDelete);
     setConfirmDelete(null);
+    toast('Categoria removida', 'info');
     load();
   }
 
