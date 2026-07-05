@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
 import { Plus, X, TrendingUp, Trash2, Pencil } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { toast, toastError } from '@/lib/toast';
 
@@ -108,7 +109,7 @@ export default function GoalsPage() {
       </div>
 
       {loading ? (
-        <p style={{ textAlign: 'center', color: c.textFaint, padding: 48 }}>Carregando...</p>
+        <ListSkeleton/>
       ) : goals.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '60px 0', background: c.surface, borderRadius: 16, border: `2px dashed ${c.border}` }}>
           <p style={{ fontSize: 40, marginBottom: 12 }}>🎯</p>

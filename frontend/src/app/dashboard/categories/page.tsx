@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
 import { Plus, X, Check, Pencil, Trash2 } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 import { toast } from '@/lib/toast';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 
@@ -80,7 +81,7 @@ export default function CategoriesPage() {
         </button>
       </div>
 
-      {loading ? <p style={{ textAlign: 'center', color: c.textFaint, padding: 48 }}>Carregando...</p> : (
+      {loading ? <ListSkeleton/> : (
         <>
           {[{ title: 'Despesas 💸', group: expenses }, { title: 'Receitas 💰', group: incomes }].map(({ title, group }) => (
             <div key={title} style={{ marginBottom: 32 }}>

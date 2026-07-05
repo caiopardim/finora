@@ -7,6 +7,7 @@ import AddTransactionModal from '@/components/ui/AddTransactionModal';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 import { toast, toastError } from '@/lib/toast';
 
 function fmt(v: number) { return formatCurrency(v); }
@@ -253,7 +254,7 @@ export default function TransactionsPage() {
 
       <div style={{ background: c.surface, borderRadius: 16, border: `1px solid ${c.border}`, boxShadow: c.shadow, overflow: 'hidden' }}>
         {loading ? (
-          <p style={{ textAlign: 'center', padding: 40, color: c.textFaint, fontSize: 14 }}>Carregando...</p>
+          <ListSkeleton/>
         ) : transactions.length === 0 ? (
           <p style={{ textAlign: 'center', padding: 48, color: c.textFaint, fontSize: 14 }}>Nenhuma transação encontrada.</p>
         ) : (

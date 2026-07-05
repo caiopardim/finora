@@ -7,6 +7,7 @@ import { Plus, X, Check, Trash2, Pencil, AlertCircle, CreditCard } from 'lucide-
 import { useRef } from 'react';
 import dayjs from 'dayjs';
 import { useTheme } from '@/lib/theme-context';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { toast, toastError } from '@/lib/toast';
 const uuidv4 = () => crypto.randomUUID();
@@ -237,7 +238,7 @@ export default function BillsPage() {
       {/* List */}
       <div style={{ background: c.surface, borderRadius: 16, border: `1px solid ${c.border}`, overflow: 'hidden' }}>
         {loading ? (
-          <p style={{ textAlign: 'center', padding: 48, color: c.textFaint }}>Carregando...</p>
+          <ListSkeleton/>
         ) : filtered.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '48px 0' }}>
             <p style={{ fontSize: 36, marginBottom: 8 }}>🎉</p>

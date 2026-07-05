@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
 import { useTheme } from '@/lib/theme-context';
+import { ListSkeleton } from '@/components/ui/Skeleton';
 import { toast } from '@/lib/toast';
 import { Plus, X, Check, Pencil, Trash2 } from 'lucide-react';
 import ConfirmModal from '@/components/ui/ConfirmModal';
@@ -110,7 +111,7 @@ export default function WalletsPage() {
         <p style={{ margin: '6px 0 0', fontSize: 12, opacity: 0.7 }}>{wallets.length} conta{wallets.length !== 1 ? 's' : ''} cadastrada{wallets.length !== 1 ? 's' : ''}</p>
       </div>
 
-      {loading ? <p style={{ textAlign: 'center', padding: 48, color: c.textFaint }}>Carregando...</p> : (
+      {loading ? <ListSkeleton/> : (
         <>
           {wallets.length === 0 ? (
             <div style={{ background: c.surface, borderRadius: 18, border: `1px solid ${c.border}`, padding: '48px 24px', textAlign: 'center' }}>
