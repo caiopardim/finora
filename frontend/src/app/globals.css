@@ -2,9 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Impede qualquer scroll horizontal / faixa fantasma em toda a app */
+/* Impede scroll horizontal / faixa fantasma sem quebrar position: sticky.
+   overflow-x: clip corta o excesso mas NÃO cria contexto de scroll (ao
+   contrário de hidden), então a sidebar sticky continua funcionando. */
 html, body {
-  overflow-x: hidden;
+  overflow-x: clip;
   max-width: 100%;
 }
 
