@@ -30,6 +30,7 @@ export interface MessageIntent {
     | 'ask_advice'
     | 'financial_diagnosis'
     | 'economy_suggestions'
+    | 'help'
     | 'simulate_goal'
     | 'create_shopping_list'
     | 'add_shopping_items'
@@ -279,6 +280,11 @@ Use para: "me dá dica de economia", "como economizar", "onde cortei gastos", "o
 }
 Use para: "quando atinjo minha meta", "quanto tempo falta", "simula minha meta", "em quanto tempo consigo", "quando consigo juntar para".
 
+{
+  "action": "help"
+}
+Use quando a pessoa quer saber o que você faz, pede ajuda geral, manda uma saudação isolada, ou está começando: "oi", "olá", "menu", "ajuda", "o que você faz", "como funciona", "o que posso fazer", "quais comandos", "começar", "help".
+
 ━━━ DESCONHECIDO ━━━
 {
   "action": "unknown"
@@ -309,6 +315,7 @@ Use para: "quando atinjo minha meta", "quanto tempo falta", "simula minha meta",
 - "Contas a pagar" → list_bills
 - "Paguei a conta de luz" → mark_bill_paid
 - "Como estou financeiramente?" → ask_advice
+- "Oi" / "O que você faz?" / "Menu" / "Ajuda" → help
 - "Me ajuda a organizar minha vida financeira" → financial_diagnosis
 - "Me dá uma dica de economia" → economy_suggestions
 - "Quando atinjo minha meta de viagem?" → simulate_goal, goal_name: "viagem"

@@ -998,6 +998,23 @@ export class WhatsappService {
           break;
         }
 
+        case 'help': {
+          const firstName = (user.name || '').split(' ')[0];
+          await this.sendMessage(normalizedPhone,
+            `👋 Oi${firstName ? `, ${firstName}` : ''}! Eu sou o Finora — seu assistente financeiro aqui no WhatsApp. É só falar naturalmente que eu cuido do resto. Veja o que posso fazer:\n\n` +
+            `💸 *Registrar gastos e receitas*\n_"Gastei 50 no mercado"_ · _"Recebi 3.000 de salário"_\n_"Paguei 100 de luz e 80 de água"_ (vários de uma vez!)\n\n` +
+            `✏️ *Corrigir ou apagar*\n_"Muda o mercado pra 45"_ · _"Apaga esse"_\n\n` +
+            `📊 *Consultar*\n_"Quanto gastei este mês?"_ · _"Como estou financeiramente?"_\n\n` +
+            `📅 *Agenda*\n_"Agenda dentista quinta às 10h"_ · _"Meus compromissos"_\n\n` +
+            `🎯 *Metas e contas*\n_"Criar meta de 5.000 pra viagem"_ · _"Cadastra a fatura do cartão dia 10"_\n\n` +
+            `🛒 *Lista de compras*\n_"Vou ao mercado"_ · _"Adiciona arroz, feijão, leite"_\n\n` +
+            `💡 *Dicas e organização*\n_"Me dá uma dica de economia"_ · _"Me ajuda a organizar minha vida financeira"_\n\n` +
+            `📈 Todo dia de manhã te mando um resumo do seu dia. E você também acessa tudo no dashboard: *${this.dashboardUrl}*\n\n` +
+            `Pode mandar ver! 🐷`,
+          );
+          break;
+        }
+
         default:
           await this.sendMessage(
             normalizedPhone,
