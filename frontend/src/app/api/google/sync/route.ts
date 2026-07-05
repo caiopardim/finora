@@ -254,6 +254,26 @@ export async function POST(req: NextRequest) {
     const userId = body.userId;
     if (!userId) return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
 
+    // Diagnóstico: varre TODAS as listas de tarefas e retorna tudo que a API devolve
+    if (body.debug === 'tasks') {
+      const accessToken = await getAccessToken(userId);
+      const headers = { Authorization: `Bearer ${accessToken}` };
+      const listsRes = await fetch('https://www.googleapis.com/tasks/v1/users/@me/lists?maxResults=100', { headers });
+      const lists = await listsRes.json();
+      const perList: any[] = [];
+      for (const l of (lists.items || [])) {
+        const tRes = await fetch(`https://www.googleapis.com/tasks/v1/lists/${encodeURIComponent(l.id)}/tasks?showCompleted=true&showHidden=true&maxResults=100`, { headers });
+        const t = await tRes.json();
+        perList.push({
+          listTitle: l.title,
+          count: Array.isArray(t.items) ? t.items.length : 0,
+          tasks: (t.items || []).map((x: any) => ({ title: x.title, due: x.due || null, status: x.status, hidden: x.hidden || false, parent: x.parent || null })),
+          error: t.error || null,
+        });
+      }
+      return NextResponse.json({ listsStatus: listsRes.status, listsCount: (lists.items || []).length, perList });
+    }
+
     // Orçamento de tempo: retorna antes do limite da função serverless
     // (Vercel Hobby corta em ~10s). A importação é incremental e roda primeiro,
     // então o que couber é salvo; o que faltar entra na próxima sync (sem duplicar).
