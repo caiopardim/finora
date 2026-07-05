@@ -41,6 +41,7 @@ export default function AgendaPage() {
   const [view, setView]         = useState<'month' | 'list'>('month');
   const [upcoming, setUpcoming] = useState<Appt[]>([]);
   const [undated, setUndated]   = useState<Appt[]>([]);
+  const [hideCompleted, setHideCompleted] = useState(false);
 
   async function loadUpcoming() {
     const { data: { session } } = await supabase.auth.getSession();
@@ -223,7 +224,10 @@ export default function AgendaPage() {
     if (!a.time) return 1;
     if (!b.time) return -1;
     return a.time.localeCompare(b.time);
-  });
+  }).filter(a => !hideCompleted || !a.done);
+
+  const upcomingView = hideCompleted ? upcoming.filter(a => !a.done) : upcoming;
+  const undatedView  = hideCompleted ? undated.filter(a => !a.done)  : undated;
 
   const inputStyle: React.CSSProperties = {
     display: 'block', width: '100%', padding: '10px 12px',
@@ -267,26 +271,32 @@ export default function AgendaPage() {
         </div>
       )}
 
-      {/* Toggle Calendário / Lista */}
-      <div style={{ display: 'inline-flex', gap: 4, background: c.surface, border: `1px solid ${c.border}`, borderRadius: 10, padding: 4, marginBottom: 20 }}>
-        {([['month', '📅 Calendário'], ['list', '📋 Lista']] as const).map(([v, label]) => (
-          <button key={v} onClick={() => setView(v)} style={{
-            padding: '7px 16px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
-            background: view === v ? '#6366f1' : 'transparent', color: view === v ? '#fff' : c.textMuted,
-          }}>{label}</button>
-        ))}
+      {/* Toggle Calendário / Lista + Ocultar concluídas */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+        <div style={{ display: 'inline-flex', gap: 4, background: c.surface, border: `1px solid ${c.border}`, borderRadius: 10, padding: 4 }}>
+          {([['month', '📅 Calendário'], ['list', '📋 Lista']] as const).map(([v, label]) => (
+            <button key={v} onClick={() => setView(v)} style={{
+              padding: '7px 16px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+              background: view === v ? '#6366f1' : 'transparent', color: view === v ? '#fff' : c.textMuted,
+            }}>{label}</button>
+          ))}
+        </div>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 7, cursor: 'pointer', color: c.textMuted, fontSize: 13, fontWeight: 500, userSelect: 'none' }}>
+          <input type="checkbox" checked={hideCompleted} onChange={(e) => setHideCompleted(e.target.checked)} style={{ cursor: 'pointer', accentColor: '#6366f1' }} />
+          Ocultar concluídas
+        </label>
       </div>
 
       {/* Visão em LISTA (agenda corrida) */}
       {view === 'list' && (
         <div style={{ background: c.surface, borderRadius: 18, border: `1px solid ${c.border}`, boxShadow: c.shadow, overflow: 'hidden' }}>
-          {upcoming.length === 0 && undated.length === 0 ? (
+          {upcomingView.length === 0 && undatedView.length === 0 ? (
             <p style={{ padding: 40, textAlign: 'center', color: c.textFaint, fontSize: 14, margin: 0 }}>
-              Nenhum compromisso a partir de hoje. Crie um novo! 📅
+              {hideCompleted ? 'Nenhum compromisso pendente. 🎉' : 'Nenhum compromisso a partir de hoje. Crie um novo! 📅'}
             </p>
           ) : (
             Object.entries(
-              upcoming.reduce((acc: Record<string, Appt[]>, a) => { (acc[a.date] ||= []).push(a); return acc; }, {})
+              upcomingView.reduce((acc: Record<string, Appt[]>, a) => { (acc[a.date] ||= []).push(a); return acc; }, {})
             ).map(([date, items]) => (
               <div key={date}>
                 <div style={{ padding: '10px 20px', background: c.bg, borderBottom: `1px solid ${c.borderLight}`, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -314,13 +324,13 @@ export default function AgendaPage() {
           )}
 
           {/* Tarefas sem data de vencimento */}
-          {undated.length > 0 && (
+          {undatedView.length > 0 && (
             <div>
               <div style={{ padding: '10px 20px', background: c.bg, borderBottom: `1px solid ${c.borderLight}`, display: 'flex', alignItems: 'center', gap: 8 }}>
                 <span style={{ fontSize: 13, fontWeight: 700, color: c.textMuted }}>📌 Sem data</span>
-                <span style={{ fontSize: 11, color: c.textFaint }}>({undated.length})</span>
+                <span style={{ fontSize: 11, color: c.textFaint }}>({undatedView.length})</span>
               </div>
-              {undated.map(a => (
+              {undatedView.map(a => (
                 <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px', borderBottom: `1px solid ${c.borderLight}`, opacity: a.done ? 0.55 : 1 }}>
                   <button onClick={() => toggleDone(a)} title={a.done ? 'Marcar como pendente' : 'Concluir'} style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${a.done ? '#22c55e' : c.border}`, background: a.done ? '#22c55e' : 'transparent', cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12 }}>
                     {a.done ? '✓' : ''}
