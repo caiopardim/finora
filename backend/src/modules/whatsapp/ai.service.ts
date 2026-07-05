@@ -15,6 +15,7 @@ export interface ParsedTransaction {
 export interface MessageIntent {
   action:
     | 'register_transaction'
+    | 'register_multiple'
     | 'query_report'
     | 'create_appointment'
     | 'list_appointments'
@@ -40,6 +41,7 @@ export interface MessageIntent {
     | 'complete_shopping_list'
     | 'unknown';
   transaction?: ParsedTransaction;
+  transactions?: ParsedTransaction[];
   query?: string;
   appointment?: { title: string; description?: string; scheduledAt: string };
   delete?: { description?: string; amount?: number; date?: string };
@@ -96,6 +98,14 @@ Analise a mensagem e retorne um JSON com UMA das ações abaixo:
   }
 }
 Use para: "gastei", "paguei", "comprei", "recebi", "ganhei", "entrou".
+
+{
+  "action": "register_multiple",
+  "transactions": [
+    { "type": "income" | "expense", "amount": number, "category": string, "description": string, "date": "YYYY-MM-DD" }
+  ]
+}
+Use quando a mensagem tem VÁRIAS transações de uma vez: "gastei 50 no mercado e 30 no uber", "paguei 100 de luz, 80 de água e recebi 500". Crie um item para cada.
 
 {
   "action": "delete_transaction",
@@ -283,6 +293,7 @@ Use para: "quando atinjo minha meta", "quanto tempo falta", "simula minha meta",
 ━━━ EXEMPLOS ━━━
 - "Gastei 45 no mercado" → register_transaction, expense, Alimentação
 - "Recebi 3500 de salário" → register_transaction, income, Salário
+- "Gastei 50 no mercado e 30 no uber" → register_multiple (2 transações)
 - "Quanto gastei este mês?" → query_report
 - "Cancela o mercado" → delete_transaction, delete: {description: "mercado"}
 - "Muda o mercado de 50 pra 45" → edit_transaction, edit: {description: "mercado", amount: 50, new_amount: 45}

@@ -316,6 +316,41 @@ export class WhatsappService {
           break;
         }
 
+        case 'register_multiple': {
+          const list = intent.transactions || [];
+          if (list.length === 0) { break; }
+          const lines: string[] = [];
+          let totalExpense = 0;
+          let hasExpense = false;
+          for (const t of list) {
+            try {
+              await this.transactions.create(user.id, {
+                type: t.type,
+                amount: t.amount,
+                description: t.description,
+                category_name: t.category,
+                date: t.date,
+                source: 'whatsapp',
+                raw_message: message,
+              });
+              const emoji = t.type === 'expense' ? '💸' : '💰';
+              const fmt = t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+              lines.push(`${emoji} ${t.description} — R$ ${fmt} (${t.category})`);
+              if (t.type === 'expense') { totalExpense += t.amount; hasExpense = true; }
+            } catch (e) {
+              this.logger.error(`[register_multiple] failed for ${t.description}: ${e.message}`);
+            }
+          }
+          const totalFmt = totalExpense.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+          await this.sendMessage(normalizedPhone,
+            `✅ *${lines.length} lançamento${lines.length > 1 ? 's' : ''} registrado${lines.length > 1 ? 's' : ''}!*\n\n` +
+            `${lines.join('\n')}` +
+            (hasExpense ? `\n\n💸 *Total de gastos:* R$ ${totalFmt}` : ''),
+          );
+          if (hasExpense) this.budgetAlerts.checkAndNotify(user.id).catch(() => {});
+          break;
+        }
+
         case 'query_report': {
           const reportData = await this.reports.getReportData(user.id);
           const reply = await this.ai.generateReportResponse(intent.query, reportData);
@@ -948,7 +983,14 @@ export class WhatsappService {
         default:
           await this.sendMessage(
             normalizedPhone,
-            `Hmm, não entendi muito bem o que você quis dizer. Lembre-se que eu sou um assistente financeiro e posso te ajudar a registrar seus gastos, consultar parcelas, ver seus relatórios e cuidar da sua agenda. Como posso te ajudar com isso? 😊`,
+            `🤔 Não entendi muito bem. Você pode tentar assim:\n\n` +
+            `💸 _"Gastei 50 no mercado"_\n` +
+            `💰 _"Recebi 3.000 de salário"_\n` +
+            `📊 _"Quanto gastei este mês?"_\n` +
+            `📅 _"Agende dentista quinta às 10h"_\n` +
+            `🛒 _"Adiciona arroz, feijão na lista"_\n` +
+            `🎯 _"Criar meta de 5.000 para viagem"_\n\n` +
+            `É só falar naturalmente que eu cuido do resto! 😊`,
           );
       }
     } catch (error) {
