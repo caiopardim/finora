@@ -407,8 +407,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <nav style={{ flex: 1, padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
           {NAV.map(({ href, label, icon: Icon }) => {
             const active = pathname === href;
+            const tourId = href.includes('/agenda') ? 'nav-agenda' : href.includes('/shopping') ? 'nav-shopping' : href.includes('/reports') ? 'nav-reports' : undefined;
             return (
-              <Link key={href} href={href} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, textDecoration: 'none', background: active ? 'rgba(34,197,94,0.14)' : 'transparent', color: active ? '#22c55e' : '#94a3b8', fontWeight: active ? 600 : 400, fontSize: 14, transition: 'all 0.15s' }}>
+              <Link key={href} href={href} data-tour={tourId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, textDecoration: 'none', background: active ? 'rgba(34,197,94,0.14)' : 'transparent', color: active ? '#22c55e' : '#94a3b8', fontWeight: active ? 600 : 400, fontSize: 14, transition: 'all 0.15s' }}>
                 <Icon size={17}/>
                 {label}
                 {active && <ChevronRight size={14} style={{ marginLeft: 'auto', opacity: 0.6 }}/>}

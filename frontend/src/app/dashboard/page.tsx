@@ -10,6 +10,7 @@ import {
 import { Plus, ArrowUpRight, ArrowDownRight, AlertTriangle, Clock, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 import AddTransactionModal from '@/components/ui/AddTransactionModal';
+import GuidedTour from '@/components/ui/GuidedTour';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import dayjs from 'dayjs';
 import { useTheme } from '@/lib/theme-context';
@@ -146,13 +147,13 @@ export default function DashboardPage() {
             Bem-vindo, {data.userName?.split(' ')[0]} 👋
           </h1>
         </div>
-        <button onClick={() => openAdd()} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 18px', background:'linear-gradient(135deg,#22c55e,#16a34a)', border:'none', borderRadius:11, color:'#fff', fontSize:14, fontWeight:600, cursor:'pointer', boxShadow:'0 4px 14px rgba(34,197,94,0.3)' }}>
+        <button data-tour="new-tx" onClick={() => openAdd()} style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 18px', background:'linear-gradient(135deg,#22c55e,#16a34a)', border:'none', borderRadius:11, color:'#fff', fontSize:14, fontWeight:600, cursor:'pointer', boxShadow:'0 4px 14px rgba(34,197,94,0.3)' }}>
           <Plus size={16}/> Nova Transação
         </button>
       </div>
 
       {/* Main stats */}
-      <div className="grid-stats">
+      <div className="grid-stats" data-tour="stats">
         <StatCard title="Saldo do Mês"  value={fmt(data.balance)} icon="💳" accent="#6366f1"
           badge={data.balance >= 0 ? '✓ positivo' : '⚠ negativo'} badgeGreen={data.balance >= 0} />
         <StatCard title="Receitas"      value={fmt(data.income)}  icon="💰" accent="#22c55e" onClick={() => openAdd('income')}
@@ -400,6 +401,16 @@ export default function DashboardPage() {
       </Card>
 
       {showAdd && <AddTransactionModal initialType={addType} onClose={() => setShowAdd(false)} onSuccess={() => { setShowAdd(false); load(); }}/>}
+
+      <GuidedTour storageKey="finora-tour-dashboard-v1" steps={[
+        { title: '👋 Bem-vindo ao Finora!', text: 'Deixa eu te mostrar em 30 segundos onde fica cada coisa. Bora?' },
+        { selector: '[data-tour="stats"]', title: '📊 Seu resumo do mês', text: 'Aqui você vê saldo, receitas e despesas em tempo real. Dica: clique no card de Receitas ou Despesas pra já lançar naquele tipo.' },
+        { selector: '[data-tour="new-tx"]', title: '💸 Registrar uma transação', text: 'Este botão abre o formulário pra adicionar um gasto ou uma receita manualmente.' },
+        { selector: '[data-tour="nav-agenda"]', title: '📅 Sua Agenda', text: 'Aqui ficam seus compromissos e tarefas — e sincroniza com o Google Agenda automaticamente.' },
+        { selector: '[data-tour="nav-shopping"]', title: '🛒 Lista de Compras', text: 'Monte sua lista pro mercado e vá marcando o que já comprou, aqui ou pelo WhatsApp.' },
+        { selector: '[data-tour="nav-reports"]', title: '📈 Relatórios', text: 'Veja gráficos e a evolução dos seus gastos por período e categoria.' },
+        { title: '💬 O principal: o WhatsApp!', text: 'O jeito mais rápido de usar o Finora é pelo WhatsApp. Mande "gastei 50 no mercado" e aparece aqui na hora. Mande "ajuda" que eu te mostro tudo. Bom uso! 🐷' },
+      ]}/>
     </div>
   );
 }
