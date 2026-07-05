@@ -158,7 +158,8 @@
       "Bash(curl -s -m 60 -X POST https://www.meufinora.com.br/api/google/sync -H 'Content-Type: application/json' -d '{\"userId\":\"aa96737b-65b8-4bfc-b633-1b4e2adde1a8\"}' -w '\\\\n[HTTP %{http_code} | %{time_total}s]\\\\n')",
       "Bash(node -e \"require\\('@sentry/node'\\); console.log\\('sentry/node OK'\\)\")",
       "Bash(node -e \"require\\('@sentry/nextjs'\\); console.log\\('sentry/nextjs OK'\\)\")",
-      "Bash(curl -s -m 40 -X POST https://www.meufinora.com.br/api/google/sync -H 'Content-Type: application/json' -d '{\"userId\":\"aa96737b-65b8-4bfc-b633-1b4e2adde1a8\",\"debug\":\"tasks\"}')"
+      "Bash(curl -s -m 40 -X POST https://www.meufinora.com.br/api/google/sync -H 'Content-Type: application/json' -d '{\"userId\":\"aa96737b-65b8-4bfc-b633-1b4e2adde1a8\",\"debug\":\"tasks\"}')",
+      "Bash(curl -s -m 40 -X POST https://www.meufinora.com.br/api/google/sync -H 'Content-Type: application/json' -d '{\"userId\":\"29974ca0-9804-4744-8b50-22cd67e36bd8\",\"debug\":\"tasks\"}')"
     ]
   }
 }

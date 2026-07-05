@@ -183,6 +183,8 @@ async function importTasksFromGoogle(userId: string, accessToken: string, deadli
 
   const admin = getAdmin();
   let imported = 0;
+  // Concluídas muito antigas não entram (evita encher a agenda com histórico antigo)
+  const oldestCompleted = Date.now() - 365 * 24 * 60 * 60 * 1000;
 
   for (const listId of taskLists) {
     if (Date.now() > deadline) break;
@@ -190,7 +192,7 @@ async function importTasksFromGoogle(userId: string, accessToken: string, deadli
     do {
       const url = new URL(`https://www.googleapis.com/tasks/v1/lists/${encodeURIComponent(listId)}/tasks`);
       url.searchParams.set('showCompleted', 'true');
-      url.searchParams.set('showHidden', 'false');
+      url.searchParams.set('showHidden', 'true'); // inclui concluídas (que o Google oculta)
       url.searchParams.set('maxResults', '100');
       if (pageToken) url.searchParams.set('pageToken', pageToken);
 
@@ -201,6 +203,8 @@ async function importTasksFromGoogle(userId: string, accessToken: string, deadli
       const rows: any[] = [];
       for (const task of (data.items || [])) {
         if (!task.id) continue;
+        // Pula tarefas concluídas antigas (mais de 1 ano)
+        if (task.status === 'completed' && task.due && new Date(task.due).getTime() < oldestCompleted) continue;
         const gid = `gtask_${task.id}`;
         if (knownIds.has(gid)) continue;
         knownIds.add(gid);
@@ -253,26 +257,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const userId = body.userId;
     if (!userId) return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
-
-    // Diagnóstico: varre TODAS as listas de tarefas e retorna tudo que a API devolve
-    if (body.debug === 'tasks') {
-      const accessToken = await getAccessToken(userId);
-      const headers = { Authorization: `Bearer ${accessToken}` };
-      const listsRes = await fetch('https://www.googleapis.com/tasks/v1/users/@me/lists?maxResults=100', { headers });
-      const lists = await listsRes.json();
-      const perList: any[] = [];
-      for (const l of (lists.items || [])) {
-        const tRes = await fetch(`https://www.googleapis.com/tasks/v1/lists/${encodeURIComponent(l.id)}/tasks?showCompleted=true&showHidden=true&maxResults=100`, { headers });
-        const t = await tRes.json();
-        perList.push({
-          listTitle: l.title,
-          count: Array.isArray(t.items) ? t.items.length : 0,
-          tasks: (t.items || []).map((x: any) => ({ title: x.title, due: x.due || null, status: x.status, hidden: x.hidden || false, parent: x.parent || null })),
-          error: t.error || null,
-        });
-      }
-      return NextResponse.json({ listsStatus: listsRes.status, listsCount: (lists.items || []).length, perList });
-    }
 
     // Orçamento de tempo: retorna antes do limite da função serverless
     // (Vercel Hobby corta em ~10s). A importação é incremental e roda primeiro,
