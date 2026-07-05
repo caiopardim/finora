@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
 import { Plus, X, Trash2, Check, ShoppingCart, Pencil } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
+import { toast, toastError } from '@/lib/toast';
 
 // Categoriza um item pelo nome (apenas para agrupar a exibição — não usa o banco)
 const ITEM_CATEGORIES: { label: string; emoji: string; keywords: string[] }[] = [
@@ -65,7 +66,7 @@ export default function ShoppingListsPage() {
       .from('shopping_list_items')
       .update({ name: newName })
       .eq('id', itemId);
-    if (error) { alert(error.message); return; }
+    if (error) { toastError(error.message); return; }
     setEditingItemId(null);
     setEditValue('');
     load();
@@ -99,9 +100,10 @@ export default function ShoppingListsPage() {
       completed: false,
     });
 
-    if (error) { alert(error.message); return; }
+    if (error) { toastError(error.message); return; }
     setShowCreate(false);
     setForm({ name: '', category: 'Alimentação' });
+    toast('Lista criada!');
     load();
   }
 
@@ -128,9 +130,10 @@ export default function ShoppingListsPage() {
       .from('shopping_list_items')
       .insert(items.map(item => ({ shopping_list_id: listId, ...item })));
 
-    if (error) { alert(error.message); return; }
+    if (error) { toastError(error.message); return; }
     setItemsInput('');
     setShowAddItems(null);
+    toast(`${items.length} ${items.length === 1 ? 'item adicionado' : 'itens adicionados'}!`);
     load();
   }
 
@@ -145,7 +148,7 @@ export default function ShoppingListsPage() {
       .update({ completed: !item.completed })
       .eq('id', itemId);
 
-    if (error) { alert(error.message); return; }
+    if (error) { toastError(error.message); return; }
     load();
   }
 
@@ -155,7 +158,7 @@ export default function ShoppingListsPage() {
       .delete()
       .eq('id', itemId);
 
-    if (error) { alert(error.message); return; }
+    if (error) { toastError(error.message); return; }
     load();
   }
 
@@ -165,7 +168,7 @@ export default function ShoppingListsPage() {
       .update({ completed: true, completed_at: new Date().toISOString() })
       .eq('id', listId);
 
-    if (error) { alert(error.message); return; }
+    if (error) { toastError(error.message); return; }
     load();
   }
 
@@ -175,8 +178,9 @@ export default function ShoppingListsPage() {
       .delete()
       .eq('id', listId);
 
-    if (error) { alert(error.message); return; }
+    if (error) { toastError(error.message); return; }
     setDeleteId(null);
+    toast('Lista removida', 'info');
     load();
   }
 

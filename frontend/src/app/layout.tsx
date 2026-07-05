@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import { ThemeProvider } from '@/lib/theme-context';
 import CookieConsent from '@/components/ui/CookieConsent';
+import { Toaster } from '@/lib/toast';
 import SentryInit from '@/components/SentryInit';
 
 const inter = Inter({ subsets: ['latin'] });
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={inter.className}>
         <SentryInit />
         <ThemeProvider>{children}</ThemeProvider>
+        <Toaster />
         <CookieConsent />
       </body>
     </html>

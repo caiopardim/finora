@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { X } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
+import { toast } from '@/lib/toast';
 
 interface Props {
   onClose: () => void;
@@ -91,6 +92,7 @@ export default function AddTransactionModal({ onClose, onSuccess, transaction, i
       if (err) { setError(err.message); setLoading(false); return; }
     }
 
+    toast(isEdit ? 'Transação atualizada!' : 'Transação salva!');
     onSuccess();
     setLoading(false);
   }
