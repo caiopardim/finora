@@ -42,6 +42,7 @@ export default function OnboardingPage() {
     { label: 'Sua conta', icon: '🏦' },
     { label: 'Categorias', icon: '🏷️' },
     { label: 'Primeira meta', icon: '🎯' },
+    { label: 'Como usar', icon: '🚀' },
   ];
 
   async function finish() {
@@ -223,11 +224,60 @@ export default function OnboardingPage() {
                 </div>
               </div>
               <div style={{ display:'flex', gap:10 }}>
-                <button onClick={finish} disabled={loading} style={{ flex:1, padding:'12px', borderRadius:12, border:`1.5px solid ${c.border}`, background:c.surface, color:c.textMuted, fontSize:14, fontWeight:500, cursor:'pointer' }}>Pular</button>
-                <button onClick={finish} disabled={loading} style={{ flex:2, padding:'12px', borderRadius:12, border:'none', background:'linear-gradient(135deg,#22c55e,#16a34a)', color:'#fff', fontSize:15, fontWeight:700, cursor:'pointer', boxShadow:'0 4px 14px rgba(34,197,94,0.3)', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
-                  {loading ? 'Configurando...' : '🎉 Ir para o Dashboard'}
+                <button onClick={() => setStep(4)} style={{ flex:1, padding:'12px', borderRadius:12, border:`1.5px solid ${c.border}`, background:c.surface, color:c.textMuted, fontSize:14, fontWeight:500, cursor:'pointer' }}>Pular</button>
+                <button onClick={() => setStep(4)} style={{ flex:2, padding:'12px', borderRadius:12, border:'none', background:'linear-gradient(135deg,#22c55e,#16a34a)', color:'#fff', fontSize:15, fontWeight:700, cursor:'pointer', boxShadow:'0 4px 14px rgba(34,197,94,0.3)', display:'flex', alignItems:'center', justifyContent:'center', gap:8 }}>
+                  Continuar <ArrowRight size={16}/>
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* Step 4 - Como usar */}
+          {step === 4 && (
+            <div style={{ padding: 32 }}>
+              <div style={{ textAlign: 'center', marginBottom: 22 }}>
+                <div style={{ fontSize: 44, marginBottom: 8 }}>🚀</div>
+                <h2 style={{ margin: '0 0 6px', fontSize: 21, fontWeight: 800, color: c.text }}>Tudo pronto, {name || 'pessoa'}!</h2>
+                <p style={{ margin: 0, fontSize: 14, color: c.textMuted, lineHeight: 1.6 }}>Veja como o Finora funciona no dia a dia:</p>
+              </div>
+
+              {/* Destaque WhatsApp */}
+              <div style={{ background: 'linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.04))', border: '1px solid rgba(34,197,94,0.25)', borderRadius: 16, padding: '18px 18px', marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                  <span style={{ fontSize: 24 }}>💬</span>
+                  <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: c.text }}>Registre tudo pelo WhatsApp</p>
+                </div>
+                <p style={{ margin: '0 0 10px', fontSize: 13.5, color: c.textMuted, lineHeight: 1.6 }}>
+                  Esse é o coração do Finora! Manda mensagem como se fosse pra um amigo:
+                </p>
+                {['💸 "Gastei 50 no mercado"', '💰 "Recebi 3.000 de salário"', '📊 "Quanto gastei este mês?"', '📅 "Agenda dentista quinta às 10h"'].map((ex) => (
+                  <p key={ex} style={{ margin: '4px 0', fontSize: 13, color: c.textSecondary, fontStyle: 'italic' }}>{ex}</p>
+                ))}
+              </div>
+
+              {/* Funcionalidades */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 22 }}>
+                {[
+                  { icon: '📊', t: 'Dashboard', d: 'Tudo organizado em tempo real' },
+                  { icon: '📅', t: 'Agenda', d: 'Sincroniza com o Google' },
+                  { icon: '🎯', t: 'Metas', d: 'Acompanhe seus objetivos' },
+                  { icon: '🛒', t: 'Lista de compras', d: 'Marque o que comprou' },
+                ].map((f) => (
+                  <div key={f.t} style={{ background: c.bg, border: `1px solid ${c.border}`, borderRadius: 12, padding: '12px 14px' }}>
+                    <div style={{ fontSize: 20, marginBottom: 4 }}>{f.icon}</div>
+                    <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 700, color: c.text }}>{f.t}</p>
+                    <p style={{ margin: 0, fontSize: 11.5, color: c.textFaint, lineHeight: 1.4 }}>{f.d}</p>
+                  </div>
+                ))}
+              </div>
+
+              <p style={{ textAlign: 'center', fontSize: 12.5, color: c.textFaint, margin: '0 0 18px' }}>
+                💡 Precisa de ajuda? É só mandar <strong>"ajuda"</strong> no WhatsApp que eu te mostro tudo.
+              </p>
+
+              <button onClick={finish} disabled={loading} style={{ width: '100%', padding: '14px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#22c55e,#16a34a)', color: '#fff', fontSize: 15, fontWeight: 700, cursor: loading ? 'wait' : 'pointer', boxShadow: '0 4px 14px rgba(34,197,94,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                {loading ? 'Configurando...' : '🎉 Ir para o Dashboard'}
+              </button>
             </div>
           )}
         </div>
