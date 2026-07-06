@@ -6,6 +6,7 @@ import { useTheme } from '@/lib/theme-context';
 import { toast } from '@/lib/toast';
 import { Plus, X, Check, Clock, ChevronLeft, ChevronRight, Pencil, Trash2, RefreshCw, CalendarDays, Unlink } from 'lucide-react';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import GuidedTour from '@/components/ui/GuidedTour';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 dayjs.locale('pt-br');
@@ -250,7 +251,7 @@ export default function AgendaPage() {
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           {googleConnected ? (
             <>
-              <button onClick={syncGoogle} disabled={syncing} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 10, border: '1.5px solid #4285f4', background: '#eff6ff', color: '#4285f4', fontSize: 13, fontWeight: 600, cursor: syncing ? 'wait' : 'pointer' }}>
+              <button data-tour="agenda-google" onClick={syncGoogle} disabled={syncing} style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '9px 16px', borderRadius: 10, border: '1.5px solid #4285f4', background: '#eff6ff', color: '#4285f4', fontSize: 13, fontWeight: 600, cursor: syncing ? 'wait' : 'pointer' }}>
                 <RefreshCw size={14} style={{ animation: syncing ? 'spin 1s linear infinite' : 'none' }}/> {syncing ? 'Sincronizando...' : 'Sincronizar'}
               </button>
               <button onClick={disconnectGoogle} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', borderRadius: 10, border: `1.5px solid ${c.border}`, background: c.surface, color: c.textMuted, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
@@ -258,11 +259,11 @@ export default function AgendaPage() {
               </button>
             </>
           ) : (
-            <button onClick={connectGoogle} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: 10, border: '1.5px solid #4285f4', background: '#fff', color: '#4285f4', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <button data-tour="agenda-google" onClick={connectGoogle} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: 10, border: '1.5px solid #4285f4', background: '#fff', color: '#4285f4', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
               <CalendarDays size={15}/> Conectar Google Agenda
             </button>
           )}
-          <button onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: 'linear-gradient(135deg,#6366f1,#4f46e5)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(99,102,241,0.35)' }}>
+          <button data-tour="agenda-new" onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: 'linear-gradient(135deg,#6366f1,#4f46e5)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(99,102,241,0.35)' }}>
             <Plus size={16}/> Novo compromisso
           </button>
         </div>
@@ -276,7 +277,7 @@ export default function AgendaPage() {
 
       {/* Toggle Calendário / Lista + Ocultar concluídas */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-        <div style={{ display: 'inline-flex', gap: 4, background: c.surface, border: `1px solid ${c.border}`, borderRadius: 10, padding: 4 }}>
+        <div data-tour="agenda-view" style={{ display: 'inline-flex', gap: 4, background: c.surface, border: `1px solid ${c.border}`, borderRadius: 10, padding: 4 }}>
           {([['month', '📅 Calendário'], ['list', '📋 Lista']] as const).map(([v, label]) => (
             <button key={v} onClick={() => setView(v)} style={{
               padding: '7px 16px', borderRadius: 7, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
@@ -546,6 +547,14 @@ export default function AgendaPage() {
           </div>
         </div>
       )}
+
+      <GuidedTour storageKey="finora-tour-agenda-v1" steps={[
+        { title: '📅 Bem-vindo à Agenda!', text: 'Aqui você organiza compromissos, contas e tarefas — tudo em um lugar. Deixa eu te mostrar rapidinho.' },
+        { selector: '[data-tour="agenda-view"]', title: '🔀 Calendário ou Lista', text: 'Alterne entre a visão de calendário mensal e a lista cronológica dos seus compromissos.' },
+        { selector: '[data-tour="agenda-google"]', title: '🔗 Google Agenda', text: 'Conecte sua conta Google para sincronizar automaticamente os eventos da Agenda e as tarefas do Google Tarefas.' },
+        { selector: '[data-tour="agenda-new"]', title: '➕ Novo compromisso', text: 'Crie um compromisso manualmente: título, data, hora e um ícone pra identificar rapidinho.' },
+        { title: '💬 Dica: use o WhatsApp!', text: 'Você também pode criar compromissos mandando mensagem no WhatsApp, tipo "dentista sexta às 15h". Bora começar? 🎉' },
+      ]}/>
     </div>
   );
 }

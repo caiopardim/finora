@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { formatCurrency } from '@/lib/utils';
 import AddTransactionModal from '@/components/ui/AddTransactionModal';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import GuidedTour from '@/components/ui/GuidedTour';
 import { Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 import { ListSkeleton } from '@/components/ui/Skeleton';
@@ -186,13 +187,13 @@ export default function TransactionsPage() {
           <h1 style={{ fontSize: 24, fontWeight: 700, color: c.text, margin: '0 0 2px' }}>Transações</h1>
           <p style={{ color: c.textFaint, fontSize: 14, margin: 0 }}>{count} registros encontrados</p>
         </div>
-        <button onClick={() => openAdd()} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: 'linear-gradient(135deg,#22c55e,#16a34a)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}>
+        <button data-tour="tx-new" onClick={() => openAdd()} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: 'linear-gradient(135deg,#22c55e,#16a34a)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}>
           <Plus size={16}/> Nova
         </button>
       </div>
 
       {/* Resumo do mês vigente — sempre visível */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 20 }}>
+      <div data-tour="tx-summary" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 20 }}>
         {[
           { label: `Receitas de ${new Date().toLocaleString('pt-BR',{month:'long'})}`, value: fmt(monthStats.income),  color: '#22c55e', accent: '#22c55e', onClick: () => openAdd('income') },
           { label: `Despesas de ${new Date().toLocaleString('pt-BR',{month:'long'})}`, value: fmt(monthStats.expense), color: '#ef4444', accent: '#ef4444', onClick: () => openAdd('expense') },
@@ -215,7 +216,7 @@ export default function TransactionsPage() {
         ))}
       </div>
 
-      <div style={{ background: c.surface, borderRadius: 14, border: `1px solid ${c.border}`, marginBottom: 20, overflow: 'hidden' }}>
+      <div data-tour="tx-filters" style={{ background: c.surface, borderRadius: 14, border: `1px solid ${c.border}`, marginBottom: 20, overflow: 'hidden' }}>
         {/* Tipo */}
         <div style={{ display: 'flex', gap: 6, padding: '14px 18px 10px' }}>
           {[['', 'Todos'], ['income', '💰 Receitas'], ['expense', '💸 Despesas']].map(([v, l]) => (
@@ -340,6 +341,14 @@ export default function TransactionsPage() {
       )}
       {showAdd && <AddTransactionModal initialType={addType} onClose={() => setShowAdd(false)} onSuccess={() => { setShowAdd(false); load(); }}/>}
       {editTx && <AddTransactionModal transaction={editTx} onClose={() => setEditTx(null)} onSuccess={() => { setEditTx(null); load(); }}/>}
+
+      <GuidedTour storageKey="finora-tour-transactions-v1" steps={[
+        { title: '💸 Suas Transações', text: 'Este é o histórico de tudo que entra e sai. Deixa eu te mostrar como usar.' },
+        { selector: '[data-tour="tx-summary"]', title: '📊 Resumo do mês', text: 'Veja receitas, despesas e o balanço do mês atual. Clique em Receitas ou Despesas pra já lançar uma nova.' },
+        { selector: '[data-tour="tx-new"]', title: '➕ Nova transação', text: 'Registre manualmente uma receita ou despesa, com categoria, valor e data.' },
+        { selector: '[data-tour="tx-filters"]', title: '🔎 Filtros', text: 'Filtre por tipo (receita/despesa) e por período — hoje, últimos 7 dias, este mês ou um intervalo personalizado.' },
+        { title: '💬 Dica: use o WhatsApp!', text: 'A forma mais rápida de lançar é pelo WhatsApp: mande "gastei 50 no mercado" e pronto. 🎉' },
+      ]}/>
     </div>
   );
 }

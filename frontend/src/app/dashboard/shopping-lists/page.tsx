@@ -6,6 +6,7 @@ import { formatCurrency } from '@/lib/utils';
 import { Plus, X, Trash2, Check, ShoppingCart, Pencil } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 import { toast, toastError } from '@/lib/toast';
+import GuidedTour from '@/components/ui/GuidedTour';
 
 // Categoriza um item pelo nome (apenas para agrupar a exibição — não usa o banco)
 const ITEM_CATEGORIES: { label: string; emoji: string; keywords: string[] }[] = [
@@ -194,6 +195,7 @@ export default function ShoppingListsPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
         <h1 style={{ color: c.text, margin: 0 }}>🛒 Lista de Compras</h1>
         <button
+          data-tour="shop-new"
           onClick={() => setShowCreate(true)}
           style={{
             background: '#6366f1',
@@ -303,7 +305,7 @@ export default function ShoppingListsPage() {
       )}
 
       {/* Listas Ativas */}
-      <div style={{ marginBottom: '40px' }}>
+      <div data-tour="shop-active" style={{ marginBottom: '40px' }}>
         <h2 style={{ color: c.text, marginBottom: '16px' }}>Ativas ({activeLists.length})</h2>
         {activeLists.length === 0 ? (
           <div style={{ color: c.textSecondary, textAlign: 'center', padding: '40px 20px' }}>
@@ -568,6 +570,13 @@ export default function ShoppingListsPage() {
           </div>
         </div>
       )}
+
+      <GuidedTour storageKey="finora-tour-shopping-v1" steps={[
+        { title: '🛒 Lista de Compras', text: 'Organize suas compras por lista e acompanhe o que já foi comprado. Deixa eu te mostrar.' },
+        { selector: '[data-tour="shop-new"]', title: '➕ Nova Lista', text: 'Crie uma lista (ex: Mercado, Farmácia) e depois adicione os itens dentro dela.' },
+        { selector: '[data-tour="shop-active"]', title: '✅ Suas listas ativas', text: 'Adicione itens de uma vez ("pão, leite, 2kg frango"), marque os comprados e finalize a lista quando terminar. Os itens são agrupados por categoria automaticamente.' },
+        { title: '💬 Dica: use o WhatsApp!', text: 'Você também pode adicionar itens pelo WhatsApp, tipo "adiciona arroz e feijão na lista do mercado". 🎉' },
+      ]}/>
     </div>
   );
 }
