@@ -11,6 +11,7 @@ import { CategoriesService } from '../categories/categories.service';
 import { GoalsService } from '../goals/goals.service';
 import { BillsService } from '../bills/bills.service';
 import { ShoppingListService } from '../shopping-lists/shopping-list.service';
+import { isValidAmount, slidingWindow } from './agent-guards.util';
 import * as dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 dayjs.locale('pt-br');
@@ -35,23 +36,17 @@ export class WhatsappService {
   private readonly messageTimestamps = new Map<string, number[]>();
   // Telefones já avisados que estão no limite (evita spam de aviso).
   private readonly rateLimitNotified = new Set<string>();
-  private static readonly RATE_WINDOW_MS = 60_000;   // janela de 1 minuto
-  private static readonly RATE_MAX_MSGS = 15;         // máx. de mensagens por janela
-  private static readonly MAX_AMOUNT = 1_000_000_000; // teto de valor (R$ 1 bi)
 
   /** Janela deslizante por telefone. Retorna true se excedeu o limite. */
   private isRateLimited(phone: string): boolean {
-    const now = Date.now();
-    const windowStart = now - WhatsappService.RATE_WINDOW_MS;
-    const recent = (this.messageTimestamps.get(phone) || []).filter((t) => t > windowStart);
-    recent.push(now);
+    const { recent, limited } = slidingWindow(this.messageTimestamps.get(phone) || [], Date.now());
     this.messageTimestamps.set(phone, recent);
-    return recent.length > WhatsappService.RATE_MAX_MSGS;
+    return limited;
   }
 
   /** Valor monetário válido: número finito, positivo e dentro do teto. */
   private isValidAmount(n: unknown): n is number {
-    return typeof n === 'number' && Number.isFinite(n) && n > 0 && n <= WhatsappService.MAX_AMOUNT;
+    return isValidAmount(n);
   }
 
   constructor(
