@@ -31,6 +31,29 @@ export class WhatsappService {
   // Onboarding flow: phone -> { stage, income?, fixedExpenses?, debts? }
   private readonly pendingOnboarding = new Map<string, { stage: 'income' | 'fixed_expenses' | 'debts' | 'main_goal'; income?: number; fixedExpenses?: string; debts?: string }>();
 
+  // Rate limiting: telefone -> timestamps (ms) das mensagens na janela atual.
+  private readonly messageTimestamps = new Map<string, number[]>();
+  // Telefones já avisados que estão no limite (evita spam de aviso).
+  private readonly rateLimitNotified = new Set<string>();
+  private static readonly RATE_WINDOW_MS = 60_000;   // janela de 1 minuto
+  private static readonly RATE_MAX_MSGS = 15;         // máx. de mensagens por janela
+  private static readonly MAX_AMOUNT = 1_000_000_000; // teto de valor (R$ 1 bi)
+
+  /** Janela deslizante por telefone. Retorna true se excedeu o limite. */
+  private isRateLimited(phone: string): boolean {
+    const now = Date.now();
+    const windowStart = now - WhatsappService.RATE_WINDOW_MS;
+    const recent = (this.messageTimestamps.get(phone) || []).filter((t) => t > windowStart);
+    recent.push(now);
+    this.messageTimestamps.set(phone, recent);
+    return recent.length > WhatsappService.RATE_MAX_MSGS;
+  }
+
+  /** Valor monetário válido: número finito, positivo e dentro do teto. */
+  private isValidAmount(n: unknown): n is number {
+    return typeof n === 'number' && Number.isFinite(n) && n > 0 && n <= WhatsappService.MAX_AMOUNT;
+  }
+
   constructor(
     private config: ConfigService,
     private ai: AiService,
@@ -53,6 +76,19 @@ export class WhatsappService {
   async handleIncomingMessage(phone: string, message: string): Promise<void> {
     const normalizedPhone = phone.replace(/\D/g, '');
     this.logger.log(`Message from ${normalizedPhone}: ${message}`);
+
+    // ── Rate limiting: protege contra flood (e custo de IA) ──
+    if (this.isRateLimited(normalizedPhone)) {
+      this.logger.warn(`Rate limit atingido para ${normalizedPhone}`);
+      if (!this.rateLimitNotified.has(normalizedPhone)) {
+        this.rateLimitNotified.add(normalizedPhone);
+        await this.sendMessage(normalizedPhone,
+          `⏳ Você enviou muitas mensagens em pouco tempo. Aguarde um minutinho e tente de novo. 🙏`,
+        ).catch(() => {});
+      }
+      return;
+    }
+    this.rateLimitNotified.delete(normalizedPhone);
 
     try {
       this.logger.log(`[1] Finding user for phone ${normalizedPhone}`);
@@ -248,6 +284,15 @@ export class WhatsappService {
           const { transaction } = intent;
           this.logger.log(`[4] Creating transaction for user ${user.id}`);
 
+          // ── Validação de valor (evita valor negativo/absurdo do parse) ──
+          if (!this.isValidAmount(transaction.amount)) {
+            await this.sendMessage(normalizedPhone,
+              `🤔 Não consegui identificar um valor válido nessa mensagem. ` +
+              `Tente algo como _"gastei 50 no mercado"_.`,
+            );
+            return;
+          }
+
           // ── Duplicate detection: check for same amount+type in last 3h ──
           const duplicate = await this.transactions.findRecentDuplicate(user.id, transaction.type, transaction.amount, 3);
           if (duplicate) {
@@ -327,6 +372,10 @@ export class WhatsappService {
           let hasExpense = false;
           for (const t of list) {
             try {
+              if (!this.isValidAmount(t.amount)) {
+                this.logger.warn(`[register_multiple] valor inválido ignorado: ${t.description} = ${t.amount}`);
+                continue;
+              }
               await this.transactions.create(user.id, {
                 type: t.type,
                 amount: t.amount,
@@ -408,7 +457,13 @@ export class WhatsappService {
           }
 
           const updates: any = {};
-          if (edit.new_amount != null) updates.amount = edit.new_amount;
+          if (edit.new_amount != null) {
+            if (!this.isValidAmount(edit.new_amount)) {
+              await this.sendMessage(normalizedPhone, `🤔 Esse novo valor não parece válido. Tente algo como _"muda o valor para 80"_.`);
+              break;
+            }
+            updates.amount = edit.new_amount;
+          }
           if (edit.new_description) updates.description = edit.new_description;
           if (edit.new_date) updates.date = edit.new_date;
           if (edit.new_category) updates.category_name = edit.new_category;
@@ -481,7 +536,7 @@ export class WhatsappService {
         // ── METAS ───────────────────────────────────────────────────────────
         case 'create_goal': {
           const { goal } = intent;
-          if (!goal?.name || !goal?.target_amount) {
+          if (!goal?.name || !this.isValidAmount(goal?.target_amount)) {
             await this.sendMessage(normalizedPhone, `🎯 Para criar uma meta preciso saber:\n• *Nome* da meta\n• *Valor* que quer juntar\n\nEx: _"Meta de 5000 reais para viagem até dezembro"_`);
             break;
           }
@@ -530,7 +585,7 @@ export class WhatsappService {
 
         case 'add_goal_progress': {
           const { goal_progress } = intent;
-          if (!goal_progress?.name || !goal_progress?.amount) {
+          if (!goal_progress?.name || !this.isValidAmount(goal_progress?.amount)) {
             await this.sendMessage(normalizedPhone, `🎯 Me diga:\n• *Nome* da meta\n• *Valor* que guardou\n\nEx: _"Guardei 500 para viagem"_`);
             break;
           }
@@ -565,7 +620,7 @@ export class WhatsappService {
         // ── CONTAS / RECORRÊNCIAS ────────────────────────────────────────────
         case 'create_bill': {
           const { bill } = intent;
-          if (!bill?.description || !bill?.amount || !bill?.due_date) {
+          if (!bill?.description || !this.isValidAmount(bill?.amount) || !bill?.due_date) {
             await this.sendMessage(normalizedPhone,
               `📋 Para cadastrar uma conta preciso saber:\n• *Nome* da conta\n• *Valor*\n• *Vencimento*\n\nEx: _"Cadastra aluguel 1500 vence dia 5 todo mês"_`,
             );
