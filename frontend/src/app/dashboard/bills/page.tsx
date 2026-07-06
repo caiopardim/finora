@@ -10,7 +10,6 @@ import { useTheme } from '@/lib/theme-context';
 import { ListSkeleton } from '@/components/ui/Skeleton';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { toast, toastError } from '@/lib/toast';
-const uuidv4 = () => crypto.randomUUID();
 
 function fmtDisplay(raw: string): string {
   const digits = raw.replace(/\D/g, '');
@@ -116,18 +115,23 @@ export default function BillsPage() {
       if (error) { toastError(error.message); return; }
     } else if (form.tipo === 'installment') {
       const n = parseInt(form.installments) || 2;
-      const group = uuidv4();
-      const rows = Array.from({ length: n }, (_, i) => ({
-        ...base,
-        description: `${form.description} (${i + 1}/${n})`,
-        due_date: dayjs(form.due_date).add(i, 'month').format('YYYY-MM-DD'),
-        recurrent: false,
-        installments: n,
-        installment_number: i + 1,
-        installment_group: group,
-      }));
-      const { error } = await supabase.from('bills').insert(rows);
-      if (error) { toastError(error.message); return; }
+      // Geração das parcelas centralizada no servidor (validação + insert atômico).
+      const res = await fetch('/api/bills/installments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({
+          description: form.description,
+          amount: amountVal,
+          due_date: form.due_date,
+          installments: n,
+          category_id: form.category_id || null,
+        }),
+      });
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({ error: 'Erro ao criar parcelas' }));
+        toastError(error || 'Erro ao criar parcelas');
+        return;
+      }
     } else {
       const { error } = await supabase.from('bills').insert({
         ...base,
