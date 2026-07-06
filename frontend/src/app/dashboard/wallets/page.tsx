@@ -8,6 +8,7 @@ import { ListSkeleton } from '@/components/ui/Skeleton';
 import { toast } from '@/lib/toast';
 import { Plus, X, Check, Pencil, Trash2 } from 'lucide-react';
 import ConfirmModal from '@/components/ui/ConfirmModal';
+import GuidedTour from '@/components/ui/GuidedTour';
 
 const ICONS  = ['🏦','💳','💵','🏧','📱','💰','🐷','🏠','✈️','💼'];
 const COLORS = ['#6366f1','#22c55e','#f97316','#3b82f6','#ec4899','#eab308','#ef4444','#06b6d4','#10b981','#8b5cf6'];
@@ -99,13 +100,13 @@ export default function WalletsPage() {
           <h1 style={{ fontSize: 24, fontWeight: 700, color: c.text, margin: '0 0 2px' }}>Contas</h1>
           <p style={{ color: c.textFaint, fontSize: 14, margin: 0 }}>Gerencie de onde vem e para onde vai seu dinheiro</p>
         </div>
-        <button onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: 'linear-gradient(135deg,#6366f1,#4f46e5)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(99,102,241,0.3)' }}>
+        <button data-tour="wallet-new" onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: 'linear-gradient(135deg,#6366f1,#4f46e5)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(99,102,241,0.3)' }}>
           <Plus size={16}/> Nova Conta
         </button>
       </div>
 
       {/* Total balance */}
-      <div style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)', borderRadius: 18, padding: '22px 24px', marginBottom: 20, color: '#fff' }}>
+      <div data-tour="wallet-total" style={{ background: 'linear-gradient(135deg,#6366f1,#4f46e5)', borderRadius: 18, padding: '22px 24px', marginBottom: 20, color: '#fff' }}>
         <p style={{ margin: '0 0 6px', fontSize: 13, opacity: 0.8, fontWeight: 500 }}>Patrimônio Total</p>
         <p style={{ margin: 0, fontSize: 'clamp(20px, 5vw, 32px)' as any, fontWeight: 800, letterSpacing: '-0.5px' }}>{formatCurrency(totalBalance)}</p>
         <p style={{ margin: '6px 0 0', fontSize: 12, opacity: 0.7 }}>{wallets.length} conta{wallets.length !== 1 ? 's' : ''} cadastrada{wallets.length !== 1 ? 's' : ''}</p>
@@ -216,6 +217,13 @@ export default function WalletsPage() {
           </div>
         </div>
       )}
+
+      <GuidedTour storageKey="finora-tour-wallets-v1" steps={[
+        { title: '🏦 Suas Contas', text: 'Aqui ficam suas contas (banco, carteira, cartão) e o saldo de cada uma. Deixa eu te mostrar.' },
+        { selector: '[data-tour="wallet-total"]', title: '💰 Patrimônio Total', text: 'A soma dos saldos de todas as suas contas, atualizada conforme suas transações.' },
+        { selector: '[data-tour="wallet-new"]', title: '➕ Nova Conta', text: 'Cadastre uma conta com nome, tipo, ícone e saldo inicial. Depois é só vincular às transações.' },
+        { title: '💬 Pronto!', text: 'Com as contas criadas, cada transação pode ser vinculada à conta certa e o saldo se ajusta sozinho. 🎉' },
+      ]}/>
     </div>
   );
 }

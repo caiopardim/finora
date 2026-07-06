@@ -8,6 +8,7 @@ import { useTheme } from '@/lib/theme-context';
 import { ListSkeleton } from '@/components/ui/Skeleton';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { toast, toastError } from '@/lib/toast';
+import GuidedTour from '@/components/ui/GuidedTour';
 
 const GOAL_ICONS   = ['🎯','🏠','🚗','✈️','📱','💻','💍','📚','🎓','🌴','💰','🏋️','🐾','🎵','🎮'];
 const GOAL_COLORS  = ['#6366f1','#f97316','#10b981','#3b82f6','#ec4899','#eab308','#8b5cf6','#06b6d4'];
@@ -103,7 +104,7 @@ export default function GoalsPage() {
           <h1 style={{ fontSize: 24, fontWeight: 700, color: c.text, margin: '0 0 2px' }}>Metas</h1>
           <p style={{ color: c.textFaint, fontSize: 14, margin: 0 }}>Seus objetivos financeiros</p>
         </div>
-        <button onClick={() => setShowCreate(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: 'linear-gradient(135deg,#22c55e,#16a34a)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}>
+        <button data-tour="goal-new" onClick={() => setShowCreate(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: 'linear-gradient(135deg,#22c55e,#16a34a)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}>
           <Plus size={16}/> Nova Meta
         </button>
       </div>
@@ -128,7 +129,7 @@ export default function GoalsPage() {
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
                     <div style={{ width: 48, height: 48, borderRadius: 14, background: color+'18', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>{goal.icon}</div>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={() => { setShowProgress(goal); setProgressAmount(''); }} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 8, border: 'none', cursor: 'pointer', background: '#f0fdf4', color: '#16a34a', fontSize: 12, fontWeight: 500 }}>
+                      <button data-tour="goal-progress" onClick={() => { setShowProgress(goal); setProgressAmount(''); }} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 8, border: 'none', cursor: 'pointer', background: '#f0fdf4', color: '#16a34a', fontSize: 12, fontWeight: 500 }}>
                         <TrendingUp size={12}/> Adicionar
                       </button>
                       <button onClick={() => openEdit(goal)} style={{ width: 30, height: 30, borderRadius: 8, border: 'none', cursor: 'pointer', background: '#eff6ff', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -252,6 +253,13 @@ export default function GoalsPage() {
           </form>
         </Modal>
       )}
+
+      <GuidedTour storageKey="finora-tour-goals-v1" steps={[
+        { title: '🎯 Suas Metas', text: 'Aqui você cria objetivos de economia e acompanha o progresso de cada um. Deixa eu te mostrar.' },
+        { selector: '[data-tour="goal-new"]', title: '➕ Nova Meta', text: 'Defina um nome, um valor alvo e um prazo (opcional). Ex: "Viagem — R$ 5.000".' },
+        { selector: '[data-tour="goal-progress"]', title: '📈 Guardar dinheiro', text: 'Conforme você economiza, clique em "Adicionar" na meta para registrar o valor e ver a barra de progresso subir.' },
+        { title: '💬 Dica: use o WhatsApp!', text: 'Você pode atualizar suas metas pelo WhatsApp, tipo "guardei 200 na meta da viagem". 🎉' },
+      ]}/>
     </div>
   );
 }
