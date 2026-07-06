@@ -387,7 +387,7 @@ export default function BillsPage() {
               {form.tipo === 'installment' && (
                 <div>
                   <Label c={c}>Número de parcelas</Label>
-                  <input required type="number" min="2" max="60" value={form.installments} onChange={e => setForm({ ...form, installments: e.target.value })} style={inputStyle} placeholder="Ex: 12"/>
+                  <input required type="number" min="2" max="420" value={form.installments} onChange={e => setForm({ ...form, installments: e.target.value })} style={inputStyle} placeholder="Ex: 12"/>
                   {amountRaw && form.installments && (
                     <p style={{ margin: '6px 0 0', fontSize: 12, color: '#6366f1', fontWeight: 500 }}>
                       Total: {formatCurrency(parseDisplay(fmtDisplay(amountRaw)) * parseInt(form.installments || '1'))} em {form.installments}x de {formatCurrency(parseDisplay(fmtDisplay(amountRaw)))}
