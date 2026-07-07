@@ -161,7 +161,9 @@
       "Bash(curl -s -m 40 -X POST https://www.meufinora.com.br/api/google/sync -H 'Content-Type: application/json' -d '{\"userId\":\"aa96737b-65b8-4bfc-b633-1b4e2adde1a8\",\"debug\":\"tasks\"}')",
       "Bash(curl -s -m 40 -X POST https://www.meufinora.com.br/api/google/sync -H 'Content-Type: application/json' -d '{\"userId\":\"29974ca0-9804-4744-8b50-22cd67e36bd8\",\"debug\":\"tasks\"}')",
       "Bash(curl -s -m 60 -X POST https://www.meufinora.com.br/api/google/sync -H 'Content-Type: application/json' -d '{\"userId\":\"29974ca0-9804-4744-8b50-22cd67e36bd8\"}' -w ' [%{time_total}s]\\\\n')",
-      "Bash(perl -i -pe 's/alert\\\\\\(error\\\\.message\\\\\\); return;/toastError\\(error.message\\); return;/g' src/app/dashboard/shopping-lists/page.tsx)"
+      "Bash(perl -i -pe 's/alert\\\\\\(error\\\\.message\\\\\\); return;/toastError\\(error.message\\); return;/g' src/app/dashboard/shopping-lists/page.tsx)",
+      "Bash(node -e \"console.log\\(require\\('./package.json'\\).devDependencies.vitest || 'not installed'\\)\")",
+      "Bash(npm test *)"
     ]
   }
 }
