@@ -100,6 +100,25 @@ export class UsersService {
     return data;
   }
 
+  /**
+   * Acesso liberado se o próprio usuário é pago OU se é membro ativo de um
+   * household cujo titular é pago (o plano do casal cobre o parceiro).
+   */
+  async hasActiveAccess(profile: { id: string; paid?: boolean }): Promise<boolean> {
+    if (profile?.paid) return true;
+    const { data: membership } = await this.supabase
+      .from('household_members')
+      .select('household_id, households(owner_id)')
+      .eq('member_id', profile.id)
+      .eq('status', 'active')
+      .neq('role', 'owner')
+      .maybeSingle();
+    const ownerId = (membership?.households as any)?.owner_id;
+    if (!ownerId) return false;
+    const { data: owner } = await this.supabase.from('profiles').select('paid').eq('id', ownerId).single();
+    return !!owner?.paid;
+  }
+
   async update(id: string, data: { name?: string; currency?: string; timezone?: string; monthly_income?: number; budget_plan?: any }) {
     const { data: updated, error } = await this.supabase
       .from('profiles')

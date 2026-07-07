@@ -6,6 +6,7 @@ import { Check, User, Shield, MessageSquare, Camera, Loader, Bell, BellOff, Pale
 import { useTheme } from '@/lib/theme-context';
 import TwoFactorSetup from '@/components/ui/TwoFactorSetup';
 import DataExport from '@/components/ui/DataExport';
+import FamilySection from '@/components/ui/FamilySection';
 import { sendSecurityAlert } from '@/lib/security';
 
 export default function SettingsPage() {
@@ -348,6 +349,8 @@ export default function SettingsPage() {
       <Section icon={<Download size={17}/>} title="Backup e exportação">
         <DataExport />
       </Section>
+
+      <FamilySection />
 
       {/* Push notifications */}
       <Section icon={<Bell size={17}/>} title="Notificações">

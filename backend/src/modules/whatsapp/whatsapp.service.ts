@@ -104,7 +104,8 @@ export class WhatsappService {
         return;
       }
 
-      if (!user.paid) {
+      const hasAccess = await this.users.hasActiveAccess(user);
+      if (!hasAccess) {
         await this.sendMessage(
           normalizedPhone,
           `🔒 *Sua assinatura Finora está inativa.*\n\n` +
