@@ -16,7 +16,8 @@ async function auth(req: NextRequest) {
   const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
   const { data: { user } } = await anon.auth.getUser(token);
   if (!user) return null;
-  return { user, email: user.email || null, svc: svcClient() };
+  // invite_email é salvo em lowercase; normaliza para casar convites.
+  return { user, email: user.email ? user.email.trim().toLowerCase() : null, svc: svcClient() };
 }
 
 // Monta o estado do household para a UI.
