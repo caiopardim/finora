@@ -11,6 +11,8 @@ export interface CreateTransactionDto {
   date?: string;
   source?: 'whatsapp' | 'web' | 'import';
   raw_message?: string;
+  shared?: boolean;
+  household_id?: string | null;
 }
 
 export interface TransactionFilter {
@@ -50,6 +52,8 @@ export class TransactionsService {
         date: dto.date || new Date().toISOString().split('T')[0],
         source: dto.source || 'web',
         raw_message: dto.raw_message,
+        shared: dto.shared ?? false,
+        household_id: dto.shared ? dto.household_id ?? null : null,
       })
       .select('*, categories(name, icon, color)')
       .single();

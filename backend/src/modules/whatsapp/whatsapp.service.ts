@@ -269,11 +269,22 @@ export class WhatsappService {
         }
       }
 
+      // ── Comando de compartilhamento: prefixo "compartilhado/casal/junto" ──
+      // Marca a transação como do casal e remove o prefixo antes do parse.
+      let sharedRequested = false;
+      let parseText = message;
+      const sharedMatch = message.match(/^\s*(compartilhad[oa]s?|casal|junto[s]?)\s*[:,-]?\s+/i);
+      if (sharedMatch) {
+        sharedRequested = true;
+        parseText = message.slice(sharedMatch[0].length);
+      }
+      const householdId = sharedRequested ? await this.users.getActiveHouseholdId(user.id) : null;
+
       this.logger.log(`[2] User found: ${user?.id} — parsing message with AI`);
       const userCategories = await this.categories.findAll(user.id).catch(() => []);
       const categoryNames = userCategories.map((c: any) => c.name);
-      const intent = await this.ai.parseMessage(message, categoryNames);
-      this.logger.log(`[3] AI intent: ${intent.action}`);
+      const intent = await this.ai.parseMessage(parseText, categoryNames);
+      this.logger.log(`[3] AI intent: ${intent.action}${sharedRequested ? ' (compartilhado)' : ''}`);
 
       switch (intent.action) {
         case 'register_transaction': {
@@ -328,6 +339,8 @@ export class WhatsappService {
             date: transaction.date,
             source: 'whatsapp',
             raw_message: message,
+            shared: sharedRequested && !!householdId,
+            household_id: householdId,
           });
           this.logger.log(`[5] Transaction created: ${created?.id}`);
           if (created?.id) this.lastTransaction.set(normalizedPhone, { id: created.id, description: transaction.description, amount: transaction.amount });
@@ -345,6 +358,8 @@ export class WhatsappService {
             `🏷️ *Categoria:* ${transaction.category}\n` +
             `💸 *Valor:* R$ ${formattedAmount}\n\n` +
             `📅 *Data:* ${new Date(transaction.date + 'T12:00:00').toLocaleDateString('pt-BR')}\n` +
+            (sharedRequested && householdId ? `👫 *Compartilhado com o casal*\n` : '') +
+            (sharedRequested && !householdId ? `ℹ️ _Você ainda não tem um espaço da família — lancei como pessoal. Crie em Configurações › Família._\n` : '') +
             `⚙️ *ID:* ${shortId}`;
 
           this.logger.log(`[6] Sending message to ${normalizedPhone}`);
@@ -380,6 +395,8 @@ export class WhatsappService {
                 date: t.date,
                 source: 'whatsapp',
                 raw_message: message,
+                shared: sharedRequested && !!householdId,
+                household_id: householdId,
               });
               const emoji = t.type === 'expense' ? '💸' : '💰';
               const fmt = t.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });

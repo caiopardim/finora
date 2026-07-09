@@ -119,6 +119,17 @@ export class UsersService {
     return !!owner?.paid;
   }
 
+  /** Household ativo do usuário (como membro ativo), ou null. */
+  async getActiveHouseholdId(userId: string): Promise<string | null> {
+    const { data } = await this.supabase
+      .from('household_members')
+      .select('household_id')
+      .eq('member_id', userId)
+      .eq('status', 'active')
+      .maybeSingle();
+    return data?.household_id ?? null;
+  }
+
   async update(id: string, data: { name?: string; currency?: string; timezone?: string; monthly_income?: number; budget_plan?: any }) {
     const { data: updated, error } = await this.supabase
       .from('profiles')

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { getHouseholdContext } from '@/lib/household';
 import { supabase } from '@/lib/supabase';
 import { X } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
@@ -19,6 +20,7 @@ interface Props {
     category_id?: string | null;
     wallet_id?: string | null;
     date: string;
+    shared?: boolean;
   };
 }
 
@@ -50,6 +52,8 @@ export default function AddTransactionModal({ onClose, onSuccess, transaction, i
   const [wallets, setWallets]       = useState<any[]>([]);
   const [loading, setLoading]       = useState(false);
   const [error, setError]           = useState('');
+  const [householdId, setHouseholdId] = useState<string | null>(null);
+  const [shared, setShared] = useState<boolean>(!!transaction?.shared);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -63,6 +67,7 @@ export default function AddTransactionModal({ onClose, onSuccess, transaction, i
         setWallets(walletsRes.data || []);
       });
     });
+    getHouseholdContext().then(({ householdId }) => setHouseholdId(householdId)).catch(() => {});
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -80,6 +85,8 @@ export default function AddTransactionModal({ onClose, onSuccess, transaction, i
       category_id: form.category_id || null,
       wallet_id:   form.wallet_id   || null,
       date:        form.date,
+      shared:      householdId ? shared : false,
+      household_id: householdId && shared ? householdId : null,
     };
 
     if (isEdit) {
@@ -198,6 +205,23 @@ export default function AddTransactionModal({ onClose, onSuccess, transaction, i
             <label style={labelStyle}>Data</label>
             <input type="date" required value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} style={inputStyle}/>
           </div>
+
+          {/* Compartilhado com o casal (só aparece se houver household) */}
+          {householdId && (
+            <button type="button" onClick={() => setShared(s => !s)} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+              padding: '12px 14px', borderRadius: 12, cursor: 'pointer',
+              border: `1.5px solid ${shared ? '#6366f1' : c.border}`,
+              background: shared ? '#6366f110' : c.inputBg, textAlign: 'left',
+            }}>
+              <span style={{ fontSize: 13, color: shared ? '#6366f1' : c.textMuted, fontWeight: 500 }}>
+                👫 {shared ? 'Compartilhado com o casal' : 'Só pra você (pessoal)'}
+              </span>
+              <span style={{ width: 40, height: 22, borderRadius: 99, background: shared ? '#6366f1' : c.border, position: 'relative', transition: 'background 0.2s', flexShrink: 0 }}>
+                <span style={{ position: 'absolute', top: 2, left: shared ? 20 : 2, width: 18, height: 18, borderRadius: '50%', background: '#fff', transition: 'left 0.2s' }}/>
+              </span>
+            </button>
+          )}
 
           {error && <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 10, padding: '10px 14px', color: '#dc2626', fontSize: 13 }}>{error}</div>}
 

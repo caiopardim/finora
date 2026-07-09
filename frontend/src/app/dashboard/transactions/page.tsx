@@ -10,6 +10,7 @@ import { Plus, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 import { ListSkeleton } from '@/components/ui/Skeleton';
 import { toast, toastError } from '@/lib/toast';
+import { getHouseholdContext } from '@/lib/household';
 
 function fmt(v: number) { return formatCurrency(v); }
 
@@ -143,30 +144,42 @@ export default function TransactionsPage() {
   const [monthStats, setMonthStats] = useState({ income: 0, expense: 0 });
   const [periodPreset, setPeriodPreset] = useState('mes');
   const [showCalendar, setShowCalendar] = useState(false);
+  const [householdId, setHouseholdId] = useState<string | null>(null);
+  const [myId, setMyId] = useState<string | null>(null);
+  const [view, setView] = useState<'couple' | 'mine'>('couple');
   const limit = 20;
+
+  useEffect(() => {
+    getHouseholdContext().then(({ householdId }) => setHouseholdId(householdId)).catch(() => {});
+    supabase.auth.getUser().then(({ data }) => setMyId(data.user?.id || null));
+  }, []);
 
   async function load() {
     setLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setLoading(false); return; }
 
+    // No modo "casal" (household + view=couple) deixamos a RLS decidir:
+    // retorna as minhas linhas + as compartilhadas do household.
+    const coupleView = !!householdId && view === 'couple';
+
     // Fetch full month totals (independent of filters/pagination)
     const now = new Date();
     const monthStart = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
     const monthEnd = new Date(now.getFullYear(), now.getMonth()+1, 0).toISOString().split('T')[0];
-    const { data: monthTxs } = await supabase.from('transactions')
-      .select('type,amount').eq('user_id', session.user.id)
-      .gte('date', monthStart).lte('date', monthEnd);
+    let mq = supabase.from('transactions').select('type,amount').gte('date', monthStart).lte('date', monthEnd);
+    if (!coupleView) mq = mq.eq('user_id', session.user.id);
+    const { data: monthTxs } = await mq;
     const mIncome  = (monthTxs||[]).filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
     const mExpense = (monthTxs||[]).filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0);
     setMonthStats({ income: mIncome, expense: mExpense });
 
     let q = supabase.from('transactions')
-      .select('id,type,amount,description,date,source,recurring_template_id,categories(name,icon,color)', { count: 'exact' })
-      .eq('user_id', session.user.id)
+      .select('id,type,amount,description,date,source,recurring_template_id,user_id,shared,categories(name,icon,color)', { count: 'exact' })
       .order('date', { ascending: false })
       .order('created_at', { ascending: false })
       .range(page * limit, page * limit + limit - 1);
+    if (!coupleView) q = q.eq('user_id', session.user.id);
 
     if (filters.type)       q = q.eq('type', filters.type);
     if (filters.start_date) q = q.gte('date', filters.start_date);
@@ -178,7 +191,7 @@ export default function TransactionsPage() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, [filters, page]);
+  useEffect(() => { load(); }, [filters, page, householdId, view]);
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto' }}>
@@ -187,9 +200,20 @@ export default function TransactionsPage() {
           <h1 style={{ fontSize: 24, fontWeight: 700, color: c.text, margin: '0 0 2px' }}>Transações</h1>
           <p style={{ color: c.textFaint, fontSize: 14, margin: 0 }}>{count} registros encontrados</p>
         </div>
-        <button data-tour="tx-new" onClick={() => openAdd()} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: 'linear-gradient(135deg,#22c55e,#16a34a)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {householdId && (
+            <div style={{ display: 'inline-flex', gap: 4, background: c.surface, border: `1px solid ${c.border}`, borderRadius: 10, padding: 4 }}>
+              {(['couple','mine'] as const).map(v => (
+                <button key={v} onClick={() => setView(v)} style={{ padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, background: view === v ? '#6366f118' : 'transparent', color: view === v ? '#6366f1' : c.textMuted }}>
+                  {v === 'couple' ? '👫 Casal' : '👤 Meu'}
+                </button>
+              ))}
+            </div>
+          )}
+          <button data-tour="tx-new" onClick={() => openAdd()} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', background: 'linear-gradient(135deg,#22c55e,#16a34a)', border: 'none', borderRadius: 11, color: '#fff', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 14px rgba(34,197,94,0.3)' }}>
           <Plus size={16}/> Nova
         </button>
+        </div>
       </div>
 
       {/* Resumo do mês vigente — sempre visível */}
@@ -272,6 +296,7 @@ export default function TransactionsPage() {
                     <span style={{ color: c.border }}>·</span>
                     <span style={{ fontSize: 12, color: c.textFaint }}>{new Date(tx.date+'T12:00').toLocaleDateString('pt-BR')}</span>
                     {tx.source==='whatsapp' && <span style={{ fontSize: 11 }}>💬</span>}
+                    {tx.shared && <span style={{ fontSize: 10, fontWeight: 700, color: '#6366f1', background: '#6366f115', padding: '1px 6px', borderRadius: 6 }}>👫 {myId && tx.user_id && tx.user_id !== myId ? 'parceiro(a)' : 'casal'}</span>}
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
