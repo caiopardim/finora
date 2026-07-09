@@ -9,6 +9,8 @@ import { toast } from '@/lib/toast';
 import { Plus, X, Check, Pencil, Trash2 } from 'lucide-react';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import GuidedTour from '@/components/ui/GuidedTour';
+import SharedToggle from '@/components/ui/SharedToggle';
+import { getHouseholdContext } from '@/lib/household';
 
 const ICONS  = ['🏦','💳','💵','🏧','📱','💰','🐷','🏠','✈️','💼'];
 const COLORS = ['#6366f1','#22c55e','#f97316','#3b82f6','#ec4899','#eab308','#ef4444','#06b6d4','#10b981','#8b5cf6'];
@@ -31,16 +33,22 @@ export default function WalletsPage() {
   const [form, setForm]         = useState(emptyForm);
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [saved, setSaved]       = useState(false);
+  const [householdId, setHouseholdId] = useState<string | null>(null);
+  const [shared, setShared]     = useState(false);
+
+  useEffect(() => { getHouseholdContext().then(({ householdId }) => setHouseholdId(householdId)).catch(() => {}); }, []);
 
   async function load() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setLoading(false); return; }
     const uid = session.user.id;
+    const hh = await getHouseholdContext().then(r => r.householdId).catch(() => null);
 
-    const [walletsRes, txRes] = await Promise.all([
-      supabase.from('wallets').select('*').eq('user_id', uid).order('name'),
-      supabase.from('transactions').select('wallet_id,type,amount').eq('user_id', uid),
-    ]);
+    // No modo casal (household) a RLS retorna as minhas linhas + as compartilhadas.
+    let wq = supabase.from('wallets').select('*').order('name');
+    let tq = supabase.from('transactions').select('wallet_id,type,amount');
+    if (!hh) { wq = wq.eq('user_id', uid); tq = tq.eq('user_id', uid); }
+    const [walletsRes, txRes] = await Promise.all([wq, tq]);
 
     // Compute balance per wallet
     const bal: Record<string, number> = {};
@@ -57,17 +65,18 @@ export default function WalletsPage() {
 
   useEffect(() => { load(); }, []);
 
-  function openCreate() { setEditing(null); setForm(emptyForm); setShowForm(true); }
-  function openEdit(w: any) { setEditing(w); setForm({ name: w.name, icon: w.icon, color: w.color, type: w.type }); setShowForm(true); }
+  function openCreate() { setEditing(null); setForm(emptyForm); setShared(false); setShowForm(true); }
+  function openEdit(w: any) { setEditing(w); setForm({ name: w.name, icon: w.icon, color: w.color, type: w.type }); setShared(!!w.shared); setShowForm(true); }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
+    const sharedFields = { shared: householdId ? shared : false, household_id: householdId && shared ? householdId : null };
     if (editing) {
-      await supabase.from('wallets').update(form).eq('id', editing.id);
+      await supabase.from('wallets').update({ ...form, ...sharedFields }).eq('id', editing.id);
     } else {
-      await supabase.from('wallets').insert({ ...form, user_id: session.user.id });
+      await supabase.from('wallets').insert({ ...form, ...sharedFields, user_id: session.user.id });
     }
     setShowForm(false);
     setSaved(true);
@@ -206,6 +215,8 @@ export default function WalletsPage() {
                   ))}
                 </div>
               </div>
+
+              <SharedToggle householdId={householdId} shared={shared} onChange={setShared}/>
 
               <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
                 <button type="button" onClick={() => setShowForm(false)} style={{ flex: 1, padding: '12px', borderRadius: 12, border: `1.5px solid ${c.border}`, background: c.surface, color: c.textMuted, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>Cancelar</button>

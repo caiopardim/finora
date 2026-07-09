@@ -9,6 +9,8 @@ import { ListSkeleton } from '@/components/ui/Skeleton';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { toast, toastError } from '@/lib/toast';
 import GuidedTour from '@/components/ui/GuidedTour';
+import SharedToggle from '@/components/ui/SharedToggle';
+import { getHouseholdContext } from '@/lib/household';
 
 const GOAL_ICONS   = ['🎯','🏠','🚗','✈️','📱','💻','💍','📚','🎓','🌴','💰','🏋️','🐾','🎵','🎮'];
 const GOAL_COLORS  = ['#6366f1','#f97316','#10b981','#3b82f6','#ec4899','#eab308','#8b5cf6','#06b6d4'];
@@ -24,11 +26,18 @@ export default function GoalsPage() {
   const [form, setForm] = useState({ name: '', target_amount: '', deadline: '', icon: '🎯', color: '#6366f1' });
   const [editForm, setEditForm] = useState({ name: '', target_amount: '', deadline: '', icon: '🎯', color: '#6366f1' });
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [householdId, setHouseholdId] = useState<string | null>(null);
+  const [shared, setShared] = useState(false);
+
+  useEffect(() => { getHouseholdContext().then(({ householdId }) => setHouseholdId(householdId)).catch(() => {}); }, []);
 
   async function load() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setLoading(false); return; }
-    const { data } = await supabase.from('goals').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false });
+    const hh = await getHouseholdContext().then(r => r.householdId).catch(() => null);
+    let q = supabase.from('goals').select('*').order('created_at', { ascending: false });
+    if (!hh) q = q.eq('user_id', session.user.id);
+    const { data } = await q;
     setGoals(data || []);
     setLoading(false);
   }
@@ -46,10 +55,13 @@ export default function GoalsPage() {
       icon: form.icon,
       color: form.color,
       current_amount: 0,
+      shared: householdId ? shared : false,
+      household_id: householdId && shared ? householdId : null,
     });
     if (error) { console.error('goals insert error:', error); toastError(error.message); return; }
     setShowCreate(false);
     setForm({ name: '', target_amount: '', deadline: '', icon: '🎯', color: '#6366f1' });
+    setShared(false);
     toast('Meta criada!');
     load();
   }
@@ -213,6 +225,7 @@ export default function GoalsPage() {
             <div><Label>Nome da meta</Label><input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} style={inputStyle} placeholder="Ex: Viagem para Europa"/></div>
             <div><Label>Valor alvo (R$)</Label><input required type="number" step="0.01" value={form.target_amount} onChange={e => setForm({ ...form, target_amount: e.target.value })} style={inputStyle} placeholder="5.000,00"/></div>
             <div><Label>Prazo (opcional)</Label><input type="date" value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })} style={inputStyle}/></div>
+            <SharedToggle householdId={householdId} shared={shared} onChange={setShared}/>
             <Buttons onCancel={() => setShowCreate(false)} label="Criar Meta"/>
           </form>
         </Modal>

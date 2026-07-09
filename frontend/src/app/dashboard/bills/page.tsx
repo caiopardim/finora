@@ -10,6 +10,8 @@ import { useTheme } from '@/lib/theme-context';
 import { ListSkeleton } from '@/components/ui/Skeleton';
 import ConfirmModal from '@/components/ui/ConfirmModal';
 import { toast, toastError } from '@/lib/toast';
+import SharedToggle from '@/components/ui/SharedToggle';
+import { getHouseholdContext } from '@/lib/household';
 
 function fmtDisplay(raw: string): string {
   const digits = raw.replace(/\D/g, '');
@@ -56,16 +58,20 @@ export default function BillsPage() {
   const [filter, setFilter]     = useState<'all' | 'pending' | 'paid'>('pending');
   const [confirmBill, setConfirmBill] = useState<Bill | null>(null);
   const [confirmInstallments, setConfirmInstallments] = useState<Bill | null>(null);
+  const [householdId, setHouseholdId] = useState<string | null>(null);
+  const [shared, setShared] = useState(false);
+
+  useEffect(() => { getHouseholdContext().then(({ householdId }) => setHouseholdId(householdId)).catch(() => {}); }, []);
 
   async function load() {
     setLoading(true);
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setLoading(false); return; }
+    const hh = await getHouseholdContext().then(r => r.householdId).catch(() => null);
+    let bq = supabase.from('bills').select('*, categories(name,icon,color)').order('due_date', { ascending: true });
+    if (!hh) bq = bq.eq('user_id', session.user.id);
     const [{ data: b }, { data: c_ }] = await Promise.all([
-      supabase.from('bills')
-        .select('*, categories(name,icon,color)')
-        .eq('user_id', session.user.id)
-        .order('due_date', { ascending: true }),
+      bq,
       supabase.from('categories').select('id,name,icon,color').eq('user_id', session.user.id).eq('type', 'expense'),
     ]);
     setBills(b || []);
@@ -74,7 +80,7 @@ export default function BillsPage() {
   }
   useEffect(() => { load(); }, []);
 
-  function openCreate() { setEditing(null); setForm(emptyForm); setAmountRaw(''); setShowForm(true); }
+  function openCreate() { setEditing(null); setForm(emptyForm); setAmountRaw(''); setShared(false); setShowForm(true); }
 
   function openEdit(b: Bill) {
     setEditing(b);
@@ -85,6 +91,7 @@ export default function BillsPage() {
       tipo: b.installments > 1 ? 'installment' : b.recurrent ? 'recurrent' : 'normal',
       installments: String(b.installments || 2),
     });
+    setShared(!!(b as any).shared);
     setShowForm(true);
   }
 
@@ -95,6 +102,8 @@ export default function BillsPage() {
 
     const amountVal = parseDisplay(fmtDisplay(amountRaw));
 
+    const sharedFields = { shared: householdId ? shared : false, household_id: householdId && shared ? householdId : null };
+
     const base = {
       user_id: session.user.id,
       description: form.description,
@@ -102,6 +111,7 @@ export default function BillsPage() {
       due_date: form.due_date,
       category_id: form.category_id || null,
       paid: false,
+      ...sharedFields,
     };
 
     if (editing) {
@@ -111,6 +121,7 @@ export default function BillsPage() {
         due_date: form.due_date,
         recurrent: form.tipo === 'recurrent',
         category_id: form.category_id || null,
+        ...sharedFields,
       }).eq('id', editing.id);
       if (error) { toastError(error.message); return; }
     } else if (form.tipo === 'installment') {
@@ -125,6 +136,8 @@ export default function BillsPage() {
           due_date: form.due_date,
           installments: n,
           category_id: form.category_id || null,
+          shared: householdId ? shared : false,
+          household_id: householdId && shared ? householdId : null,
         }),
       });
       if (!res.ok) {
@@ -414,6 +427,8 @@ export default function BillsPage() {
                   </select>
                 </div>
               )}
+
+              <SharedToggle householdId={householdId} shared={shared} onChange={setShared}/>
 
               <div style={{ display: 'flex', gap: 10 }}>
                 <button type="button" onClick={() => setShowForm(false)} style={{ flex: 1, padding: '11px', borderRadius: 10, border: `1.5px solid ${c.border}`, background: c.surface, color: c.textSecondary, fontSize: 14, fontWeight: 500, cursor: 'pointer' }}>Cancelar</button>

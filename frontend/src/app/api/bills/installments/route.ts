@@ -23,6 +23,8 @@ export async function POST(req: NextRequest) {
     due_date: String(body.due_date || ''),
     installments: parseInt(String(body.installments), 10),
     category_id: body.category_id || null,
+    shared: !!body.shared,
+    household_id: body.shared ? body.household_id || null : null,
   };
 
   const check = validateInstallments(input);

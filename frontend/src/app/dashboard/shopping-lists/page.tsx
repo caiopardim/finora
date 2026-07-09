@@ -7,6 +7,8 @@ import { Plus, X, Trash2, Check, ShoppingCart, Pencil } from 'lucide-react';
 import { useTheme } from '@/lib/theme-context';
 import { toast, toastError } from '@/lib/toast';
 import GuidedTour from '@/components/ui/GuidedTour';
+import SharedToggle from '@/components/ui/SharedToggle';
+import { getHouseholdContext } from '@/lib/household';
 
 // Categoriza um item pelo nome (apenas para agrupar a exibição — não usa o banco)
 const ITEM_CATEGORIES: { label: string; emoji: string; keywords: string[] }[] = [
@@ -55,6 +57,8 @@ export default function ShoppingListsPage() {
   const [showAddItems, setShowAddItems] = useState<string | null>(null);
   const [selectedList, setSelectedList] = useState<ShoppingList | null>(null);
   const [form, setForm] = useState({ name: '', category: 'Alimentação' });
+  const [householdId, setHouseholdId] = useState<string | null>(null);
+  const [shared, setShared] = useState(false);
   const [itemsInput, setItemsInput] = useState('');
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
@@ -73,15 +77,19 @@ export default function ShoppingListsPage() {
     load();
   }
 
+  useEffect(() => { getHouseholdContext().then(({ householdId }) => setHouseholdId(householdId)).catch(() => {}); }, []);
+
   async function load() {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) { setLoading(false); return; }
+    const hh = await getHouseholdContext().then(r => r.householdId).catch(() => null);
 
-    const { data } = await supabase
+    let q = supabase
       .from('shopping_lists')
       .select('*, items:shopping_list_items(*)')
-      .eq('user_id', session.user.id)
       .order('created_at', { ascending: false });
+    if (!hh) q = q.eq('user_id', session.user.id);
+    const { data } = await q;
 
     setLists(data || []);
     setLoading(false);
@@ -99,11 +107,14 @@ export default function ShoppingListsPage() {
       name: form.name,
       category: form.category,
       completed: false,
+      shared: householdId ? shared : false,
+      household_id: householdId && shared ? householdId : null,
     });
 
     if (error) { toastError(error.message); return; }
     setShowCreate(false);
     setForm({ name: '', category: 'Alimentação' });
+    setShared(false);
     toast('Lista criada!');
     load();
   }
@@ -269,6 +280,9 @@ export default function ShoppingListsPage() {
               <option>Limpeza</option>
               <option>Outras</option>
             </select>
+            <div style={{ marginBottom: '16px' }}>
+              <SharedToggle householdId={householdId} shared={shared} onChange={setShared}/>
+            </div>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button
                 type="submit"

@@ -15,6 +15,8 @@ export interface InstallmentInput {
   due_date: string;
   installments: number;
   category_id?: string | null;
+  shared?: boolean;
+  household_id?: string | null;
 }
 
 export interface InstallmentValidation {
@@ -46,11 +48,13 @@ export interface InstallmentRow {
   recurrent: boolean;
   installments: number;
   installment_number: number;
+  shared: boolean;
+  household_id: string | null;
 }
 
 /** Gera as linhas das parcelas (sem user_id/group — o caller adiciona). */
 export function buildInstallmentRows(input: InstallmentInput): InstallmentRow[] {
-  const { description, amount, due_date, installments, category_id = null } = input;
+  const { description, amount, due_date, installments, category_id = null, shared = false, household_id = null } = input;
   return Array.from({ length: installments }, (_, i) => ({
     description: `${description} (${i + 1}/${installments})`,
     amount,
@@ -60,5 +64,7 @@ export function buildInstallmentRows(input: InstallmentInput): InstallmentRow[] 
     recurrent: false,
     installments,
     installment_number: i + 1,
+    shared: !!shared,
+    household_id: shared ? household_id ?? null : null,
   }));
 }
