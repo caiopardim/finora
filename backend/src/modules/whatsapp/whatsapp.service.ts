@@ -450,7 +450,7 @@ export class WhatsappService {
             tx = await this.transactions.findRecentByDescription(user.id, del!.description!, del?.amount);
           }
           if (!tx) {
-            await this.sendMessage(normalizedPhone, `❌ Não encontrei nenhuma transação com *"${del?.description}"*.\n\nVerifique no dashboard ou tente com outro termo.`);
+            await this.sendMessage(normalizedPhone, `🔍 Não encontrei nenhuma transação com *"${del?.description}"*.\n\nVerifique no dashboard ou tente com outro termo.`);
             break;
           }
           const fmtAmt = Number(tx.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -476,7 +476,7 @@ export class WhatsappService {
             tx = await this.transactions.findRecentByDescription(user.id, edit!.description!, edit?.amount);
           }
           if (!tx) {
-            await this.sendMessage(normalizedPhone, `❌ Não encontrei nenhuma transação com *"${edit?.description}"*.\n\nVerifique no dashboard ou tente com outro termo.`);
+            await this.sendMessage(normalizedPhone, `🔍 Não encontrei nenhuma transação com *"${edit?.description}"*.\n\nVerifique no dashboard ou tente com outro termo.`);
             break;
           }
 
@@ -620,7 +620,7 @@ export class WhatsappService {
           );
           if (!matched) {
             await this.sendMessage(normalizedPhone,
-              `❌ Não encontrei meta com o nome *"${goal_progress.name}"*.\n\nSuas metas:\n${allGoals?.map((g: any) => `• ${g.icon || '🎯'} ${g.name}`).join('\n') || 'Nenhuma meta cadastrada'}`,
+              `🔍 Não encontrei meta com o nome *"${goal_progress.name}"*.\n\nSuas metas:\n${allGoals?.map((g: any) => `• ${g.icon || '🎯'} ${g.name}`).join('\n') || 'Nenhuma meta cadastrada'}`,
             );
             break;
           }
@@ -713,7 +713,7 @@ export class WhatsappService {
           );
           if (!matchedBill) {
             await this.sendMessage(normalizedPhone,
-              `❌ Não encontrei a conta *"${billName}"* em aberto.\n\nSuas contas pendentes:\n${allBills?.slice(0, 5).map((b: any) => `• ${b.description}`).join('\n') || 'Nenhuma conta pendente'}`,
+              `🔍 Não encontrei a conta *"${billName}"* em aberto.\n\nSuas contas pendentes:\n${allBills?.slice(0, 5).map((b: any) => `• ${b.description}`).join('\n') || 'Nenhuma conta pendente'}`,
             );
             break;
           }
@@ -803,7 +803,7 @@ export class WhatsappService {
 
           if (!matched) {
             await this.sendMessage(normalizedPhone,
-              `❌ Não encontrei meta com o nome *"${goalName}"*.\n\nSuas metas:\n${allGoals?.map((g: any) => `• ${g.icon || '🎯'} ${g.name}`).join('\n') || 'Nenhuma meta cadastrada'}`,
+              `🔍 Não encontrei meta com o nome *"${goalName}"*.\n\nSuas metas:\n${allGoals?.map((g: any) => `• ${g.icon || '🎯'} ${g.name}`).join('\n') || 'Nenhuma meta cadastrada'}`,
             );
             break;
           }
@@ -1094,24 +1094,30 @@ export class WhatsappService {
           break;
         }
 
-        default:
+        default: {
+          const nome = (user.name || '').split(' ')[0];
           await this.sendMessage(
             normalizedPhone,
-            `🤔 Não entendi muito bem. Você pode tentar assim:\n\n` +
+            `🤔 Foi mal${nome ? `, ${nome}` : ''}, não peguei bem o que você quis dizer dessa vez. ` +
+            `Pode reformular? Aqui vão alguns exemplos do que eu entendo:\n\n` +
             `💸 _"Gastei 50 no mercado"_\n` +
             `💰 _"Recebi 3.000 de salário"_\n` +
             `📊 _"Quanto gastei este mês?"_\n` +
             `📅 _"Agende dentista quinta às 10h"_\n` +
             `🛒 _"Adiciona arroz, feijão na lista"_\n` +
             `🎯 _"Criar meta de 5.000 para viagem"_\n\n` +
-            `É só falar naturalmente que eu cuido do resto! 😊`,
+            `Ou responda *ajuda* que eu te mostro tudo que sei fazer. 😊`,
           );
+          break;
+        }
       }
     } catch (error) {
       this.logger.error(`Error handling message: ${error.message}`, error.stack);
+      // Erro técnico do nosso lado — NÃO culpar a forma do usuário falar.
       await this.sendMessage(
         phone.replace(/\D/g, ''),
-        `Hmm, não entendi muito bem o que você quis dizer. Lembre-se que eu sou um assistente financeiro e posso te ajudar a registrar seus gastos, consultar parcelas, ver seus relatórios e cuidar da sua agenda. Como posso te ajudar com isso? 😊`,
+        `😕 Ops, tive um probleminha aqui do meu lado pra processar isso agora. ` +
+        `Não foi nada que você fez! Pode mandar de novo em instantes? Se continuar, tenta reenviar daqui a pouco. 🙏`,
       );
     }
   }
@@ -1132,7 +1138,7 @@ export class WhatsappService {
       }
 
       await this.transactions.remove(user.id, tx.id);
-      await this.sendMessage(normalizedPhone, `❌ *${tx.description}*\n\nExcluído com Sucesso!`);
+      await this.sendMessage(normalizedPhone, `🗑️ *${tx.description}*\n\nExcluído com sucesso! ✅`);
     } catch (error) {
       this.logger.error(`Error handling delete command: ${error.message}`);
       await this.sendMessage(normalizedPhone, '❌ Não foi possível excluir. Tente novamente.');
@@ -1354,7 +1360,7 @@ export class WhatsappService {
 
         await this.sendMessage(
           normalizedPhone,
-          `❌ *${description}*\n\nExcluído com Sucesso!`,
+          `🗑️ *${description}*\n\nExcluído com sucesso! ✅`,
         );
       }
     } catch (error) {
