@@ -107,8 +107,7 @@ export default function ShoppingListsPage() {
       name: form.name,
       category: form.category,
       completed: false,
-      shared: householdId ? shared : false,
-      household_id: householdId && shared ? householdId : null,
+      ...(householdId ? { shared, household_id: shared ? householdId : null } : {}),
     });
 
     if (error) { toastError(error.message); return; }

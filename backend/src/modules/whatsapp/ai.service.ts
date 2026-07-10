@@ -358,7 +358,7 @@ Responda APENAS com o JSON, sem texto adicional, sem markdown.`;
         file,
         model: 'whisper-1',
         language: 'pt',
-      });
+      }, { timeout: 60_000 });
 
       return result.text?.trim() || null;
     } catch (err) {
@@ -640,11 +640,9 @@ Responda APENAS com o JSON, sem texto adicional, sem markdown.`;
             ],
           },
         ],
-      });
+      }, { timeout: 90_000 });
 
-      const raw = response.content[0].type === 'text' ? response.content[0].text : '{}';
-      const text = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-      const parsed = JSON.parse(text);
+      const parsed = JSON.parse(this.extractJsonText(response.content));
       this.logger.log(`[analyzeReceiptImage] found ${parsed.transactions?.length ?? 0} transactions, summary: ${parsed.summary}`);
       return parsed.transactions || [];
     } catch (err) {
@@ -759,6 +757,13 @@ ${billsSummary}`,
   }
 
   // ── Analisa texto extraído de PDF ou planilha ─────────────────────────────
+  /** Extrai o primeiro bloco de texto da resposta do Claude (ignora thinking/outros). */
+  private extractJsonText(content: any[]): string {
+    const block = Array.isArray(content) ? content.find((b: any) => b?.type === 'text') : null;
+    const raw = block?.text ?? '{}';
+    return raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+  }
+
   async analyzeDocumentText(text: string, filename: string, categoryNames: string[]): Promise<{ transactions: ParsedTransaction[]; summary: string }> {
     if (!this.anthropic) return { transactions: [], summary: 'IA não configurada.' };
     const today = dayjs().format('YYYY-MM-DD');
@@ -826,11 +831,9 @@ Responda APENAS com o JSON, sem texto adicional, sem markdown.`,
             content: `Conteúdo do arquivo:\n\n${text.slice(0, 12000)}`,
           },
         ],
-      });
+      }, { timeout: 90_000 });
 
-      const rawText = response.content[0].type === 'text' ? response.content[0].text : '{}';
-      const responseText = rawText.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-      const parsed = JSON.parse(responseText);
+      const parsed = JSON.parse(this.extractJsonText(response.content));
       return {
         transactions: parsed.transactions || [],
         summary: parsed.summary || '',

@@ -41,20 +41,27 @@ export class TransactionsService {
       categoryId = cat?.id;
     }
 
+    const insertData: Record<string, any> = {
+      user_id: userId,
+      category_id: categoryId,
+      type: dto.type,
+      amount: dto.amount,
+      description: dto.description,
+      date: dto.date || new Date().toISOString().split('T')[0],
+      source: dto.source || 'web',
+      raw_message: dto.raw_message,
+    };
+    // Só referencia as colunas de compartilhamento quando realmente compartilhado.
+    // Assim, transações pessoais funcionam mesmo se a migration de households
+    // ainda não estiver aplicada (a coluna tem default no banco).
+    if (dto.shared && dto.household_id) {
+      insertData.shared = true;
+      insertData.household_id = dto.household_id;
+    }
+
     const { data, error } = await this.supabase
       .from('transactions')
-      .insert({
-        user_id: userId,
-        category_id: categoryId,
-        type: dto.type,
-        amount: dto.amount,
-        description: dto.description,
-        date: dto.date || new Date().toISOString().split('T')[0],
-        source: dto.source || 'web',
-        raw_message: dto.raw_message,
-        shared: dto.shared ?? false,
-        household_id: dto.shared ? dto.household_id ?? null : null,
-      })
+      .insert(insertData)
       .select('*, categories(name, icon, color)')
       .single();
 

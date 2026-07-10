@@ -142,14 +142,26 @@ export class WhatsappController {
       const evolutionKey = this.config.get('EVOLUTION_API_KEY');
       const messageId = data?.key?.id;
 
-      const mediaRes = await fetch(
-        `${evolutionUrl}/chat/getBase64FromMediaMessage/${instanceName}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', apikey: evolutionKey },
-          body: JSON.stringify({ message: { key: data?.key, message: data?.message } }),
-        },
-      );
+      const audioController = new AbortController();
+      const audioTimer = setTimeout(() => audioController.abort(), 45_000);
+      let mediaRes: Response;
+      try {
+        mediaRes = await fetch(
+          `${evolutionUrl}/chat/getBase64FromMediaMessage/${instanceName}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', apikey: evolutionKey },
+            body: JSON.stringify({ message: { key: data?.key, message: data?.message } }),
+            signal: audioController.signal,
+          },
+        );
+      } catch (err) {
+        this.logger.error(`Audio download timeout/error: ${(err as Error).message}`);
+        await this.whatsapp.sendMessage(phone, '⌛ O áudio demorou demais pra baixar. Tente enviar em texto!');
+        return;
+      } finally {
+        clearTimeout(audioTimer);
+      }
 
       if (!mediaRes.ok) {
         this.logger.error(`Failed to download audio: ${mediaRes.status}`);

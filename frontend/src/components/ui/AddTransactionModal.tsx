@@ -78,15 +78,16 @@ export default function AddTransactionModal({ onClose, onSuccess, transaction, i
     const amount = parseDisplay(fmtDisplay(rawDigits));
     if (!amount) { setError('Informe um valor válido'); setLoading(false); return; }
 
-    const payload = {
+    const payload: Record<string, any> = {
       type:        form.type,
       amount,
       description: form.description,
       category_id: form.category_id || null,
       wallet_id:   form.wallet_id   || null,
       date:        form.date,
-      shared:      householdId ? shared : false,
-      household_id: householdId && shared ? householdId : null,
+      // Só referencia colunas de compartilhamento quando há household
+      // (evita quebrar se a migration ainda não estiver aplicada).
+      ...(householdId ? { shared, household_id: shared ? householdId : null } : {}),
     };
 
     if (isEdit) {

@@ -102,7 +102,7 @@ export default function BillsPage() {
 
     const amountVal = parseDisplay(fmtDisplay(amountRaw));
 
-    const sharedFields = { shared: householdId ? shared : false, household_id: householdId && shared ? householdId : null };
+    const sharedFields = householdId ? { shared, household_id: shared ? householdId : null } : {};
 
     const base = {
       user_id: session.user.id,

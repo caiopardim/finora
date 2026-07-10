@@ -33,7 +33,15 @@ export async function POST(req: NextRequest) {
   // 3) Gera as linhas no servidor e insere em lote (INSERT único = atômico).
   const svc = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
   const group = crypto.randomUUID();
-  const rows = buildInstallmentRows(input).map((r) => ({ ...r, user_id: user.id, installment_group: group }));
+  const isShared = !!(input.shared && input.household_id);
+  const rows = buildInstallmentRows(input).map((r) => {
+    // Só referencia colunas de compartilhamento quando realmente compartilhado
+    // (evita quebrar se a migration de households ainda não estiver aplicada).
+    const { shared, household_id, ...rest } = r;
+    const base: Record<string, any> = { ...rest, user_id: user.id, installment_group: group };
+    if (isShared) { base.shared = true; base.household_id = input.household_id; }
+    return base;
+  });
 
   const { error } = await svc.from('bills').insert(rows);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

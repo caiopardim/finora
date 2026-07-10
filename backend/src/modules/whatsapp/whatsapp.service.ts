@@ -49,6 +49,17 @@ export class WhatsappService {
     return isValidAmount(n);
   }
 
+  /** fetch com timeout via AbortController (evita requisições penduradas). */
+  private async fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...init, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   constructor(
     private config: ConfigService,
     private ai: AiService,
@@ -1137,7 +1148,7 @@ export class WhatsappService {
         await this.sendMessage(normalizedPhone, `🐷 Para usar o Finora, crie sua conta em *${this.dashboardUrl}*`);
         return;
       }
-      if (!user.paid) {
+      if (!(await this.users.hasActiveAccess(user))) {
         await this.sendMessage(normalizedPhone, `🔒 Sua assinatura está inativa. Reative em *${this.dashboardUrl}/dashboard/plano*`);
         return;
       }
@@ -1152,15 +1163,23 @@ export class WhatsappService {
 
       this.logger.log(`[media] user=${user.id} mimeType=${mimeType} fileName=${fileName} hasImage=${!!imageMsg} hasDoc=${!!docMsg}`);
 
-      // Download base64 via Evolution API
-      const mediaRes = await fetch(
-        `${this.evolutionUrl}/chat/getBase64FromMediaMessage/${this.instance}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', apikey: this.evolutionKey },
-          body: JSON.stringify({ message: { key: data?.key, message: data?.message } }),
-        },
-      );
+      // Download base64 via Evolution API (com timeout para não travar)
+      let mediaRes: Response;
+      try {
+        mediaRes = await this.fetchWithTimeout(
+          `${this.evolutionUrl}/chat/getBase64FromMediaMessage/${this.instance}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', apikey: this.evolutionKey },
+            body: JSON.stringify({ message: { key: data?.key, message: data?.message } }),
+          },
+          45_000,
+        );
+      } catch (err) {
+        this.logger.error(`[media] download timeout/erro: ${(err as Error).message}`);
+        await this.sendMessage(normalizedPhone, '⌛ O arquivo demorou demais pra baixar. Tente enviar novamente, ou mande uma *foto* do documento.');
+        return;
+      }
       if (!mediaRes.ok) {
         await this.sendMessage(normalizedPhone, '❌ Não consegui baixar o arquivo. Tente enviar novamente.');
         return;
@@ -1169,6 +1188,13 @@ export class WhatsappService {
       const base64: string = mediaData?.base64 || mediaData?.data;
       if (!base64) {
         await this.sendMessage(normalizedPhone, '❌ Não consegui ler o arquivo. Tente novamente.');
+        return;
+      }
+
+      // Guard de tamanho: arquivos muito grandes travam o parse. base64 ~= 1.33x bytes.
+      const approxBytes = Math.floor((base64.length * 3) / 4);
+      if (approxBytes > 20 * 1024 * 1024) { // 20 MB
+        await this.sendMessage(normalizedPhone, '📄 Esse arquivo é muito grande (acima de 20 MB). Tente enviar um trecho menor, uma *foto* da página, ou o extrato em *CSV*.');
         return;
       }
 

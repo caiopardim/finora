@@ -55,8 +55,7 @@ export default function GoalsPage() {
       icon: form.icon,
       color: form.color,
       current_amount: 0,
-      shared: householdId ? shared : false,
-      household_id: householdId && shared ? householdId : null,
+      ...(householdId ? { shared, household_id: shared ? householdId : null } : {}),
     });
     if (error) { console.error('goals insert error:', error); toastError(error.message); return; }
     setShowCreate(false);

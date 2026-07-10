@@ -72,7 +72,7 @@ export default function WalletsPage() {
     e.preventDefault();
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) return;
-    const sharedFields = { shared: householdId ? shared : false, household_id: householdId && shared ? householdId : null };
+    const sharedFields = householdId ? { shared, household_id: shared ? householdId : null } : {};
     if (editing) {
       await supabase.from('wallets').update({ ...form, ...sharedFields }).eq('id', editing.id);
     } else {
