@@ -55,6 +55,8 @@ export interface MessageIntent {
   shopping_list?: { name: string; category?: string };
   shopping_items?: Array<{ name: string; quantity?: number; unit?: string }>;
   shopping_item_names?: string[];
+  /** Quando action='unknown' mas há um palpite: exemplo de como reformular. */
+  suggestion?: string;
 }
 
 @Injectable()
@@ -287,8 +289,18 @@ Use quando a pessoa quer saber o que você faz, pede ajuda geral, manda uma saud
 
 ━━━ DESCONHECIDO ━━━
 {
-  "action": "unknown"
+  "action": "unknown",
+  "suggestion": string (OPCIONAL)
 }
+Use quando não conseguir mapear a mensagem para nenhuma ação acima.
+Se a mensagem PARECER estar tentando fazer algo que você sabe (mas está ambígua,
+incompleta ou mal escrita), preencha "suggestion" com um exemplo curto de como a
+pessoa poderia reformular — na 1ª pessoa, do jeito que ela falaria.
+Exemplos:
+- "mercado 50" (sem verbo) → suggestion: "Gastei 50 no mercado"
+- "e o dentista?" → suggestion: "Agenda dentista quinta às 10h"
+- "quanto sobrou" → suggestion: "Quanto gastei este mês?"
+Se não fizer ideia do que a pessoa quis, NÃO preencha "suggestion".
 
 ━━━ REGRAS GERAIS ━━━
 - Para datas relativas: hoje=${today}

@@ -1096,10 +1096,27 @@ export class WhatsappService {
 
         default: {
           const nome = (user.name || '').split(' ')[0];
+
+          // "Você quis dizer?" — quando a IA tem um palpite do que a pessoa tentou.
+          if (intent.suggestion) {
+            await this.sendMessage(normalizedPhone,
+              `🤔 Não tenho 100% de certeza do que você quis dizer. Você quis algo como:\n\n` +
+              `👉 _"${intent.suggestion}"_\n\n` +
+              `Se for isso, é só mandar assim! Ou responda *ajuda* pra ver tudo que eu faço. 😊`,
+            );
+            break;
+          }
+
+          // Fallback genérico — varia a abertura pra não soar robótico na repetição.
+          const aberturas = [
+            `🤔 Foi mal${nome ? `, ${nome}` : ''}, não peguei bem o que você quis dizer dessa vez.`,
+            `😅 Hmm, essa eu não entendi${nome ? `, ${nome}` : ''}. Deixa eu te ajudar:`,
+            `🤔 Não consegui entender direito. Sem problema — tenta assim:`,
+          ];
+          const abertura = aberturas[Math.floor(Math.random() * aberturas.length)];
           await this.sendMessage(
             normalizedPhone,
-            `🤔 Foi mal${nome ? `, ${nome}` : ''}, não peguei bem o que você quis dizer dessa vez. ` +
-            `Pode reformular? Aqui vão alguns exemplos do que eu entendo:\n\n` +
+            `${abertura}\n\n` +
             `💸 _"Gastei 50 no mercado"_\n` +
             `💰 _"Recebi 3.000 de salário"_\n` +
             `📊 _"Quanto gastei este mês?"_\n` +
