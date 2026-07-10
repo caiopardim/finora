@@ -28,7 +28,7 @@ export class WhatsappService {
   // Última transação registrada por telefone (para "apaga esse", "muda o último")
   private readonly lastTransaction = new Map<string, { id: string; description: string; amount: number }>();
   // Pending duplicate confirmations: phone -> pending transaction data
-  private readonly pendingDuplicates = new Map<string, { type: string; amount: number; description: string; category: string; date: string; duplicateDesc: string; duplicateAgo: string }>();
+  private readonly pendingDuplicates = new Map<string, { type: string; amount: number; description: string; category: string; date: string; duplicateDesc: string; duplicateAgo: string; shared?: boolean; household_id?: string | null }>();
   // Onboarding flow: phone -> { stage, income?, fixedExpenses?, debts? }
   private readonly pendingOnboarding = new Map<string, { stage: 'income' | 'fixed_expenses' | 'debts' | 'main_goal'; income?: number; fixedExpenses?: string; debts?: string }>();
 
@@ -238,6 +238,8 @@ export class WhatsappService {
             date: pendingDup.date,
             source: 'whatsapp',
             raw_message: message,
+            shared: pendingDup.shared,
+            household_id: pendingDup.household_id,
           });
           const fmt = pendingDup.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
           const shortId = (created?.id as string)?.slice(-6) ?? '------';
@@ -330,6 +332,8 @@ export class WhatsappService {
               date: transaction.date,
               duplicateDesc: duplicate.description,
               duplicateAgo: ago,
+              shared: sharedRequested && !!householdId,
+              household_id: householdId,
             });
             await this.sendMessage(normalizedPhone,
               `⚠️ *Possível lançamento duplicado!*\n\n` +
@@ -1321,7 +1325,7 @@ export class WhatsappService {
       for (const tx of transactions) {
         try {
           const amt = Number(tx.amount);
-          if (!amt || amt <= 0) continue;
+          if (!this.isValidAmount(amt)) continue;
 
           await this.transactions.create(user.id, {
             type: tx.type || 'expense',
