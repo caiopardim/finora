@@ -563,19 +563,13 @@ Exemplos de sugestões:
 
 
   // ── Analisa imagem/PDF de comprovante via Claude Vision ─────────────────
-  async analyzeReceiptImage(base64: string, mimeType: string, categoryNames: string[]): Promise<ParsedTransaction[]> {
-    if (!this.anthropic) return [];
+  /** Prompt compartilhado para extração de transações de comprovantes/notas (imagem ou PDF). */
+  private receiptSystemPrompt(categoryNames: string[]): string {
     const today = dayjs().format('YYYY-MM-DD');
     const categoryList = categoryNames.length
       ? categoryNames.join(', ')
       : 'Alimentação, Transporte, Moradia, Saúde, Lazer, Educação, Vestuário, Internet/Telefone, Serviços, Salário, Freelance, Investimentos, Outros';
-
-    // Claude Vision accepts JPEG, PNG, GIF, WEBP
-    const safeMime = (['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mimeType)
-      ? mimeType
-      : 'image/jpeg') as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
-
-    const systemPrompt = `Você é um assistente financeiro inteligente. Analise o arquivo enviado (comprovante, recibo, extrato bancário ou nota fiscal) e extraia TODAS as transações financeiras presentes.
+    return `Você é um assistente financeiro inteligente. Analise o arquivo enviado (comprovante, recibo, extrato bancário ou nota fiscal) e extraia TODAS as transações financeiras presentes.
 
 Hoje é ${today}.
 
@@ -623,12 +617,21 @@ OUTRAS REGRAS:
 - Extrato → cada linha vira um item separado
 
 Responda APENAS com o JSON, sem texto adicional, sem markdown.`;
+  }
+
+  async analyzeReceiptImage(base64: string, mimeType: string, categoryNames: string[]): Promise<ParsedTransaction[]> {
+    if (!this.anthropic) return [];
+
+    // Claude Vision accepts JPEG, PNG, GIF, WEBP
+    const safeMime = (['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(mimeType)
+      ? mimeType
+      : 'image/jpeg') as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
 
     try {
       const response = await this.anthropic.messages.create({
         model: 'claude-opus-4-8',
         max_tokens: 2000,
-        system: systemPrompt,
+        system: this.receiptSystemPrompt(categoryNames),
         messages: [
           {
             role: 'user',
@@ -648,6 +651,39 @@ Responda APENAS com o JSON, sem texto adicional, sem markdown.`;
     } catch (err) {
       this.logger.error('analyzeReceiptImage failed', err?.message);
       return [];
+    }
+  }
+
+  /**
+   * Analisa um PDF enviando os bytes direto ao Claude (bloco `document`).
+   * Lê PDFs com texto E escaneados/imagem — mais robusto que pdf-parse.
+   */
+  async analyzeReceiptPdf(base64: string, categoryNames: string[]): Promise<{ transactions: ParsedTransaction[]; summary: string }> {
+    if (!this.anthropic) return { transactions: [], summary: 'IA não configurada.' };
+    try {
+      const response = await this.anthropic.messages.create({
+        model: 'claude-opus-4-8',
+        max_tokens: 3000,
+        system: this.receiptSystemPrompt(categoryNames),
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'document',
+                source: { type: 'base64', media_type: 'application/pdf', data: base64 },
+              } as any,
+            ],
+          },
+        ],
+      }, { timeout: 120_000 });
+
+      const parsed = JSON.parse(this.extractJsonText(response.content));
+      this.logger.log(`[analyzeReceiptPdf] found ${parsed.transactions?.length ?? 0} transactions, summary: ${parsed.summary}`);
+      return { transactions: parsed.transactions || [], summary: parsed.summary || '' };
+    } catch (err) {
+      this.logger.error('analyzeReceiptPdf failed', (err as Error)?.message);
+      return { transactions: [], summary: '' };
     }
   }
 

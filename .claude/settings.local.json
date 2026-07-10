@@ -163,7 +163,8 @@
       "Bash(curl -s -m 60 -X POST https://www.meufinora.com.br/api/google/sync -H 'Content-Type: application/json' -d '{\"userId\":\"29974ca0-9804-4744-8b50-22cd67e36bd8\"}' -w ' [%{time_total}s]\\\\n')",
       "Bash(perl -i -pe 's/alert\\\\\\(error\\\\.message\\\\\\); return;/toastError\\(error.message\\); return;/g' src/app/dashboard/shopping-lists/page.tsx)",
       "Bash(node -e \"console.log\\(require\\('./package.json'\\).devDependencies.vitest || 'not installed'\\)\")",
-      "Bash(npm test *)"
+      "Bash(npm test *)",
+      "Bash(cp \"/Users/caiopardim/Library/Group Containers/group.com.apple.coreservices.useractivityd/shared-pasteboard/items/8D073D6E-2E03-4248-9EF4-2522C1B8A018/Comprovante_Deposito_Aparelho_Auditivo.pdf\" /private/tmp/claude-501/-Users-caiopardim-Desktop-Finora/abf17976-279a-4c57-802e-bee3f4b7fb15/scratchpad/test.pdf && ls -la /private/tmp/claude-501/-Users-caiopardim-Desktop-Finora/abf17976-279a-4c57-802e-bee3f4b7fb15/scratchpad/test.pdf)"
     ]
   }
 }

@@ -1212,36 +1212,40 @@ export class WhatsappService {
           : '📷 Não encontrei transações financeiras nesta imagem.';
 
       } else if (mimeType === 'application/pdf' || fileName.endsWith('.pdf')) {
-        // ── PDF: extrai texto com pdf-parse e envia pro GPT ───────────────
-        // GPT-4o Vision NÃO aceita PDF — precisa extrair texto primeiro
-        try {
-          const pdfParse = require('pdf-parse');
-          const buffer = Buffer.from(base64, 'base64');
-          const pdfData = await pdfParse(buffer);
+        // ── PDF: envia direto ao Claude (lê texto E escaneado/imagem) ──────
+        // Claude aceita PDF nativamente — mais robusto que pdf-parse, que
+        // falha em muitos comprovantes de banco / PDFs modernos.
+        const result = await this.ai.analyzeReceiptPdf(base64, categoryNames);
+        transactions = result.transactions;
+        summary = result.summary || (transactions.length > 0
+          ? `📄 Encontrei *${transactions.length} transação(ões)* no PDF!`
+          : '');
 
-          const rawText = pdfData.text || '';
-          const text = rawText.replace(/\s+/g, ' ').trim();
-          const wordCount = text.split(' ').filter((w: string) => w.length > 2).length;
-          this.logger.log(`[media] pdf pages=${pdfData.numpages} text length=${text.length} words=${wordCount}`);
-
-          if (wordCount >= 10) {
-            const result = await this.ai.analyzeDocumentText(text, fileName, categoryNames);
-            transactions = result.transactions;
-            summary = result.summary || `📄 Encontrei *${transactions.length} transação(ões)* no PDF!`;
-          } else {
-            // PDF é escaneado (só imagem, sem texto) — não tem como extrair automaticamente
-            await this.sendMessage(normalizedPhone,
-              '📄 Este PDF parece ser escaneado (sem texto selecionável).\n\n' +
-              'Tire uma *foto* do documento e me mande a imagem — assim consigo ler e importar as transações! 📷',
-            );
-            return;
+        // Fallback: se o Claude não achou nada, tenta extrair texto com pdf-parse.
+        if (transactions.length === 0) {
+          try {
+            const pdfParse = require('pdf-parse');
+            const buffer = Buffer.from(base64, 'base64');
+            const pdfData = await pdfParse(buffer);
+            const text = (pdfData.text || '').replace(/\s+/g, ' ').trim();
+            const wordCount = text.split(' ').filter((w: string) => w.length > 2).length;
+            this.logger.log(`[media] pdf fallback pages=${pdfData.numpages} words=${wordCount}`);
+            if (wordCount >= 10) {
+              const alt = await this.ai.analyzeDocumentText(text, fileName, categoryNames);
+              transactions = alt.transactions;
+              summary = alt.summary || summary;
+            }
+          } catch (err) {
+            this.logger.warn(`[media] pdf-parse fallback falhou: ${(err as Error).message}`);
           }
-        } catch (err) {
-          this.logger.error('pdf-parse error', err.message);
+        }
+
+        if (transactions.length === 0) {
           await this.sendMessage(normalizedPhone,
-            '❌ Não consegui ler este PDF. Tente:\n\n' +
-            '📷 Tirar uma *foto* do comprovante\n' +
-            '📊 Exportar o extrato em *CSV ou XLSX*',
+            '📄 Consegui abrir o PDF, mas não identifiquei transações financeiras nele.\n\n' +
+            'Se for um comprovante, tente também:\n' +
+            '📷 Tirar uma *foto* do documento\n' +
+            '📊 Enviar o extrato em *CSV ou XLSX*',
           );
           return;
         }
