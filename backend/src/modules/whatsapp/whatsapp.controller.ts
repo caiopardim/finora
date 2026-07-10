@@ -116,7 +116,30 @@ export class WhatsappController {
       return { status: 'processing' };
     }
 
-    if (!message) return { status: 'ignored' };
+    if (!message) {
+      // Tipos que não sabemos processar (vídeo, sticker, localização, contato...).
+      // Só avisamos se for claramente uma mídia enviada pelo usuário — evita
+      // responder a eventos silenciosos (status, reações, protocolos internos).
+      const knownUnsupported =
+        data?.message?.videoMessage ||
+        data?.message?.stickerMessage ||
+        data?.message?.locationMessage ||
+        data?.message?.contactMessage ||
+        data?.message?.contactsArrayMessage;
+      if (knownUnsupported) {
+        this.whatsapp.sendMessage(
+          phone,
+          '🤔 Não consigo ler esse tipo de mensagem.\n\n' +
+          'Você pode me mandar:\n' +
+          '💬 *Texto* — "gastei 50 no mercado"\n' +
+          '🎙️ *Áudio* — falando o gasto\n' +
+          '📷 *Foto* de comprovante ou nota\n' +
+          '📄 *PDF* ou *planilha* (CSV/XLSX) de extrato',
+        ).catch((err) => this.logger.error('Error sending unsupported-type hint', err));
+        return { status: 'processing' };
+      }
+      return { status: 'ignored' };
+    }
 
     // Handle delete command: "excluir XXXXXX"
     const deleteMatch = message.trim().match(/^excluir\s+([a-f0-9]{6})$/i);
