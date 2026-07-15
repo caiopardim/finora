@@ -16,11 +16,19 @@
 2. Anote: **Project URL** e as duas chaves (**anon** e **service_role**)
 
 ### 1.2 Rodar as migrations
-No painel do Supabase → SQL Editor, execute em ordem:
+No painel do Supabase → SQL Editor, execute **em ordem**:
 ```
 supabase/migrations/001_initial_schema.sql
 supabase/migrations/002_bills_and_recurring.sql
+supabase/migrations/003_add_paid_to_profiles.sql
+supabase/migrations/004_appointments.sql
+supabase/migrations/005_households.sql        # contas compartilhadas (casal)
 ```
+
+> Algumas tabelas (wallets, shopping_lists, etc.) foram criadas direto no painel do
+> Supabase e não têm migration. Ao clonar num projeto Supabase novo do zero, elas
+> precisam ser recriadas. Depois de tudo, rode `supabase/audit_rls.sql` (query #1) para
+> conferir que todas as tabelas estão com RLS habilitado.
 
 ### 1.3 (Opcional) Dados de exemplo
 Crie um usuário via Authentication → Add User, copie o UUID e substitua em `supabase/seed.sql`, depois execute o arquivo.
@@ -38,12 +46,14 @@ Edite `.env`:
 ```
 SUPABASE_URL=https://xxxx.supabase.co
 SUPABASE_SERVICE_KEY=sua-service-role-key
-OPENAI_API_KEY=sk-...
+ANTHROPIC_API_KEY=sk-ant-...        # IA principal (parse, relatórios, visão/PDF)
+OPENAI_API_KEY=sk-...               # só para transcrição de áudio (Whisper)
 EVOLUTION_API_URL=https://sua-evolution-api.com
 EVOLUTION_API_KEY=sua-api-key
 EVOLUTION_INSTANCE=finora
 WEBHOOK_SECRET=qualquer-string-secreta
 FRONTEND_URL=http://localhost:3000
+SENTRY_DSN=                         # opcional (monitoramento de erros)
 ```
 
 ```bash
@@ -166,7 +176,7 @@ Usuário → WhatsApp → Evolution API → Webhook POST /api/webhook/whatsapp
                                             ↓
                                      WhatsappService
                                             ↓
-                                       AiService (GPT-4o-mini)
+                                       AiService (Claude — haiku/opus)
                                             ↓
                                { action, transaction, query }
                                             ↓
